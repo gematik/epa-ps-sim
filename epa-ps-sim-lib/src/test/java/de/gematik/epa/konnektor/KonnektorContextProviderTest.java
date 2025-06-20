@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,8 +15,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor;
 
 import static de.gematik.epa.unit.util.Assertions.*;
@@ -23,33 +30,9 @@ import de.gematik.epa.unit.util.TestBase;
 import de.gematik.epa.unit.util.TestDataFactory;
 import java.util.MissingResourceException;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import telematik.ws.conn.phrs.phrmanagementservice.wsdl.v2_5.FaultMessage;
-import telematik.ws.conn.phrs.phrmanagementservice.xsd.v2_5.GetHomeCommunityID;
 
 class KonnektorContextProviderTest extends TestBase {
-
-  @BeforeEach
-  void beforeEach() {
-    TestDataFactory.initKonnektorTestConfiguration(konnektorInterfaceAssembly());
-  }
-
-  @SneakyThrows
-  @Test
-  void createContextHeaderTest() {
-    var tstObj =
-        new KonnektorContextProvider(
-            konnektorConfigurationProvider(), konnektorInterfaceAssembly());
-    var firstResult = assertDoesNotThrow(() -> tstObj.createContextHeader(TestDataFactory.KVNR));
-
-    assertEquals(TestDataFactory.contextHeader(), firstResult);
-
-    var secondResult = assertDoesNotThrow(() -> tstObj.getContextHeader());
-
-    assertSame(firstResult, secondResult);
-  }
 
   @SneakyThrows
   @Test
@@ -58,31 +41,14 @@ class KonnektorContextProviderTest extends TestBase {
         new KonnektorContextProvider(
             konnektorConfigurationProvider(), konnektorInterfaceAssembly());
 
-    var firstResult = assertDoesNotThrow(() -> tstObj.createContextHeader(TestDataFactory.KVNR));
-
-    var phrManagementServiceMock = konnektorInterfaceAssembly().phrManagementService();
-    Mockito.when(phrManagementServiceMock.getHomeCommunityID(Mockito.any(GetHomeCommunityID.class)))
-        .thenThrow(
-            new FaultMessage(
-                "The PHRManagementService should not have been called a second time for the same KVNR"));
+    var firstResult = assertDoesNotThrow(tstObj::createContextType);
 
     assertDoesNotThrow(tstObj::removeContextHeader);
 
-    var secondResult = assertDoesNotThrow(() -> tstObj.createContextHeader(TestDataFactory.KVNR));
+    var secondResult = assertDoesNotThrow(tstObj::createContextType);
 
     assertEquals(firstResult, secondResult);
     assertNotSame(firstResult, secondResult);
-  }
-
-  @Test
-  void getContextTest() {
-    var tstObj =
-        new KonnektorContextProvider(
-            konnektorConfigurationProvider(), konnektorInterfaceAssembly());
-    var context = assertDoesNotThrow(tstObj::getContext);
-
-    assertNotNull(context);
-    assertEquals(TestDataFactory.contextHeader().getContext(), context);
   }
 
   @Test
@@ -90,7 +56,7 @@ class KonnektorContextProviderTest extends TestBase {
     var tstObj =
         new KonnektorContextProvider(
             konnektorConfigurationProvider(), konnektorInterfaceAssembly());
-    tstObj.createContextHeader(TestDataFactory.KVNR);
+    tstObj.createContextType();
 
     var context = assertDoesNotThrow(tstObj::getContext);
 
@@ -102,32 +68,9 @@ class KonnektorContextProviderTest extends TestBase {
   void getContextThrowsTest() {
     var konCfgProvider =
         new KonnektorConfigurationProvider(
-            TestDataFactory.createKonnektorConfiguration().context(null));
+            TestDataFactory.createKonnektorConfigurationMutable().context(null));
     var konCtxProvider = new KonnektorContextProvider(konCfgProvider, konnektorInterfaceAssembly());
 
     assertThrows(MissingResourceException.class, konCtxProvider::getContext);
-  }
-
-  @Test
-  void getRecordIdentifierTest() {
-    var tstObj =
-        new KonnektorContextProvider(
-            konnektorConfigurationProvider(), konnektorInterfaceAssembly());
-    tstObj.createContextHeader(TestDataFactory.KVNR);
-
-    var recordIdentifier = tstObj.getRecordIdentifier();
-
-    assertNotNull(recordIdentifier);
-    assertEquals(TestDataFactory.recordIdentifier(), recordIdentifier);
-  }
-
-  @Test
-  void getRecordIdentifierThrowsTest() {
-    var konCtxProvider =
-        new KonnektorContextProvider(
-            konnektorConfigurationProvider(), konnektorInterfaceAssembly());
-    konCtxProvider.removeContextHeader();
-
-    assertThrows(MissingResourceException.class, konCtxProvider::getRecordIdentifier);
   }
 }

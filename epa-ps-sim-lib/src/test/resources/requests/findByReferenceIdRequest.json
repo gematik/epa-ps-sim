@@ -1,0 +1,9 @@
+{
+  "queryData" : {
+    "XDSDocumentEntryReferenceIdList": ["1.2.3.4.5.6^^^^urn.gematik.iti.xds.2023.rootDocumentUniqueId"],
+    "XDSDocumentEntryStatus": ["urn:oasis:names:tc:ebxml-regrep:StatusType:Approved"]
+  },
+  "query" : "FindDocumentsByReferenceId",
+  "kvnr" : "X110435031",
+  "returnType" : "LeafClass"
+}

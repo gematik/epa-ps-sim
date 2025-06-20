@@ -1,0 +1,336 @@
+openapi: 3.0.3
+info:
+  title: I_Email_Management
+  description: |
+    This interface provides access to the service **Email Management** for insurants and insurance.<br/>
+    
+    **General conditions**:</br> 
+    For all operations if applicable:
+    - a section _Client_ in operation descriptions covers recommendations (informative) for clients.
+    - a section _Provider_ in operation descriptions covers requirements for the server side. 
+    - error responses may be extended by helpful information about the error condition in _errorDetail_
+
+    **Prerequisites**:</br>
+    The User Session shall provide 
+    - name
+    - role ((profession-)oid)
+    - identifier (kvnr)
+
+    of the current user (requestor) for evaluation in operations.
+
+    All operations of this service mandate a VAU-channel and an authorized user session.</br>
+    If the service Email Management is used by insurances, the management is only allowed for 
+    insurants hosted by the insurance itself. 
+    For access by ePA-FdV a device registration for the device used is required.
+
+    **User Agent**:</br>
+    The user agent information (x-useragent) is part of any request, even if 
+    not essentially required for the operation (e.g. raw-data collection), and
+    may be considered for provider internal use. 
+
+  contact:
+    name: gematik GmbH
+    url: 'http://www.gematik.de'
+
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+
+  version: 1.3.2
+
+  # version history:
+  # ----------------
+  # version 1.3.2
+  #   - changed error condition 409 requestMismatch to 403 invalidUser
+  # version 1.3.1
+  #   - added error condition for not authenticated user sessions
+  # version 1.3.0
+  #   - added status code 404 notHomeSystem to replaceEmailAddress
+  #   - clarification regarding x-insurant-id (editorial)
+  #   - responses as json object
+  #   - added actor and timestamp to responses
+  #   - discard setEmailAddress and rework replaceEmailAddress as common setter operation
+  #   - editorial updates
+  # version 1.2.1
+  #   - removed obsolete 403 unregistered device in description of setEmailAddress
+  # version 1.2.0
+  #   - just one email address is allowed
+  #   - remove getEmails
+  #   - remove deleteEmails
+  #   - update of get, set, update of emails
+  # version 1.1.1
+  #   - added limit of 10 mail addresses to setEmail operation (description)
+  #   - editorial correction in operation descriptions
+  #   - removed log-entry requirement for setEmail
+  # version 1.1.0
+  #   - bugfix UserAgentType
+  # version 1.0.0
+  #   - initial version
+
+servers:
+  - url: https://epa-hst1.prod.epa4all.de
+
+tags:
+- name: EmailManagement
+  description: |
+    **Email Management** allows:
+    - insurants (excluding representatives) to register or update their own email address 
+    - insurances to register or update the email address of an insurant hosted by the insurance
+
+    There is only one single email address supported by the helath record system. This address 
+    is always associated to a kvnr and always hosted in the "Home System" of an insurant, the 
+    health record system operating health records for the insurance of a user.
+
+    The first (initial) email address shall be provided by the insurance and subsequent changes 
+    may be applied by the insurant itself or - on demand - via the insurance.
+   
+
+paths:
+  /epa/basic/api/v1/emailaddress:
+    parameters:
+      - $ref: '#/components/parameters/useragent'
+      - $ref: '#/components/parameters/insurantid'
+    get:
+      tags:
+        - EmailManagement
+      operationId: getEmailAddress
+      summary: (getEmailAddress) get stored email address
+      description: |
+       Retrieves information about a specific email address.</br>
+       This operation is limited to users of role oid_versicherter which has to be the insurant 
+       (health record owner) or role oid_kostentraeger, which shall manage only adresses of associated insurants.
+
+        **Client**:</br>
+        An ePA-FdV client shall have a valid device registration.
+
+       The insurance shall use _x-insurant-id_ for addressing.</br>
+       For ePA-FdV no health record is mandated for this operation but the used device
+       shall have a valid device registration for successful operation.
+
+        **Provider**</br>
+        no recommendations.
+
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200|||
+        | Request does not match schema | 400 | malformedRequest ||
+        | Requestor not authorized | 403 | invalAuth | no user session with valid ID-Token available |
+        | Requestor role is not _oid_versicherter_ or _oid_kostentraeger_ | 403 | invalidOid ||
+        | Device registration does not exist |403 | unregisteredDevice | in case requestor role is _oid_versicherter_ |
+        | Wrong or missing _x-insurantid_ | 403 | invalidParam | in case requestor role is _oid_kostentraeger_ |
+        | Requestor is not the insurant | 403 | invalidUser ||
+        | Email does not exist| 404 | noResource ||
+        | Not the "home system" of the user | 404| notHomeSystem ||
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+         </br>
+        | Postconditions                        | Remarks |
+        |---------------------------------------|---------|
+        | none ||
+
+      responses:
+        '200':
+          description: 'OK.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailResponseType'
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '403':
+          $ref: '#/components/responses/Error403Forbidden'
+        '404':
+          $ref: '#/components/responses/Error404NotFound'
+        '409':
+          $ref: '#/components/responses/Error409Conflict'
+        '500':
+          $ref: '#/components/responses/Error500InternalError'
+
+    put:
+      tags:
+        - EmailManagement
+      operationId: replaceEmailAddress
+      summary: (replaceEmailAddress) Replaces the existing email address
+      description: |
+       This operation sets or replaces the email address for an insurant.</br>
+       This operation is limited to users of role oid_versicherter which has to be the insurant 
+       (health reocrd owner) or role oid_kostentraeger, which shall manage only adresses of associated insurants.
+
+       **Client**:</br>
+       The insurance shall (mandatory) apply an email address for the insurant and use _x-insurant-id_ 
+       for addressing.</br>
+       An ePA-FdV may change the email address. A health record is not mandated for this operation but the 
+       ePA-FdV shall have a valid device registration for successful operation.
+
+       **Provider**:</br>
+       The (single) email address is set or replaced by the provided new email address. The addressed owner
+       of the email (associated insurant) shall be: 
+       - kvnr (insurantId) from UserSession when requestor role is oid_versicherter (i.e. ePA-FdV client)
+       - insurnatId from _x-insurant-id_ when requestor role is oid_kostentraeger
+       
+       Each change of an email address shall collect the following data for information:
+       - timestamp _createdAt_ set to current system time.
+       - name _actor_ set to readable name of the requestor  
+
+       A notification email should be sent to both the existing (if applicable) and the new email address.
+
+       | Conditions | Status code | Error code | Remarks |
+       |------------|-------------|------------|---------|
+       | Successful operation | 200 |||
+       | Request does not match schema | 400 | malformedRequest ||
+       | Requestor not authorized | 403 | invalAuth | no user session with valid ID-Token available |
+       | Requestor role is not _oid_versicherter_ or _oid_kostentraeger_ | 403 | invalidOid ||
+       | Device registration does not exist |403 | unregisteredDevice | in case requestor role is _oid_versicherter_ |
+       | Wrong or missing _x-insurantid_ | 403 | invalidParam | in case requestor role is _oid_kostentraeger_ |
+       | Requestor is not the insurant | 403 | invalidUser ||
+       | Not the "home system" of the user | 404| notHomeSystem ||
+       | Any other error | 500 | internalError | (see 'Retry interval') |
+
+       </br>
+       | Postconditions                        | Remarks |
+       |---------------------------------------|---------|
+       | Email notification is sent to both the existing and the new email address | to existing email if applicable (address available) |
+       | The raw-data of the operation is collected and associated to _useragent_ | for any operation result according to gemSpec_Perf UC_A2.2 and UC_A2.5 |
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequestType'
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailResponseType'
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '403':
+          $ref: '#/components/responses/Error403Forbidden'
+        '404':
+          $ref: '#/components/responses/Error404NotFound'
+        '409':
+          $ref: '#/components/responses/Error409Conflict'
+        '500':
+          $ref: '#/components/responses/Error500InternalError'
+
+
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier. Is only required for requestor _oid_kostentraeger_.
+      required: false
+      schema:
+        $ref: '#/components/schemas/InsurantIdType'
+    useragent:
+      name: x-useragent
+      in: header
+      description: user agent information
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserAgentType'
+
+  responses:
+    Error400BadRequest:
+      description: Bad Request.
+      content:
+        application/json:
+          example:
+            errorCode: malformedRequest
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error403Forbidden:
+      description: Forbidden.
+      content:
+        application/json:
+          example:
+            errorCode: invalidOid
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error404NotFound:
+      description: Not found.
+      content:
+        application/json:
+          example:
+            errorCode: noResource
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error409Conflict:
+      description: Conflict.
+      content:
+        application/json:
+          examples:
+            statusMismatch:
+              value:
+                errorCode: statusMismatch
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error500InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          example:
+            errorCode: internalError
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+
+  schemas:
+    UserAgentType:
+      description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."
+      type: string
+      pattern: '^[a-zA-Z0-9\-]{1,20}\/[a-zA-Z0-9\-\.]{1,15}$'
+      example: CLIENTID1234567890AB/2.1.12-45
+    InsurantIdType:
+      type: string
+      description: |-
+        The health record identifier. 
+        For today the record identifier equals the insurant id (kvnr).
+      pattern: '^[A-Z]{1}\d{9}$'
+      example: Z123456789
+    EmailRequestType:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/EmailAddressType'
+      required:
+        - email
+    EmailResponseType:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/EmailAddressType'
+        actor:
+          description: "Modifier of the email address"
+          type: string
+          example: "Betriebskrankenkasse ABC"
+        createdAt:
+          description: timestamp of email registration
+          type: string
+          format: date-time
+          example: "2025-04-22T14:23:01Z"
+      required:
+        - email
+        - actor
+        - createdAt
+    EmailAddressType:
+      type: string
+      description: "email address"
+      format: email
+      example: "name@example.com"
+    ErrorType:
+      description: Error object with additional information about the occurred error
+      type: object
+      properties:
+        errorCode:
+          description: Error condition specifier
+          type: string
+        errorDetail:
+          description: Additional details regarding the error condition (if applicable)
+          type: string
+      required:
+        - errorCode

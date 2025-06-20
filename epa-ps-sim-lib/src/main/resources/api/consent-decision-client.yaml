@@ -1,0 +1,493 @@
+openapi: 3.0.1
+info:
+  title: I_Consent_Decision_Management
+  description: |-
+    This interface provides access to the service **Consent Decision Management** of the Electronic Health Record system for insurants, representatives and ombuds offices.<br/>
+
+    **General conditions**:</br>
+    For all operations if applicable:
+    - a section _Client_ in operation descriptions covers recommendations (informative) for clients.
+    - a section _Provider_ in operation descriptions covers requirements for the server side.
+    - error responses may be extended by helpful information about the error condition in _errorDetail_
+
+    **Prerequisites**:</br>
+    The Health Record System shall provide
+    - name
+    - role ((profession-)oid)
+    - identifier (telematik-id or KVNR)
+    - indication of a valid entitlement
+
+    of the current user (requestor) for evaluation in operations.
+
+    Operations mandating a valid entitlement implicitly mandate use of a VAU channel
+    and a valid ID-Token. If one of these conditions is not met, the response
+    of the (aborted) operation shall always be '403': 'notEntitled'.
+
+    **Retry interval**:</br>
+    The following retry intervals are suggested in case of an error response:<br>
+    - '409' Conflict.
+      - approx. 24 hours
+    - '500' Internal Error
+      - approx. 10 minutes
+
+    **User Agent**:</br>
+    The user agent information (x-useragent) is part of any request, even if
+    not essentially required for the operation (e.g. raw-data collection), and
+    may be considered for provider internal use.
+
+    **Log-Entries**
+    Whenever a _Postcondition_ mandates a log-entry, this entry shall contain
+    data as defined in A_24055*.
+    Log entry storage requires an entitled user for the related operation to
+    ensure access to secure data storage. Therefore, log entry creation shall
+    always be skipped and no log entry shall be stored if this precondition is
+    not met.
+
+  version: 1.5.3
+
+  # version history:
+  # ----------------
+  # version 1.5.3
+  #   - additional error condition for missing device registration
+  #   - clarification on scope of an UdpMedication assignment (fhir medication + category emp)
+  # version 1.5.2
+  #   - remove consent for data submission and DataUsagePurpose
+  # version 1.5.1
+  #   - clarification regarding required entitlement for logging
+  #   - added error condition for not authenticated user sessions
+  # version 1.5.0
+  #   - rename ResearchUsagePurposes... to DataUsagePurposes
+  #   - fix: purpose examples
+  #   - editorial improvements
+  #   - changed status code from 404 to 409 in updateDataUsagePurposes and getDataUsagePurposes
+  #   - introduce user specific policy medication service UdpMedication
+  # version 1.4.0 (renamed: released for review as version 1.3.0 !)
+  #   - new ressource researchDataPurpose for detailed consent of research data submission
+  # version 1.3.0
+  #   - changed array to object with array for consent lists
+  # version 1.2.0
+  #   - bugfix UserAgentType
+  #   - return all changed consent decisions in response of updateConsentDecision
+  # version 1.1.1
+  #   - reworked the correction of depending consent decision change 'medication' and 'erp-submission'
+  # version 1.1.0
+  #   - correction in effect of consent decision 'medication' for oid_versicherter
+  #   - correction of depending consent decision change 'medication' and 'erp-submission'
+  #   - bugfixes
+  # version 1.0.0
+  #   - first release version
+  # version 0.0.1
+  #   - initial version for review
+
+  contact:
+    name: gematik GmbH
+    url: 'http://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: "https://www.apache.org/licenses/LICENSE-2.0"
+
+servers:
+  - url: https://epa-hst1.prod.epa4all.de
+
+tags:
+  - name: ConsentDecisions
+    description: |
+     Consent decision management operations allow to view current decisions made and to change those
+     decisions regarding consent related functions of the health record.
+
+paths:
+  /epa/basic/api/v1/consents/{functionid}:
+    parameters:
+      - $ref: '#/components/parameters/insurantid'
+      - $ref: "#/components/parameters/functionid"
+      - $ref: '#/components/parameters/useragent'
+    put:
+      tags:
+        - ConsentDecisions
+      operationId: updateConsentDecision
+      summary: (updateConsentDecision) Update one consent decisions
+      description: |
+        Update the user decision regarding a particular consent related function of a
+        personal health record.</br>
+        This operation is limited to entitled users of role oid_versicherter and oid_ombudsstelle.
+
+        **Client**:</br>
+        no recommendations.
+
+        **Provider**:</br>
+        A changed consent decision shall be persisted securely in SecureDataStorage and become
+        immediately valid.
+
+        Changed consents of class "healthCareProcess" shall also be made available for the Information Service.
+
+        _functionid_ == _medication_:</br>
+        The change of this decision alters the medication process participation and shall cause special impact
+        for the XDS document service and the Fhir data service. If set to _deny_, no client (any oid) - except
+        the ePrescription backend, the insurant and representatives (oid_erp-vau, oid_versicherter) - shall be
+        able to read or write medication related data (locked).
+        Vice versa these clients are unlocked for intented use if decision is set to _permit_. </br>
+          - (a) lock the following data categories if _functionid_ = _medication_ is
+            set to _deny_:
+            - xds data category "emp"; folder.Codelist: code = "emp"; codeSystem = "urn:oid:1.2.276.0.76.5.512"
+            - fhir data service "medication"
+          - (b) unlock the following data categories if _functionid_ = _medication_ is
+            set to _permit_:
+            - xds data category "emp"; folder.Codelist: code = "emp"; codeSystem = "urn:oid:1.2.276.0.76.5.512"
+            - fhir data service "medication"
+          - (h) set the decision for _erp-submission_ to _permit_ if _functionid_ = _medication_ is
+            set to _permit_.
+
+        _functionid_ == _erp-submission_:</br>
+        The change of this decision shall cause special impact for the XDS document service and the Fhir data service
+        and disable the data collection related to the medication process if set to _deny_.
+        A decision change also sets the corresponding decision for _medication_ implicitly.</br>
+          - (c) remove all data from following data category (folder/service) if _functionid_ = _erp-submission_ is
+            set to _deny_:
+            - xds data category "emp"; folder.Codelist: code = "emp"; codeSystem = "urn:oid:1.2.276.0.76.5.512"
+            - fhir data service "medication"
+          - (d) lock all operations for the ePrescription backend (oid_erp-vau) if _functionid_ = _erp-submission_ is
+            set to _deny_.
+          - (e) unlock all operations for the ePrescription backend (oid_erp-vau) if _functionid_ = _erp-submission_ is
+            set to _permit_.
+          - (f) set the decision for _medication_ to _deny_ (including the consequences for clients) if _functionid_ = _erp-submission_ is
+            set to _deny_.
+
+        If decision provided equals decision stored (i.e. no change), this shall not cause an error response.
+
+        An unknown parameter _functionid_ shall lead to rejection of the request. This operation operates on existings
+        resources only and does not create new ones.
+
+        An email shall be sent to the insurant using the registered mail address after a successful change of
+        a decision for notification. The mail shall contain understandable information about the changed consent
+        decision(s) and timestamp of change (according to A_24844*)."
+
+        The response of a successful operation shall contain all changed consent decisions.
+
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | Request does not match schema | 400 | malformedRequest ||
+        | Requestor not authorized | 403 | invalAuth | no user session with valid ID-Token available |
+        | Device registration does not exist | 403 | unregisteredDevice | if requestor role is oid_versicherter only |
+        | Requestor has no valid entitlement | 403 | notEntitled ||
+        | Requestor role is not _oid_versicherter_ or _oid_ombudsstelle_| 403 | invalidOid ||
+        | Health record does not exist | 404 | noHealthRecord | _insurantid_ unknown |
+        | Resource for _functionid_ does not exist | 404 | noResource ||
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+         </br>
+        | Postconditions                        | Remarks |
+        |---------------------------------------|---------|
+        | The updated consent decision is stored in SecureDataStorage |in case of (f), (g), (h): both decisions |
+        | Associated data categories are read and write protected for clients | conditional, see (a), (f) |
+        | Associated data categories are read and write enabled for clients | conditional, see (b) |
+        | Associated data categories are empty (all content deleted) | conditional, see (c) |
+        | Operations for ePrescription backend (oid_erp-vau) are locked | conditional, see (d) |
+        | Operations for ePrescription backend (oid_erp-vau) are unlocked | conditional, see (e), (h) |
+        | Decision for _medication_ is set to _deny_| conditional, see (f) |
+        | Decision for _medication_ is set to _permit_| conditional, see (g) |
+        | Decision for _erp-submission_ is set to _permit_| conditional, see (h) |
+        | The Information Service has updated consent decisions | conditional, if functions of class "healthCareProcess" are changed |
+        | An email is sent to the insurant | success case with change of consent only |
+        | A log-entry for the operation exists | all operation results |
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            examples:
+              Permit:
+                summary: Permit request (e.g functionid == medication)
+                value:
+                 decision: "permit"
+              Deny:
+                summary: Deny request (e.g functionid == erp-submission)
+                value:
+                 decision: "deny"
+            schema:
+              $ref: "#/components/schemas/ConsentDecisionType"
+      responses:
+        "200":
+          description: OK. Consent decision successfully updated
+          content:
+            application/json:
+              examples:
+                Permit_Medication:
+                  summary: Permit functionid == medication (permits erp-submission internally) response
+                  value:
+                    data:
+                      - functionId: "medication"
+                        decision: "permit"
+                      - functionId: "erp-submission"
+                        decision: "permit"
+                Deny_erp-submission:
+                  summary: Deny functionid == erp-submission (denies medication internally) response
+                  value:
+                    data:
+                      - functionId: "medication"
+                        decision: "deny"
+                      - functionId: "erp-submission"
+                        decision: "deny"
+                Deny_erp-submission2:
+                  summary: Deny functionid == erp-submission (medication already denied) response
+                  value:
+                    data:
+                      - functionId: "erp-submission"
+                        decision: "deny"
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ConsentDecisionsResponseType"
+        '400':
+          $ref: "#/components/responses/Error400BadRequest"
+        '403':
+          $ref: "#/components/responses/Error403Forbidden"
+        '404':
+          $ref: "#/components/responses/Error404NotFound"
+        '409':
+          $ref: "#/components/responses/Error409Conflict"
+        '500':
+          $ref: "#/components/responses/Error500InternalError"
+
+    get:
+      tags:
+        - ConsentDecisions
+      operationId: getConsentDecision
+      summary: (getConsentDecision) Read one current consent decisions
+      description: |
+        Get current decision for a particular consent related functions of the health record.<br/>
+        This operation is limited to entitled users of role oid_versicherter and oid_ombudsstelle.
+
+        **Client**:</br>
+        no recommendations.
+
+        **Provider**:
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | Request does not match schema | 400 | malformedRequest ||
+        | Requestor not authorized | 403 | invalAuth | no user session with valid ID-Token available |
+        | Device registration does not exist | 403 | unregisteredDevice | if requestor role is oid_versicherter only |
+        | Requestor has no valid entitlement | 403 | notEntitled ||
+        | Requestor role is not _oid_versicherter_ or _oid_ombudsstelle_| 403 | invalidOid ||
+        | Health record does not exist | 404 | noHealthRecord | _insurantid_ unknown |
+        | Resource for _functionid_ does not exist | 404 | noResource ||
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+         </br>
+        | Postconditions                        | Remarks |
+        |---------------------------------------|---------|
+        | none ||
+
+      responses:
+        '200':
+          description: Ok.
+          content:
+            application/json:
+              example:
+                functionId: "medication"
+                decision: "deny"
+              schema:
+                $ref: "#/components/schemas/ConsentDecisionsResponseType"
+        '400':
+          $ref: "#/components/responses/Error400BadRequest"
+        '403':
+          $ref: "#/components/responses/Error403Forbidden"
+        '404':
+          $ref: "#/components/responses/Error404NotFound"
+        '409':
+          $ref: "#/components/responses/Error409Conflict"
+        '500':
+          $ref: "#/components/responses/Error500InternalError"
+
+  /epa/basic/api/v1/consents:
+    parameters:
+      - $ref: '#/components/parameters/insurantid'
+      - $ref: '#/components/parameters/useragent'
+    get:
+      tags:
+        - ConsentDecisions
+      operationId: getConsentDecisions
+      summary: (getConsentDecisions) Read all current consent decisions
+      description: |
+        Get current decisions for all consent related functions of the health record.<br/>
+        This operation is limited to entitled users of role oid_versicherter and oid_ombudsstelle.
+
+        **Client**:</br>
+        no recommendations.
+
+        **Provider**
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | Request does not match schema | 400 | malformedRequest ||
+        | Requestor not authorized | 403 | invalAuth | no user session with valid ID-Token available |
+        | Device registration does not exist | 403 | unregisteredDevice | if requestor role is oid_versicherter only |
+        | Requestor has no valid entitlement | 403 | notEntitled ||
+        | Requestor role is not _oid_versicherter_ or _oid_ombudsstelle_| 403 | invalidOid ||
+        | Health record does not exist | 404 | noHealthRecord | _insurantid_ unknown |
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+         </br>
+        | Postconditions                        | Remarks |
+        |---------------------------------------|---------|
+        | none ||
+
+      responses:
+        '200':
+          description: Ok.
+          content:
+            application/json:
+              example:
+                data:
+                  - functionId: "medication"
+                    decision: "deny"
+                  - functionId: "erp-submission"
+                    decision: "permit"
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ConsentDecisionsResponseType"
+        '400':
+          $ref: "#/components/responses/Error400BadRequest"
+        '403':
+          $ref: "#/components/responses/Error403Forbidden"
+        '404':
+          $ref: "#/components/responses/Error404NotFound"
+        '409':
+          $ref: "#/components/responses/Error409Conflict"
+        '500':
+          $ref: "#/components/responses/Error500InternalError"
+
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: '#/components/schemas/InsurantIdType'
+    useragent:
+      name: x-useragent
+      in: header
+      description: user agent information
+      required: true
+      schema:
+        $ref: '#/components/schemas/UserAgentType'
+    functionid:
+      name: functionid
+      in: path
+      description: id of the consent related function
+      required: true
+      schema:
+        $ref: '#/components/schemas/FunctionIdType'
+  responses:
+    Error400BadRequest:
+      description: Bad Request.
+      content:
+        application/json:
+          example:
+            errorCode: malformedRequest
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error403Forbidden:
+      description: Forbidden.
+      content:
+        application/json:
+          example:
+            errorCode: notEntitled
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error404NotFound:
+      description: Not found.
+      content:
+        application/json:
+          example:
+            errorCode: noResource
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error409Conflict:
+      description: Conflict.
+      content:
+        application/json:
+          examples:
+            statusMismatch:
+              value:
+                errorCode: statusMismatch
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error500InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          example:
+            errorCode: internalError
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+
+  schemas:
+    ConsentDecisionType:
+      description: "Consent Decision"
+      type: object
+      properties:
+        decision:
+          type: string
+          enum: [ "permit", "deny" ]
+          description: "Decision"
+      required:
+        - decision
+      example:
+        decision: "deny"
+    ConsentDecisionsResponseType:
+      description: "Consent Decisions Response"
+      type: object
+      properties:
+        functionId:
+          $ref: '#/components/schemas/FunctionIdType'
+        decision:
+          type: string
+          enum: [ "permit", "deny" ]
+          description: "Decision"
+      required:
+        - functionId
+        - decision
+      example:
+        functionId: "medication"
+        decision: "deny"
+    UserAgentType:
+      description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."
+      type: string
+      pattern: '^[a-zA-Z0-9\-]{1,20}\/[a-zA-Z0-9\-\.]{1,15}$'
+      example: CLIENTID1234567890AB/2.1.12-45
+    FunctionIdType:
+      type: string
+      description: function id of consent related functions of a health record.
+    InsurantIdType:
+      type: string
+      description: |-
+        The health record identifier. 
+        For today the record identifier equals the insurant id (kvnr).
+      pattern: '^[A-Z]{1}\d{9}$'
+      example: Z123456789
+    ErrorType:
+      description: "Error object with additional information about the occurred error"
+      type: object
+      properties:
+        errorCode:
+          description: "Error condition specifier"
+          type: string
+        errorDetail:
+          description: "Additional details regarding the error condition"
+          type: string
+      required:
+        - errorCode

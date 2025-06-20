@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,8 +15,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.client;
 
 import de.gematik.epa.konnektor.KonnektorContextProvider;
@@ -40,20 +47,26 @@ public class EventServiceClient extends KonnektorServiceClient {
   private ContextType context;
 
   public EventServiceClient(
-      KonnektorContextProvider konnektorContextProvider,
-      KonnektorInterfaceAssembly konnektorInterfaceAssembly) {
+      final KonnektorContextProvider konnektorContextProvider,
+      final KonnektorInterfaceAssembly konnektorInterfaceAssembly) {
     super(konnektorContextProvider, konnektorInterfaceAssembly);
     runInitializationSynchronized();
   }
 
   public GetCardsResponse getSmbInfo() {
-    var request = buildGetCards(true, CardTypeType.SM_B);
-    return getCards(request);
+    return getCardsInfo(CardTypeType.SM_B);
   }
 
-  public CardInfoType getEgkInfoToKvnr(@NonNull String kvnr) {
-    var request = buildGetCards(true, CardTypeType.EGK);
-    var response = getCards(request);
+  public GetCardsResponse getHbaInfo() {
+    return getCardsInfo(CardTypeType.HBA);
+  }
+
+  public GetCardsResponse getEgkInfo() {
+    return getCardsInfo(CardTypeType.EGK);
+  }
+
+  public CardInfoType getEgkInfoToKvnr(@NonNull final String kvnr) {
+    final var response = getEgkInfo();
 
     KonnektorUtils.logWarningIfPresent(
         log, response.getStatus(), KonnektorUtils.warnMsgWithOperationName("getCards"));
@@ -64,9 +77,8 @@ public class EventServiceClient extends KonnektorServiceClient {
         .orElse(null);
   }
 
-  public String getCardHandle(CardTypeType cardType) {
-    var getCardsRequest = buildGetCards(true, cardType);
-    return getCards(getCardsRequest).getCards().getCard().stream()
+  public String getCardHandle(final CardTypeType cardType) {
+    return getCardsInfo(cardType).getCards().getCard().stream()
         .findFirst()
         .orElseThrow(
             () ->
@@ -75,7 +87,7 @@ public class EventServiceClient extends KonnektorServiceClient {
         .getCardHandle();
   }
 
-  public GetCardsResponse getCards(@NonNull GetCards request) {
+  GetCardsResponse getCards(@NonNull final GetCards request) {
     return eventService.getCards(request);
   }
 
@@ -86,6 +98,11 @@ public class EventServiceClient extends KonnektorServiceClient {
   }
 
   // region private
+
+  private GetCardsResponse getCardsInfo(final CardTypeType cardType) {
+    final var request = buildGetCards(true, cardType);
+    return getCards(request);
+  }
 
   private GetCards buildGetCards(final boolean mandantWide, final CardTypeType cardType) {
     final var getCardsRequest = new ObjectFactory().createGetCards();

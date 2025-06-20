@@ -6,20 +6,25 @@ A Spring Boot app to offer the epa-ps-sim functionality as standalone applicatio
 
 ## Getting started
 
-* It can simply be started like `java -jar epa-ps-sim-app-<version>.jar`
+* It can simply be started like `java -jar epa-ps-sim-app-<version>.jar` or `mvn spring-boot:run`
 * It is configured via the [application.yaml](src/main/resources/application.yaml)
-  * To overwrite configuration on start please consult the [Spring Boot Documentation](https://docs.spring.io/spring-boot/docs/1.0.0.RC5/reference/html/boot-features-external-config.html).
+    * To overwrite configuration on start please consult
+      the [Spring Boot Documentation](https://docs.spring.io/spring-boot/docs/1.0.0.RC5/reference/html/boot-features-external-config.html).
 * **But**: The app won't start out of the box, because it does not include a TLS client keystore.
   There's two ways to deal with this:
-  1. Configure a TLS client keystore
-     * To do so, edit the `application.yaml` in the section `konnektor.connection.tlsconfig`.
-  2. Connect via HTTP to the Konnektor
-     * To do so, in the `application.yaml` change the value of `konnektor.connection.address.protocol` to "http".
-     * Be aware, this can only work, if the Konnektor, you want to connect to, permits the use of unsecured connections.
+    1. Configure a TLS client keystore
+        * To do so, edit the `application.yaml` in the section `konnektor.connection.tlsconfig`.
+    2. Connect via HTTP to the Konnektor
+        * To do so, in the `application.yaml` change the value
+          of `konnektor.connection.address.protocol` to "http".
+        * Be aware, this can only work, if the Konnektor, you want to connect to, permits the use of
+          unsecured connections.
+* The OpenApi-UI is available
+  on `http://<hostname or IP>:9016/services/api-docs?url=/services/openapi.json`
 
 ## Usage
 
 * The Konnektor to connect to, can not be changed on runtime.
   So anytime another Konnektor shall be used, the app has to be stopped,
   the connection changed in the application.yaml and the app restarted.
-  * We plan to change this in a future release
+    * We plan to change this in a future release

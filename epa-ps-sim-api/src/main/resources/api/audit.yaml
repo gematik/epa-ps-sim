@@ -1,0 +1,257 @@
+openapi: 3.0.3
+info:
+  title: ePA SIM AuditEvent API
+  description: The AuditEvent FHIR resource type
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+
+tags:
+  - name: AuditEvent
+    description: The AuditEvent FHIR resource type
+
+paths:
+  /epa/testdriver/api/v1/fhir/AuditEvent:
+    get:
+      tags:
+        - AuditEvent
+      summary: Get an audit event list of a personal health record as FHIR objects.
+      description: 'This operation executes the use case "List Audit Events" in an existing user session. The Audit Events provided by the health record system are delivered.'
+      operationId: getAuditEventListAsFHIR
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - name: _count
+          in: query
+          required: false
+          description: |
+            With "_count", the client can specify the maximum number of elements to be included on 
+            one "page" of the response. This means the AuditEvent Service limits the result set to 
+            this maximum specified number. If no value for "_count" is provided, the default value set is "25".
+          schema:
+            type: integer
+        - name: _offset
+          in: query
+          required: false
+          description: |
+            This URL parameter indicates the (zero-based) offset of the first returned element in the collection. 
+            If no value for "_offset" is provided, the default value set is "0".
+          schema:
+            type: integer
+        - name: _total
+          in: query
+          required: false
+          description: This parameter controls whether and how the AuditEvent Service returns the total number of search results.
+          schema:
+            type: string
+        - name: _id
+          in: query
+          required: false
+          description: The logical id of the resource
+          schema:
+            type: string
+        - name: _lastUpdated
+          in: query
+          required: false
+          description: Can be used to select resources based on the last time they were changed
+          schema:
+            type: string
+            format: date-time
+        - name: date
+          in: query
+          required: false
+          description: Time when the event was recorded
+          schema:
+            type: string
+            format: date-time
+        - name: altid
+          in: query
+          required: false
+          description: Alternative User identity (e.g. Telematik-ID or the KVNR)
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          description: Type/identifier of event
+          schema:
+            type: string
+        - name: action
+          in: query
+          required: false
+          description: Type of action performed during the event
+          schema:
+            type: string
+        - name: entity-name
+          in: query
+          required: false
+          description: Descriptor for entity
+          schema:
+            type: string
+        - name: outcome
+          in: query
+          required: false
+          description: Whether the event succeeded (0) or failed (4)
+          schema:
+            type: string
+      responses:
+        200:
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetAuditEventResponseDTO'
+
+  /epa/testdriver/api/v1/audit/render/pdf:
+    get:
+      tags:
+        - AuditEvent
+      summary: 'Returns a PDF/A file of all audit events in a human-readable format.'
+      description: ' The Audit Event Service **SHALL** return the list of all AuditEvent entries (i.e. FHIR resources) 
+        as a PDF/A file which shall be one of the allowed formats (A_25233*).'
+      operationId: getAuditEventListAsPdfA
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/signed'
+      responses:
+        default:
+          description: eML as PDF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAuditEventListAsPdfAResponseDTO'
+
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: 'shared.yaml#/components/schemas/KvnrType'
+    useragent:
+      name: x-useragent
+      in: header
+      description: user agent information
+      required: false
+      schema:
+        $ref: '#/components/schemas/UserAgentType'
+    signed:
+      name: signed
+      in: query
+      description: Request signed PDF/A (true) or unsigned PDF/A (false)
+      required: false
+      schema:
+        type: boolean
+        default: false
+  schemas:
+    UserAgentType:
+      description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."
+      type: string
+      pattern: '^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$'
+      example: CLIENTID1234567890AB/2.1.12-45
+    GetAuditEventResponseDTO:
+      description: Returns a list of all audit events using the FHIR representation as string array where the content is JSON
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          oneOf:
+            - $ref: "#/components/schemas/SearchSet_Bundle"
+            - type: object
+              properties:
+                auditEvents:
+                  description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/audit-event'
+                  x-examples:
+                    Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/audit-event
+                  type: array
+                  items:
+                    type: string
+
+    SearchSet_Bundle:
+      description: "Contains a collection of resources + Rule: entry.search only when a search"
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum:
+            - Bundle
+        id:
+          description: The logical id of the resource, as used in the URL for the
+            resource. Once assigned, this value never changes.
+          type: string
+          pattern: "[A-Za-z0-9\\-\\.]{1,64}"
+          example: "86604fc1-b356-57e3-8738-8ef36c8d608c"
+        meta:
+          type: object
+          properties:
+            lastUpdated:
+              description: When the resource last changed - e.g. when the version changed.
+              type: string
+              format: date-time
+        type:
+          type: string
+          enum:
+            - searchset
+        total:
+          type: integer
+          minimum: 0
+          example: 1
+        link:
+          type: array
+          items:
+            type: object
+            properties:
+              relation:
+                type: string
+                enum:
+                  - self
+                  - next
+                  - previous
+                  - first
+                  - last
+              url:
+                type: string
+                description: Reference details for the link, A Uniform Resource Locator (RFC 1738 ).
+                  Note URLs are accessed directly using the specified protocol. Common URL protocols are http{s}.
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              fullUrl:
+                type: string
+                description: "URI for resource (Absolute URL server address or URI for UUID/OID)"
+              search:
+                type: object
+                description: Search related information
+                properties:
+                  mode:
+                    type: string
+                    description: match | include | outcome - why this is in the result set
+                    enum:
+                      - match
+                      - include
+                      - outcome
+                    example: match
+              resource:
+                type: string
+                description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/audit-event'
+                x-examples:
+                  Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/audit-event
+
+    GetAuditEventListAsPdfAResponseDTO:
+      description: Response including the AuditEvent as PDFA.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            auditEventAsPdfA:
+              description: 'The AuditEvent as PDF/A as an array of bytes.'
+              type: string
+              format: byte

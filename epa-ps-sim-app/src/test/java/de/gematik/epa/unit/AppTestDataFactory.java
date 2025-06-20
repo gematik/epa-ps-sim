@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-app
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,51 +15,49 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.unit;
 
-import static org.apache.cxf.message.Message.*;
-
-import de.gematik.epa.config.AddressConfig;
-import de.gematik.epa.config.BasicAuthenticationConfig;
-import de.gematik.epa.config.Context;
-import de.gematik.epa.config.FileInfo;
-import de.gematik.epa.config.ProxyAddressConfig;
-import de.gematik.epa.config.TlsConfig;
-import de.gematik.epa.konnektor.cxf.KonnektorInterfacesCxfImpl;
-import de.gematik.epa.konnektor.cxf.interceptors.HomeCommunityBlockOutInterceptor;
+import de.gematik.epa.konnektor.client.AuthSignatureServiceClient;
+import de.gematik.epa.ps.document.config.DocumentConfigurationData;
+import de.gematik.epa.ps.document.config.DocumentConnectionConfigurationData;
 import de.gematik.epa.ps.konnektor.config.KonnektorConfigurationData;
 import de.gematik.epa.ps.konnektor.config.KonnektorConnectionConfigurationData;
+import de.gematik.epa.unit.util.TestDataFactory;
+import de.gematik.epa.utils.HealthRecordProvider;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
-import java.util.List;
-import javax.xml.namespace.QName;
+import java.util.Base64;
+import java.util.zip.GZIPOutputStream;
+import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
-import org.apache.cxf.binding.soap.Soap12;
-import org.apache.cxf.binding.soap.SoapMessage;
-import org.apache.cxf.service.model.InterfaceInfo;
-import org.apache.cxf.service.model.MessageInfo;
-import org.apache.cxf.service.model.MessageInfo.Type;
-import org.apache.cxf.service.model.ServiceInfo;
-import telematik.ws.conn.cardservice.xsd.v8_1.CardInfoType;
-import telematik.ws.conn.cardservice.xsd.v8_1.Cards;
-import telematik.ws.conn.cardservice.xsd.v8_1.GetPinStatusResponse;
-import telematik.ws.conn.cardservice.xsd.v8_1.PinStatusEnum;
-import telematik.ws.conn.cardservicecommon.xsd.v2_0.CardTypeType;
-import telematik.ws.conn.connectorcommon.xsd.v5_0.Status;
-import telematik.ws.conn.eventservice.xsd.v6_1.GetCardsResponse;
-import telematik.ws.conn.phrs.phrmanagementservice.xsd.v2_5.GetHomeCommunityIDResponse;
+import lombok.extern.slf4j.Slf4j;
+import oasis.names.tc.dss._1_0.core.schema.Base64Signature;
+import oasis.names.tc.dss._1_0.core.schema.SignatureObject;
+import oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryResponse;
+import org.apache.commons.io.FileUtils;
+import telematik.ws.conn.certificateservice.xsd.v6_0.ReadCardCertificateResponse;
+import telematik.ws.conn.certificateservicecommon.xsd.v2_0.CertRefEnum;
+import telematik.ws.conn.certificateservicecommon.xsd.v2_0.X509DataInfoListType;
+import telematik.ws.conn.signatureservice.xsd.v7_4.ExternalAuthenticateResponse;
+import telematik.ws.conn.vsds.vsdservice.xsd.v5_2.ReadVSDResponse;
+import telematik.ws.fa.vsds.pruefungsnachweis.xsd.v1_0.PN;
 
+@Slf4j
 @UtilityClass
-public class AppTestDataFactory {
+public class AppTestDataFactory extends TestDataFactory {
 
-  public static final String MANDANT_ID = "Test_Mandant";
-  public static final String CLIENTSYSTEM_ID = "Test_Clientsytem";
-  public static final String WORKPLACE_ID = "Test_Workplace";
-  public static final String USER_ID = "Test_User";
-  public static final String STATUS_RESULT_OK = "OK";
-  public static final String KVNR = "X123456789";
-  public static final String HOME_COMMUNITY_ID = "1.2.3.4.5.67";
+  public static final String HMAC_KEY =
+      "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
+  private final VsdmFdHelper vsdmFd =
+      new VsdmFdHelper("X", TestUtils.hexStringToByteArray(HMAC_KEY), 2);
 
   public static KonnektorConfigurationData createKonnektorConfiguration() {
     return new KonnektorConfigurationData()
@@ -64,8 +65,12 @@ public class AppTestDataFactory {
         .context(createKonnektorContext());
   }
 
-  public static Context createKonnektorContext() {
-    return new Context(MANDANT_ID, CLIENTSYSTEM_ID, WORKPLACE_ID, USER_ID);
+  public static DocumentConfigurationData createDocumentConfiguration() {
+    return new DocumentConfigurationData().connection(createDocumentConnectionConfiguration());
+  }
+
+  public static DocumentConnectionConfigurationData createDocumentConnectionConfiguration() {
+    return new DocumentConnectionConfigurationData().address(createAddress());
   }
 
   public static KonnektorConnectionConfigurationData createKonnektorConnectionConfiguration() {
@@ -76,86 +81,117 @@ public class AppTestDataFactory {
         .basicAuthentication(createBasicAuthenticationData());
   }
 
-  public static AddressConfig createAddress() {
-    return new AddressConfig(
-        "localhost",
-        Integer.parseInt(AddressConfig.DEFAULT_PORT),
-        KonnektorInterfacesCxfImpl.HTTPS_PROTOCOL,
-        "services");
+  public static AdhocQueryResponse getAdhocQueryResponse() {
+    var result = new AdhocQueryResponse();
+    result.setStatus("urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success");
+    return result;
   }
 
-  public static TlsConfig createTlsConfig() {
-    return new TlsConfig(
-        new FileInfo("test.p12"),
-        "test1234",
-        "PKCS12",
-        List.of("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", "TLS_DHE_RSA_WITH_AES_256_CBC_SHA"));
-  }
-
-  public static ProxyAddressConfig createProxyAddressConfig() {
-    return new ProxyAddressConfig(
-        "localhost", Integer.parseInt(ProxyAddressConfig.DEFAULT_PORT), true);
-  }
-
-  public static BasicAuthenticationConfig createBasicAuthenticationData() {
-    return new BasicAuthenticationConfig("root", "root", true);
-  }
-
-  public static SoapMessage createCxfSoapMessage() {
-    var soapMessage = new SoapMessage(Soap12.getInstance());
-    var interfaceInfo =
-        new InterfaceInfo(
-            new ServiceInfo(), new QName(HomeCommunityBlockOutInterceptor.PHR_SERVICE_PORT_NAME));
-    var operationInfo =
-        interfaceInfo.addOperation(
-            new QName(HomeCommunityBlockOutInterceptor.PROV_AND_REG_OPERATION_NAME));
-    var msgInfo = new MessageInfo(operationInfo, Type.OUTPUT, operationInfo.getName());
-    soapMessage.put(MessageInfo.class, msgInfo);
-    soapMessage.put(REQUESTOR_ROLE, Boolean.TRUE);
-    return soapMessage;
-  }
-
-  public static Status getStatusOk() {
-    var status = new Status();
-    status.setResult(STATUS_RESULT_OK);
-
-    return status;
-  }
-
-  public static GetHomeCommunityIDResponse createGetHomeCommunityResponse() {
-    var getHomeCommunityResponse = new GetHomeCommunityIDResponse();
-    getHomeCommunityResponse.setStatus(getStatusOk());
-    getHomeCommunityResponse.setHomeCommunityID(HOME_COMMUNITY_ID);
-    return getHomeCommunityResponse;
-  }
-
-  public static CardInfoType cardInfoSmb() {
-    var cardInfo = new CardInfoType();
-    cardInfo.setCardType(CardTypeType.SMC_B);
-    cardInfo.setCardVersion(new CardInfoType.CardVersion());
-    cardInfo.setCardHandle("SMB123");
-    cardInfo.setCardHolderName("Arztpraxis Unit Test Olé");
-    cardInfo.setIccsn("80271282350235250218");
-    cardInfo.setCtId("CT1");
-    cardInfo.setSlotId(BigInteger.valueOf(1));
-
-    return cardInfo;
-  }
-
-  public static GetCardsResponse getCardsSmbResponse() {
-    var getCardsResponse = new GetCardsResponse();
-    getCardsResponse.setStatus(getStatusOk());
-    getCardsResponse.setCards(new Cards());
-    getCardsResponse.getCards().getCard().add(cardInfoSmb());
-
-    return getCardsResponse;
-  }
-
-  public static GetPinStatusResponse getPinStatusResponse(PinStatusEnum pinStatus) {
-    BigInteger leftTries = new BigInteger("3");
-    return new GetPinStatusResponse()
+  public static ExternalAuthenticateResponse getSignNonceResponse() {
+    return new ExternalAuthenticateResponse()
         .withStatus(getStatusOk())
-        .withPinStatus(pinStatus)
-        .withLeftTries(leftTries);
+        .withSignatureObject(
+            new SignatureObject()
+                .withBase64Signature(
+                    new Base64Signature()
+                        .withType(AuthSignatureServiceClient.SIGNATURE_TYPE_ECDSA)
+                        .withValue(
+                            Base64.getEncoder()
+                                .encode(
+                                    "MEQCIDEP8zhC2lbumG0UsizWg5xtxGuQmJpxtbVtNWMDpWGkAiAeryczHhZTRKqs6+VyaokfpURmTvEUFCHy01iFYFtOtQ=="
+                                        .getBytes()))));
+  }
+
+  public static ExternalAuthenticateResponse getSignChallengeResponse() {
+    return new ExternalAuthenticateResponse()
+        .withStatus(getStatusOk())
+        .withSignatureObject(
+            new SignatureObject()
+                .withBase64Signature(
+                    new Base64Signature()
+                        .withType(AuthSignatureServiceClient.SIGNATURE_TYPE_ECDSA)
+                        .withValue(
+                            Base64.getDecoder()
+                                .decode(
+                                    "MEQCIEz3/1KiA71YhFr/Qe/Jcq2bJ6V0qbTDXsJWcl+TcGWeAiAVDPtXq1/nrrcbYwySaTVMsxsVFkLsyu1Qg3B20G0okw=="
+                                        .getBytes()))));
+  }
+
+  @SneakyThrows
+  public static ReadCardCertificateResponse getReadCardCertificateResponse() {
+    var readCardCertificateResponse = new ReadCardCertificateResponse();
+
+    readCardCertificateResponse.setStatus(getStatusOk());
+    readCardCertificateResponse.setX509DataInfoList(new X509DataInfoListType());
+
+    var x509DataInfo = new X509DataInfoListType.X509DataInfo();
+    x509DataInfo.setCertRef(CertRefEnum.C_AUT);
+
+    var x509Data = new X509DataInfoListType.X509DataInfo.X509Data();
+    x509Data.setX509Certificate(
+        FileUtils.readFileToByteArray(
+            FileUtils.getFile(
+                "src/test/resources/certs/80276883110000163969-C_SMCB_HCI_AUT_E256.crt")));
+    x509Data.setX509SubjectName("Unfallkrankenhaus am SeeTEST-ONLY");
+    x509Data.setX509IssuerSerial(new X509DataInfoListType.X509DataInfo.X509Data.X509IssuerSerial());
+
+    x509DataInfo.setX509Data(x509Data);
+    readCardCertificateResponse.getX509DataInfoList().getX509DataInfo().add(x509DataInfo);
+
+    return readCardCertificateResponse;
+  }
+
+  public static ReadVSDResponse getReadVSDResponsePZ2() {
+    return createReadVSDResponsePZ2(createPruefungsnachweisPZ2("ICCSN-1"));
+  }
+
+  public static ReadVSDResponse getReadVSDResponsePZ2RevokedEgk() {
+    log.info("Test with revoked eGK");
+    return createReadVSDResponsePZ2(createPruefungsnachweisPZ2("ICCSN-2"));
+  }
+
+  public static ReadVSDResponse createReadVSDResponsePZ2(String pn) {
+    return createReadVSDResponse(pn);
+  }
+
+  private static String createPruefungsnachweisPZ2(String iccsn) {
+    String pruefzifferV2 = vsdmFd.genPruefziffer(iccsn);
+    log.info("Prüfziffer V2: {}", pruefzifferV2);
+
+    PN pn = new PN();
+    pn.setCDMVERSION("1.0.0");
+    pn.setTS("20240523091105");
+    pn.setE(BigInteger.valueOf(2));
+    pn.setPZ(Base64.getDecoder().decode(pruefzifferV2));
+
+    try {
+      return compressAndEncodePN(pn);
+    } catch (Exception e) {
+      throw new RuntimeException("Error creating Pruefungsnachweis V2", e);
+    }
+  }
+
+  private static String compressAndEncodePN(PN pn) throws Exception {
+    JAXBContext jaxbContext = JAXBContext.newInstance(PN.class);
+    Marshaller marshaller = jaxbContext.createMarshaller();
+    ByteArrayOutputStream xmlOutputStream = new ByteArrayOutputStream();
+    marshaller.marshal(pn, xmlOutputStream);
+    byte[] xmlBytes = xmlOutputStream.toByteArray();
+
+    ByteArrayOutputStream gzipOutputStream = new ByteArrayOutputStream();
+    try (GZIPOutputStream gzip = new GZIPOutputStream(gzipOutputStream)) {
+      gzip.write(xmlBytes);
+    }
+    byte[] compressedBytes = gzipOutputStream.toByteArray();
+
+    return Base64.getEncoder().encodeToString(compressedBytes);
+  }
+
+  public static void setupFqdnProvider(final String insurantId) {
+    HealthRecordProvider.addHealthRecord(insurantId, "http://localhost:8080");
+  }
+
+  public static void clearFqdnProvider(final String insurantId) {
+    HealthRecordProvider.clearHealthRecord(insurantId);
   }
 }

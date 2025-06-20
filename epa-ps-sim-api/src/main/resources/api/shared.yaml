@@ -1,0 +1,51 @@
+openapi: 3.0.1
+info:
+  title: Shared
+  version: 1.0.0
+paths: { }
+components:
+  parameters:
+    fqdn:
+      name: fqdn
+      in: query
+      description: 'Determines optionally the FQDN of Access Gateway'
+      schema:
+        type: string
+    telematikId:
+      name: telematikId
+      in: query
+      required: true
+      description: 'Selected telematik id to execute the operation'
+      schema:
+        $ref: '#/components/schemas/TelematikIdType'
+  schemas:
+    ResponseDTO:
+      description: Return of the success status for an API call. In any error case the status message is given.
+      type: object
+      properties:
+        success:
+          type: boolean
+        statusMessage:
+          type: string
+      required:
+        - success
+    KvnrType:
+      type: string
+      pattern: '^[A-Z]{1}\d{9}$'
+      example: Z123456789
+    TelematikIdType:
+      type: string
+      pattern: '[0-9]{1}[-]{1}\d{1,126}$'
+      example: 2-883110000118994
+    DisplayNameType:
+      description: A readable name
+      type: string
+      example: Praxis Dr. Annamaria Heckhausén
+    DateType:
+      type: string
+      format: date
+      example: '2025-12-31'
+    DateTimeType:
+      type: string
+      format: date-time
+      example: '2025-01-01T18:00:00Z'

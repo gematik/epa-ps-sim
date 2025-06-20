@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-app
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,14 +15,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.ps.endpoint;
 
-import de.gematik.epa.api.impl.DocumentApiImpl;
+import de.gematik.epa.api.testdriver.impl.DocumentApiImpl;
 import de.gematik.epa.config.DefaultdataProvider;
-import de.gematik.epa.konnektor.KonnektorContextProvider;
-import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
+import de.gematik.epa.config.InsurantIdBuilder;
+import de.gematik.epa.document.DocumentInterfaceAssembly;
+import de.gematik.epa.konnektor.SmbInformationProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 /**
@@ -31,9 +40,12 @@ import org.springframework.stereotype.Service;
 public final class DocumentApiEndpoint extends DocumentApiImpl {
 
   public DocumentApiEndpoint(
-      KonnektorContextProvider contextProvider,
-      KonnektorInterfaceAssembly konnektorInterfaceAssembly,
-      DefaultdataProvider defaultdataProvider) {
-    super(contextProvider, konnektorInterfaceAssembly, defaultdataProvider);
+      @Qualifier("documentInterfaceAssembly")
+          final DocumentInterfaceAssembly documentInterfaceAssembly,
+      @Qualifier("insurantBuilder") final InsurantIdBuilder insurantIdBuilder,
+      @Qualifier("defaultDataProvider") final DefaultdataProvider defaultdataProvider,
+      final SmbInformationProvider smbInformationProvider) {
+    super(
+        documentInterfaceAssembly, defaultdataProvider, smbInformationProvider, insurantIdBuilder);
   }
 }

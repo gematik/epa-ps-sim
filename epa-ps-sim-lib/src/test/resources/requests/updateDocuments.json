@@ -1,0 +1,46 @@
+{
+  "kvnr" : "X110426931",
+  "documentMetadataList": [
+    {
+      "documentMetadata": {
+        "author": [
+          {
+            "identifier": "165746304",
+            "familyName": "Blankenburg",
+            "givenName": "Sigrid",
+            "title": "Dr.",
+            "authorInstitution": [
+              {
+                "name": "arztpraxis",
+                "identifier": "5-SMC-B-Testkarte-883110000117894"
+              }
+            ],
+            "authorRole": [
+              "11^^^&1.3.6.1.4.1.19376.3.276.1.5.13&ISO"
+            ]
+          }
+        ],
+        "classCode": "PLA",
+        "eventCodeList": [
+          "H1"
+        ],
+        "confidentialityCode": [
+          "N"
+        ],
+        "creationTime": "2023-06-09T11:54:20Z",
+        "formatCode": "urn:gematik:ig:Medikationsplan:r3.1",
+        "healthcareFacilityTypeCode": "PRA",
+        "languageCode": "de-DE",
+        "mimeType": "application/xml",
+        "practiceSettingCode": "ALLG",
+        "title": "MediPlan",
+        "serviceStartTime": "2021-03-01T08:28:55.194Z",
+        "serviceStopTime": "2021-03-01T08:38:55.194Z",
+        "typeCode": "MEDI",
+        "uri": "Medikationsplan.xml",
+        "comments": "Neue Cooles MediPlan"
+      },
+      "entryUUIDOfDocumentToUpdate": "1.2.276.0.76.4.8"
+    }
+  ]
+}

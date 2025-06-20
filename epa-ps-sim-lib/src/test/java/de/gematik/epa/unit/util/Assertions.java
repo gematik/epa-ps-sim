@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,15 +15,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.unit.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import de.gematik.epa.config.BasicAuthenticationConfig;
-import de.gematik.epa.config.ProxyAddressConfig;
-import de.gematik.epa.config.TlsConfig;
+import de.gematik.epa.api.testdriver.config.BasicAuthenticationConfig;
+import de.gematik.epa.api.testdriver.config.ProxyAddressConfig;
+import de.gematik.epa.api.testdriver.config.TlsConfig;
+import de.gematik.epa.ihe.model.simple.InsurantId;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
@@ -28,23 +36,9 @@ import org.apache.cxf.configuration.security.AuthorizationPolicy;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.opentest4j.AssertionFailedError;
 import telematik.ws.conn.connectorcontext.xsd.v2_0.ContextType;
-import telematik.ws.conn.phrs.phrservice.xsd.v2_0.ContextHeader;
-import telematik.ws.fd.phr.phrcommon.xsd.v1_1.InsurantIdType;
-import telematik.ws.fd.phr.phrcommon.xsd.v1_1.RecordIdentifierType;
 
 @UtilityClass
 public class Assertions {
-
-  public static void assertEquals(@NonNull ContextHeader expected, @NonNull ContextHeader actual) {
-    if (actual.equals(expected)) return;
-
-    try {
-      assertEquals(expected.getContext(), actual.getContext());
-      assertEquals(expected.getRecordIdentifier(), actual.getRecordIdentifier());
-    } catch (AssertionError ae) {
-      throw new AssertionFailedError("ContextHeader are not the same", expected, actual, ae);
-    }
-  }
 
   public static void assertEquals(@NonNull ContextType expected, @NonNull ContextType actual) {
     if (actual.equals(expected)
@@ -56,25 +50,7 @@ public class Assertions {
     throw new AssertionFailedError("Contexts are not the same", expected, actual);
   }
 
-  public static void assertEquals(
-      @NonNull RecordIdentifierType expected, @NonNull RecordIdentifierType actual) {
-    if (actual.equals(expected)) return;
-
-    if (!actual.getHomeCommunityId().equals(expected.getHomeCommunityId()))
-      throw new AssertionFailedError(
-          "HomeCommunityIds are not the same",
-          expected.getHomeCommunityId(),
-          actual.getHomeCommunityId());
-
-    try {
-      assertEquals(expected.getInsurantId(), actual.getInsurantId());
-    } catch (AssertionError ae) {
-      throw new AssertionFailedError("RecordIdentifier are not the same", expected, actual, ae);
-    }
-  }
-
-  public static void assertEquals(
-      @NonNull InsurantIdType expected, @NonNull InsurantIdType actual) {
+  public static void assertEquals(@NonNull InsurantId expected, @NonNull InsurantId actual) {
     if (actual.equals(expected)
         || (actual.getExtension().equals(expected.getExtension())
             && actual.getRoot().equals(expected.getRoot()))) return;

@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,13 +15,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.client;
 
-import de.gematik.epa.dto.request.SignDocumentRequest;
-import de.gematik.epa.dto.request.SignDocumentRequest.SignatureType;
-import de.gematik.epa.dto.response.SignDocumentResponse.SignatureForm;
+import de.gematik.epa.api.testdriver.dto.request.SignDocumentRequest;
+import de.gematik.epa.api.testdriver.dto.response.SignDocumentResponse.SignatureForm;
 import de.gematik.epa.ihe.model.simple.ByteArray;
 import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
@@ -85,14 +91,14 @@ public class SignatureServiceClient extends KonnektorServiceClient {
         .withSignRequest(buildSignRequest(request.document(), request.signatureType()));
   }
 
-  public de.gematik.epa.dto.response.SignDocumentResponse transformResponse(
+  public de.gematik.epa.api.testdriver.dto.response.SignDocumentResponse transformResponse(
       SignDocumentResponse konResponse) {
     return Optional.ofNullable(konResponse).map(SignDocumentResponse::getSignResponse).stream()
         .flatMap(Collection::stream)
         .findFirst()
         .map(
             sr ->
-                new de.gematik.epa.dto.response.SignDocumentResponse(
+                new de.gematik.epa.api.testdriver.dto.response.SignDocumentResponse(
                     KonnektorUtils.fromStatus(sr.getStatus()),
                     getSignatureObject(sr),
                     Objects.nonNull(sr.getSignatureObject().getSignaturePtr())
@@ -105,7 +111,8 @@ public class SignatureServiceClient extends KonnektorServiceClient {
     return signatureService.signDocument(request);
   }
 
-  private SignRequest buildSignRequest(ByteArray document, @NonNull SignatureType signatureType) {
+  private SignRequest buildSignRequest(
+      ByteArray document, @NonNull SignDocumentRequest.SignatureType signatureType) {
     return Optional.ofNullable(document)
         .map(ByteArray::value)
         .map(v -> new Base64Data().withMimeType("text/plain; charset=utf-8").withValue(v))

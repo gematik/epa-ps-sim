@@ -4,3 +4,46 @@ konnektor:
       keystorefile:
         filePath: test.p12
       keystorepassword: test1234
+
+fhir-server:
+  protocol: http
+  host: localhost
+  port: 8080
+  path: fhir
+  user-agent: test
+
+auth-server:
+  protocol: http
+  host: localhost
+  port: 8081
+  nonce-path: /epa/authz/v1/getNonce
+  authorization-sc-path: /epa/authz/v1/send_authorization_request_sc
+  authorization-code-sc-path: /epa/authz/v1/send_authorization_request_sc
+
+idp-server:
+  protocol: http
+  host: localhost
+  port: 8082
+  path: discoveryDocument
+  verify-ssl: false
+  follow-redirects: false
+
+
+entitlement-server:
+  protocol: http
+  host: localhost
+  port: 8084
+
+eml-render:
+  protocol: http
+  host: localhost
+  port: 8085
+
+audit-render:
+  protocol: http
+  host: localhost
+  port: 8090
+
+vau-proxy:
+  host: localhost
+  port: 8099

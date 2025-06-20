@@ -1,0 +1,125 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Consent Decision Management API
+  description: Consent Decision Management Service related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+tags:
+  - name: Consent Decision Management
+
+paths:
+  /epa/testdriver/api/v1/consents:
+    parameters:
+      - name: x-insurantid
+        in: header
+        schema:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+    get:
+      tags:
+        - Consent Decision Management
+      summary: Get current decisions for all consent related functions of the health record.
+      description: 'Get current decision for a particular consent related functions of the health record.'
+      operationId: getConsentDecisions
+      responses:
+        default:
+          description: Ok.
+          content:
+            application/json:
+              example:
+                data:
+                  - functionId: "medication"
+                    decision: "deny"
+                  - functionId: "erp-submission"
+                    decision: "permit"
+              schema:
+                $ref: "#/components/schemas/GetConsentDecisionsResponseDTO"
+
+  /epa/testdriver/api/v1/consentDecision/{functionid}:
+    parameters:
+      - name: x-insurantid
+        in: header
+        schema:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+      - in: path
+        name: functionid
+        schema:
+          $ref: '#/components/schemas/FunctionIdType'
+        required: true
+    put:
+      tags:
+        - Consent Decision Management
+      summary: Update one consent decision
+      description: 'Update the user decision regarding a particular consent related function of a 
+          personal health record.This operation is limited to entitled users of role oid_versicherter and oid_ombudsstelle.'
+      operationId: putConsentDecision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutConsentDecisionRequestDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+
+components:
+  schemas:
+    GetConsentDecisionsResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentDecisionsResponseTypeDTO"
+
+    ConsentDecisionsResponseTypeDTO:
+      description: "Consent Decisions Response"
+      type: object
+      properties:
+        functionId:
+          type: string
+          enum: [ "medication", "erp-submission" ]
+          description: function id of consent related functions of a health record.
+        decision:
+          type: string
+          enum: [ "permit", "deny" ]
+          description: "Decision"
+      required:
+        - functionId
+        - decision
+      example:
+        functionId: "medication"
+        decision: "deny"
+    PutConsentDecisionRequestDTO:
+      allOf:
+        - type: object
+          required:
+            - decision
+          properties:
+            decision:
+              $ref: '#/components/schemas/DecisionEnum'
+
+    FunctionIdType:
+      type: string
+      description: function id of consent related functions of a health record.
+
+    DecisionEnum:
+      type: string
+      enum:
+        - permit
+        - deny
+      description: Decision for consent
+    DecisionType:
+      $ref: '#/components/schemas/DecisionEnum'

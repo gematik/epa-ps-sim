@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,73 +15,83 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor;
 
+import de.gematik.epa.authentication.exception.TelematikIdNotFoundException;
 import de.gematik.epa.config.AuthorInstitutionProvider;
 import de.gematik.epa.data.SmbInformation;
 import de.gematik.epa.ihe.model.simple.AuthorInstitution;
-import de.gematik.epa.konnektor.client.CertificateServiceClient;
-import de.gematik.epa.konnektor.client.EventServiceClient;
+import de.gematik.epa.utils.TelematikIdHolder;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import lombok.Getter;
-import lombok.experimental.Accessors;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import telematik.ws.conn.cardservice.xsd.v8_1.CardInfoType;
+import telematik.ws.conn.eventservice.xsd.v6_1.GetCardsResponse;
 
-@Accessors(fluent = true)
-public class SmbInformationProvider implements AuthorInstitutionProvider {
-
-  @Getter(lazy = true)
-  private static final Map<String, SmbInformation> knownSmb = new ConcurrentHashMap<>();
-
-  @Getter private final EventServiceClient eventServiceClient;
-
-  @Getter private final CertificateServiceClient certificateServiceClient;
+@Service
+@Slf4j
+public class SmbInformationProvider extends InformationProvider<SmbInformation>
+    implements AuthorInstitutionProvider {
 
   public SmbInformationProvider(
-      KonnektorContextProvider konnektorContextProvider,
-      KonnektorInterfaceAssembly konnektorInterfaceAssembly) {
-    eventServiceClient =
-        new EventServiceClient(konnektorContextProvider, konnektorInterfaceAssembly);
-    certificateServiceClient =
-        new CertificateServiceClient(konnektorContextProvider, konnektorInterfaceAssembly);
+      final KonnektorContextProvider konnektorContextProvider,
+      final KonnektorInterfaceAssembly konnektorInterfaceAssembly) {
+    super(konnektorContextProvider, konnektorInterfaceAssembly);
   }
 
-  public List<SmbInformation> getSmbInformations() {
-    var insertedSmbs = eventServiceClient.getSmbInfo().getCards().getCard();
-    var unknownSmbs =
-        insertedSmbs.stream()
-            .filter(cardInfo -> !knownSmb().containsKey(cardInfo.getIccsn()))
-            .toList();
+  private static AuthorInstitution smbInformationToAuthorInstitution(final SmbInformation smbInfo) {
+    return new AuthorInstitution(smbInfo.cardHolderName(), smbInfo.telematikId());
+  }
 
-    unknownSmbs.stream()
-        .map(this::retrieveSmbInformation)
-        .forEach(smbInfo -> knownSmb().put(smbInfo.iccsn(), smbInfo));
+  @Override
+  protected GetCardsResponse getCardsResponse() {
+    return eventServiceClient.getSmbInfo();
+  }
 
-    return insertedSmbs.stream().map(cardInfo -> knownSmb().get(cardInfo.getIccsn())).toList();
+  @Override
+  protected SmbInformation retrieveCardInformation(final CardInfoType cardInfo) {
+    return new SmbInformation(
+        getTelematikId(cardInfo),
+        cardInfo.getIccsn(),
+        cardInfo.getCardHolderName(),
+        cardInfo.getCardHandle(),
+        getProfessionOids(cardInfo));
+  }
+
+  /**
+   * the Info for the card having the specific telematikId
+   *
+   * @param telematikId - telematikId of the card
+   * @return Optinal of SmbInformation
+   */
+  public Optional<SmbInformation> getSmbInformationForTelematikId(final String telematikId) {
+    return getCardsInformations().stream()
+        .filter(card -> card.telematikId().equals(telematikId))
+        .findFirst();
   }
 
   public List<AuthorInstitution> getAuthorInstitutions() {
-    return getSmbInformations().stream()
+    return getCardsInformations().stream()
         .map(SmbInformationProvider::smbInformationToAuthorInstitution)
         .toList();
   }
 
   @Override
   public AuthorInstitution getAuthorInstitution() {
-    return getAuthorInstitutions().stream().findFirst().orElse(null);
-  }
-
-  private SmbInformation retrieveSmbInformation(CardInfoType cardInfo) {
-    var telematikId = certificateServiceClient.getTelematikIdToCard(cardInfo);
-
-    return new SmbInformation(telematikId, cardInfo.getIccsn(), cardInfo.getCardHolderName());
-  }
-
-  private static AuthorInstitution smbInformationToAuthorInstitution(SmbInformation smbInfo) {
-    return new AuthorInstitution(smbInfo.cardHolderName(), smbInfo.telematikId());
+    var loggedInTelematikId = TelematikIdHolder.getTelematikId();
+    return getAuthorInstitutions().stream()
+        .filter(c -> c.identifier().equals(loggedInTelematikId))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new TelematikIdNotFoundException(
+                    "No matching telematikId: " + loggedInTelematikId));
   }
 }

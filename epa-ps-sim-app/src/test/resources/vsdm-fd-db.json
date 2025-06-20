@@ -1,0 +1,14 @@
+{
+  "ICCSN-1": {
+    "KVNR": "X110435031",
+    "revoked": false,
+    "VB": "20200123",
+    "Strasse": "Ruhsal"
+  },
+  "ICCSN-2": {
+    "KVNR": "A115678912",
+    "revoked": true,
+    "VB": "20100913",
+    "Strasse": ""
+  }
+}

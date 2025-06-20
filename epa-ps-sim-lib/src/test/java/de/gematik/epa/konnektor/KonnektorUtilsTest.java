@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,18 +15,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor;
 
-import static de.gematik.epa.unit.util.TestDataFactory.getAuthorizationStateResponse;
 import static de.gematik.epa.unit.util.TestDataFactory.getStatusOk;
 import static de.gematik.epa.unit.util.TestDataFactory.getTelematikError;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import de.gematik.epa.dto.response.GetAuthorizationStateResponseDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -31,7 +36,6 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import telematik.ws.conn.connectorcommon.xsd.v5_0.Status;
 import telematik.ws.conn.eventservice.wsdl.v6_1.FaultMessage;
-import telematik.ws.conn.phrs.phrmanagementservice.xsd.v2_5.GetAuthorizationStateResponse;
 
 class KonnektorUtilsTest {
 
@@ -138,31 +142,5 @@ class KonnektorUtilsTest {
     assertNotNull(result.statusMessage());
     assertTrue(result.statusMessage().contains(throwable.getFaultInfo().toString()));
     assertTrue(result.statusMessage().contains(throwable.getMessage()));
-  }
-
-  @Test
-  void getAuthorizationStateResponseTest() {
-    GetAuthorizationStateResponseDTO result =
-        assertDoesNotThrow(
-            () -> KonnektorUtils.getAuthorizationStateResponse(getAuthorizationStateResponse()));
-    assertTrue(result.success());
-    assertFalse(result.authorizedApplications().isEmpty());
-
-    var authorizedAppl = result.authorizedApplications().get(0);
-    assertEquals("ePA", authorizedAppl.applicationName());
-    assertNotNull(result.authorizedApplications().get(0).validTo());
-  }
-
-  @Test
-  void getAuthorizationStateResponseWithEmptyAuthorizedApplications() {
-    var response = new GetAuthorizationStateResponse();
-    response.setStatus(getStatusOk());
-
-    GetAuthorizationStateResponseDTO result =
-        assertDoesNotThrow(() -> KonnektorUtils.getAuthorizationStateResponse(response));
-    assertNotNull(result);
-    assertTrue(result.success());
-    assertNull(result.statusMessage());
-    assertTrue(result.authorizedApplications().isEmpty());
   }
 }

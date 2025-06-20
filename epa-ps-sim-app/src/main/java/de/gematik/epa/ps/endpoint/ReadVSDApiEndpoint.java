@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-app
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,18 +15,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.ps.endpoint;
 
-import de.gematik.epa.api.impl.ReadVSDApiImpl;
+import de.gematik.epa.api.testdriver.ReadVSDApi;
+import de.gematik.epa.api.testdriver.impl.ReadVSDApiImpl;
 import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
 import org.springframework.stereotype.Service;
 
 /**
- * Create an endpoint of the {@link de.gematik.epa.api.ReadVSDApi} interface based on the {@link
- * ReadVSDApiImpl} implementation.<br>
+ * Create an endpoint of the {@link ReadVSDApi} interface based on the {@link ReadVSDApiImpl}
+ * implementation.<br>
  * It is autoconfigured through the cxf-spring-boot-starter-jaxrs, so no manual setup is required
  */
 @Service
