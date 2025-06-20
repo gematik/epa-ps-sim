@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,8 +15,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.config;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,9 +32,9 @@ class KonnektorConnectionConfigurationMutableTest {
 
   @Test
   void replace() {
-    var tstData = TestDataFactory.createKonnektorConnectionConfiguration();
+    var tstData = TestDataFactory.createKonnektorConnectionConfigurationMutable();
     var tstObj =
-        TestDataFactory.createKonnektorConnectionConfiguration()
+        TestDataFactory.createKonnektorConnectionConfigurationMutable()
             .address(null)
             .proxyAddress(null)
             .basicAuthentication(null)
@@ -41,9 +48,9 @@ class KonnektorConnectionConfigurationMutableTest {
 
   @Test
   void update() {
-    var tstData = TestDataFactory.createKonnektorConnectionConfiguration().address(null);
+    var tstData = TestDataFactory.createKonnektorConnectionConfigurationMutable().address(null);
     var tstObj =
-        TestDataFactory.createKonnektorConnectionConfiguration()
+        TestDataFactory.createKonnektorConnectionConfigurationMutable()
             .basicAuthentication(null)
             .tlsConfig(null);
 

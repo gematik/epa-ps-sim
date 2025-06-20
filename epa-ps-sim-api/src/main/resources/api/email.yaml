@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: ePA SIM Email Management API
+  description: Email Management Service related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+tags:
+  - name: EmailMgmt
+
+paths:
+  /epa/testdriver/api/v1/emailaddress:
+    parameters:
+      - name: x-insurantid
+        in: header
+        schema:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+    get:
+      tags:
+        - EmailMgmt
+      summary: 'Get stored email address'
+      description: 'Retrieves information about a specific email address for an existing health record matching _insurantid_.'
+      operationId: getEmailAddress
+      responses:
+        default:
+          description: 'Response containing the success status and the status message'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEmailAddressResponseDTO'
+
+    put:
+      tags:
+        - EmailMgmt
+      operationId: replaceEmailAddress
+      summary: 'Replaces the existing email address'
+      requestBody:
+        content:
+          application/json:
+            example:
+              email: "name@example.com"
+            schema:
+              $ref: "#/components/schemas/PutEmailRequestDTO"
+
+      responses:
+        '200':
+          description: 'OK.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PutEmailResponseDTO'
+components:
+  schemas:
+    GetEmailAddressResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+      properties:
+        email:
+          type: string
+        actor:
+          type: string
+        createdAt:
+          type: string
+
+    PutEmailRequestDTO:
+      type: object
+      properties:
+        email:
+          $ref: '#/components/schemas/EmailAddressType'
+      required:
+        - email
+    PutEmailResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+      properties:
+        email:
+          type: string
+        actor:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - email
+        - actor
+        - createdAt
+
+    EmailAddressType:
+      type: string
+      description: email address
+      format: email
+      example: name@example.com

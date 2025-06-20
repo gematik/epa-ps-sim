@@ -1,0 +1,9 @@
+{
+  "queryData" : {
+    "XDSDocumentEntryComment" : [ "Comment%" ],
+    "XDSDocumentEntryStatus": ["urn:oasis:names:tc:ebxml-regrep:StatusType:Approved"]
+  },
+  "query" : "FindDocumentsByComment",
+  "kvnr" : "X110435031",
+  "returnType" : "LeafClass"
+}

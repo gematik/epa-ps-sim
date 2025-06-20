@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,14 +15,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.client;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import de.gematik.epa.dto.request.SignDocumentRequest;
-import de.gematik.epa.dto.request.SignDocumentRequest.SignatureAlgorithm;
+import de.gematik.epa.api.testdriver.dto.request.SignDocumentRequest;
 import de.gematik.epa.ihe.model.simple.ByteArray;
 import de.gematik.epa.unit.util.ResourceLoader;
 import de.gematik.epa.unit.util.TestBase;
@@ -36,7 +42,6 @@ class SignatureServiceClientTest extends TestBase {
 
   @BeforeEach
   void beforeEach() {
-    TestDataFactory.initKonnektorTestConfiguration(konnektorInterfaceAssembly());
     tstObj = new SignatureServiceClient(konnektorContextProvider(), konnektorInterfaceAssembly());
   }
 
@@ -76,7 +81,8 @@ class SignatureServiceClientTest extends TestBase {
         .thenReturn(new GetJobNumberResponse().withJobNumber("Job001"));
 
     var signDocumentRequest =
-        new SignDocumentRequest((ByteArray) null, false, SignatureAlgorithm.RSA_ECC);
+        new SignDocumentRequest(
+            (ByteArray) null, false, SignDocumentRequest.SignatureAlgorithm.ECC);
 
     var konSignDocument = assertDoesNotThrow(() -> tstObj.transformRequest(signDocumentRequest));
 

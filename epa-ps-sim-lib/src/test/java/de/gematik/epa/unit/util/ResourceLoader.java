@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,20 +15,25 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.unit.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import de.gematik.epa.dto.request.FindRequestDTO;
-import de.gematik.epa.dto.request.PutDocumentsRequestDTO;
-import de.gematik.epa.dto.request.ReadVSDRequest;
-import de.gematik.epa.dto.request.ReplaceDocumentsRequestDTO;
-import de.gematik.epa.dto.request.RetrieveDocumentsRequestDTO;
-import de.gematik.epa.dto.request.SignDocumentRequest;
+import de.gematik.epa.api.testdriver.dto.request.FindRequestDTO;
+import de.gematik.epa.api.testdriver.dto.request.PutDocumentsRequestDTO;
+import de.gematik.epa.api.testdriver.dto.request.ReadVSDRequest;
+import de.gematik.epa.api.testdriver.dto.request.ReplaceDocumentsRequestDTO;
+import de.gematik.epa.api.testdriver.dto.request.RetrieveDocumentsRequestDTO;
+import de.gematik.epa.api.testdriver.dto.request.SignDocumentRequest;
+import de.gematik.epa.api.testdriver.dto.request.UpdateDocumentsRequestDTO;
 import de.gematik.epa.utils.XmlUtils;
 import java.io.File;
 import java.io.IOException;
@@ -52,15 +60,21 @@ public class ResourceLoader {
   public static final String RETRIEVE_DOCUMENTS_REQUEST =
       REQUEST_PATH + "retrieveDocumentsRequest.json";
 
+  public static final String UPDATE_DOCUMENTS_REQUEST = REQUEST_PATH + "updateDocuments.json";
+
   public static final String PKI_PATH = TEST_RESOURCES_PATH + "pki/";
   public static final String AUT_CERTIFICATE =
-      PKI_PATH + "80276883110000117894-C_SMCB_HCI_AUT_E256.crt";
+      PKI_PATH + "80276883110000163969-C_SMCB_HCI_AUT_E256.crt";
   public static final String OTHER_CERTIFICATE = PKI_PATH + "wiki-gematik-de.crt";
   public static final String TEST_P12 = PKI_PATH + "test.p12";
 
   public static final String FIND_BY_PATIENT_ID_REQUEST =
       REQUEST_PATH + "findByPatientIdRequest.json";
 
+  public static final String FIND_BY_REFERENCE_ID_REQUEST =
+      REQUEST_PATH + "findByReferenceIdRequest.json";
+
+  public static final String FIND_BY_COMMENT_REQUEST = REQUEST_PATH + "findByCommentRequest.json";
   public static final String REPLACE_DOCUMENTS_REQUEST = REQUEST_PATH + "replaceDocuments.json";
 
   public static final String SIGN_DOCUMENT_REQUEST = REQUEST_PATH + "signDocumentRequest.json";
@@ -75,6 +89,10 @@ public class ResourceLoader {
       loadDtoFromJsonFile(PutDocumentsRequestDTO.class, PUT_DOCUMENTS_WITH_FOLDER_METADATA_REQUEST);
 
   @Getter(lazy = true)
+  private static final UpdateDocumentsRequestDTO updateDocumentsRequest =
+      loadDtoFromJsonFile(UpdateDocumentsRequestDTO.class, UPDATE_DOCUMENTS_REQUEST);
+
+  @Getter(lazy = true)
   private static final RetrieveDocumentsRequestDTO retrieveDocumentsRequest =
       loadDtoFromJsonFile(RetrieveDocumentsRequestDTO.class, RETRIEVE_DOCUMENTS_REQUEST);
 
@@ -85,6 +103,14 @@ public class ResourceLoader {
   @Getter(lazy = true)
   private static final FindRequestDTO findByPatientIdRequest =
       loadDtoFromJsonFile(FindRequestDTO.class, FIND_BY_PATIENT_ID_REQUEST);
+
+  @Getter(lazy = true)
+  private static final FindRequestDTO findByReferenceIdRequest =
+      loadDtoFromJsonFile(FindRequestDTO.class, FIND_BY_REFERENCE_ID_REQUEST);
+
+  @Getter(lazy = true)
+  private static final FindRequestDTO findByCommentRequest =
+      loadDtoFromJsonFile(FindRequestDTO.class, FIND_BY_COMMENT_REQUEST);
 
   @Getter(lazy = true)
   private static final SignDocumentRequest signDocumentRequest =

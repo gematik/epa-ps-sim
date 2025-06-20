@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,19 +15,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.client;
 
+import static de.gematik.epa.konnektor.client.CertificateServiceClient.OID_PRAXIS_ARZT;
 import static org.junit.jupiter.api.Assertions.*;
 
 import de.gematik.epa.unit.util.KonnektorInterfaceAnswer;
 import de.gematik.epa.unit.util.TestBase;
 import de.gematik.epa.unit.util.TestDataFactory;
+import java.util.List;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import telematik.ws.conn.certificateservice.wsdl.v6_0.CertificateServicePortType;
@@ -42,14 +50,9 @@ class CertificateServiceClientTest extends TestBase {
   private final CertificateServicePortType certPortMock =
       konnektorInterfaceAssembly().certificateService();
 
-  @BeforeEach
-  void initTest() {
-    TestDataFactory.initKonnektorTestConfiguration(konnektorInterfaceAssembly());
-  }
-
   @SneakyThrows
   @Test
-  void getTelematikIdToCard() {
+  void getTelematikIdFromCard() {
     var response = TestDataFactory.readCardCertificateResponse();
     var answer =
         new KonnektorInterfaceAnswer<ReadCardCertificate, ReadCardCertificateResponse>()
@@ -58,10 +61,14 @@ class CertificateServiceClientTest extends TestBase {
 
     Mockito.when(certPortMock().readCardCertificate(Mockito.any())).then(answer);
 
-    var telematikId = assertDoesNotThrow(() -> tstObj.getTelematikIdToCard(cardInfo));
+    var telematikId = assertDoesNotThrow(() -> tstObj.getTelematikIdFromCard(cardInfo));
+    var professionOids = assertDoesNotThrow(() -> tstObj.getProfessionOidsFromCard(cardInfo));
 
     assertNotNull(telematikId);
     assertEquals(TestDataFactory.SMB_AUT_TELEMATIK_ID, telematikId);
+
+    assertNotNull(professionOids);
+    assertArrayEquals(List.of(OID_PRAXIS_ARZT).toArray(), professionOids.toArray());
 
     var request = answer.getRequest();
 

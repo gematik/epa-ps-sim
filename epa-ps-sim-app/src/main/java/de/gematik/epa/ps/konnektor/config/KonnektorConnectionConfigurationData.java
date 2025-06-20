@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-app
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,14 +15,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.ps.konnektor.config;
 
-import de.gematik.epa.config.AddressConfig;
-import de.gematik.epa.config.BasicAuthenticationConfig;
-import de.gematik.epa.config.ProxyAddressConfig;
-import de.gematik.epa.config.TlsConfig;
+import de.gematik.epa.api.testdriver.config.AddressConfig;
+import de.gematik.epa.api.testdriver.config.BasicAuthenticationConfig;
+import de.gematik.epa.api.testdriver.config.ProxyAddressConfig;
+import de.gematik.epa.api.testdriver.config.TlsConfig;
 import de.gematik.epa.konnektor.config.KonnektorConnectionConfigurationMutable;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

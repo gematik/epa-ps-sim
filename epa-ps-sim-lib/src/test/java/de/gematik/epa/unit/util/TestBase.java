@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,11 +15,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.unit.util;
 
 import de.gematik.epa.config.DefaultdataProvider;
+import de.gematik.epa.config.InsurantIdBuilder;
+import de.gematik.epa.document.DocumentInterfaceAssembly;
 import de.gematik.epa.konnektor.KonnektorConfigurationProvider;
 import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
@@ -29,11 +38,18 @@ public abstract class TestBase {
 
   @Getter(lazy = true)
   private final KonnektorConfigurationProvider konnektorConfigurationProvider =
-      new KonnektorConfigurationProvider(TestDataFactory.createKonnektorConfiguration());
+      new KonnektorConfigurationProvider(TestDataFactory.createKonnektorConfigurationMutable());
 
   @Getter(lazy = true)
   private final KonnektorInterfaceAssembly konnektorInterfaceAssembly =
       TestDataFactory.konnektorInterfaceAssemblyMock();
+
+  @Getter(lazy = true)
+  private final DocumentInterfaceAssembly documentInterfaceAssembly =
+      TestDataFactory.documentInterfaceAssemblyMock();
+
+  @Getter(lazy = true)
+  private final InsurantIdBuilder insurantIdBuilder = TestDataFactory.insurantBuilder();
 
   @Getter(lazy = true)
   private final DefaultdataProvider defaultdataProvider =

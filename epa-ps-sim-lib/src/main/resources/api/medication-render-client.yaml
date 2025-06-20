@@ -1,0 +1,319 @@
+openapi: 3.0.3
+info:
+  title: "eML Render Interface"
+  description: |
+    ### **Prerequisites**:
+    
+    The Health Record System shall provide 
+    - name
+    - role ((profession-)oid)
+    - identifier (telematik-id or kvnr)
+    - indication of a valid entitlement 
+    of the current user (requestor) for evaluation in operations.
+
+    Operations mandating a valid entitlement implicitly mandate use of a VAU-channel
+    and a valid ID-Token. If one of these conditions is not met, then the response
+    of the (aborted) operation shall always be '403': 'notEntitled'. 
+
+    ### **Retry interval**:
+    
+    The following retry intervals are suggested in case of an error response:<br>
+    - '409' Conflict (statusMismatch).
+      - approx. 24 hours
+    - '500' Internal Error
+      - approx. 10 minutes
+
+    ### **User Agent**:
+    
+    The user agent information (x-useragent) is part of any request, even if 
+    not essentially required for the operation (e.g. raw-data collection), and
+    may be considered for provider internal use. 
+
+    ### **Log-Entries**
+    
+    Whenever a _Postcondition_ mandates a log-entry, this entry shall contain
+    data as defined in A_24991*.
+
+  contact:
+    name: gematik GmbH
+    email: epa@gematik.de
+    url: 'http://www.gematik.de'
+
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+
+  version: 1.0.1
+servers:
+  - url: 'https://epa-hst1.prod.epa4all.de'
+
+tags:
+  - name: xHTML
+    description: medication list (eML) in xHTML
+  - name: PDF
+    description: medication list (eML) in PDF
+  - name: MedicationList
+    description: medication list (eML) in FHIR format
+
+paths:
+  /epa/medication/render/v1/eml/xhtml:
+    get:
+      tags:
+        - xHTML
+      operationId: renderEMLAsHTML
+      description: |
+        This interface returns a medication list (eML) rendered in xHTML file which shall be one of the allowed formats (A_25233*).
+
+        #### **Allowed user groups [professionOID]**
+        * oid_versicherter
+        * oid_praxis_arzt 
+        * oid_krankenhaus
+        * oid_institution-vorsorge-reha
+        * oid_zahnarztpraxis 
+        * oid_praxis_psychotherapeut
+        * oid_institution-oeg
+        * oid_öffentliche_apotheke
+        * oid_institution-pflege
+        * oid_institution-geburtshilfe
+        * oid_praxis-physiotherapeut
+        * oid_institution-arbeitsmedizin
+
+        ***
+
+        **Error Handling**
+        -
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | If the insurant objects to the medication process in the ePA system, the Medication Service gets locked. | 423 | locked | |
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+      responses:
+        '200':
+          description: OK
+          content:
+            text/html:
+              schema:
+                type: string
+        '409':
+          $ref: '#/components/responses/Error409Conflict'
+        '423':
+          $ref: '#/components/responses/Error423Locked'
+        '500':
+          $ref: '#/components/responses/Error500InternalError'
+
+  /epa/medication/render/v1/eml/pdf:
+    get:
+      tags:
+        - PDF
+      operationId: renderEMLAsPDF
+      description: |
+        This interface returns a medication list (eML) rendered in PDF/A.
+
+        #### **Allowed user groups [professionOID]**
+        * oid_versicherter
+        * oid_praxis_arzt 
+        * oid_krankenhaus
+        * oid_institution-vorsorge-reha
+        * oid_zahnarztpraxis 
+        * oid_praxis_psychotherapeut
+        * oid_institution-oeg
+        * oid_öffentliche_apotheke
+        * oid_institution-pflege
+        * oid_institution-geburtshilfe
+        * oid_praxis-physiotherapeut
+        * oid_institution-arbeitsmedizin
+
+        ***
+        
+        **Error Handling**
+        -
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 | | |
+        | If the insurant objects to the medication process in the ePA system, the Medication Service gets locked. | 423 | locked | |
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '409':
+          $ref: '#/components/responses/Error409Conflict'
+        '423':
+          $ref: '#/components/responses/Error423Locked'
+        '500':
+          $ref: '#/components/responses/Error500InternalError'
+
+  /epa/medication/api/v1/fhir/$medication-list:
+    get:
+      tags:
+        - MedicationList
+      description: Get a medication list
+      operationId: getMedicationList
+      parameters:
+        - name: date
+          in: query
+          description: Limit the search to this date. Can specify upper or lower limits
+            and periods by providing an upper and a lower limit.
+          required: false
+          schema:
+            type: string
+        - name: _count
+          in: query
+          description: Limit the result bundle to this many entries. To get more entries
+            request the next page.
+          required: false
+          schema:
+            type: integer
+        - name: _offset
+          in: query
+          description: Defines the offset of the first entry in the collection.
+          required: false
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestId'
+      responses:
+        '200':
+          description: Searchset bundle containing the requested entities.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/Bundle'
+        '400':
+          $ref: '#/components/responses/GetMedicationListError400'
+        '404':
+          $ref: '#/components/responses/GetMedicationListError404'
+
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: '#/components/schemas/InsurantIdType'
+    useragent:
+      name: x-useragent
+      in: header
+      description: user agent information
+      required: false
+      schema:
+        $ref: '#/components/schemas/UserAgentType'
+    requestId:
+      name: X-Request-ID
+      in: header
+      description: UUID der Nachricht
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Error500InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          example:
+            errorCode: internalError
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error409Conflict:
+      description: Conflict.
+      content:
+        application/json:
+          example:
+            errorCode: statusMismatch
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error423Locked:
+      description: Locked
+      content:
+        application/json:
+          example:
+            errorCode: locked
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    GetMedicationListError400:
+      description: Something is wrong with the request e.g unknown search parameter, invalid query parameter or invalid request
+      content:
+        application/fhir+json:
+          example: unknownSearchParameter
+          schema:
+            $ref: '#/components/schemas/EPAOperationOutcome'
+    GetMedicationListError404:
+      description: Unknown resource type or resource not found
+      content:
+        application/fhir+json:
+          example: unknownResourceType
+          schema:
+            $ref: '#/components/schemas/EPAOperationOutcome'
+
+  schemas:
+    InsurantIdType:
+      type: string
+      description: |-
+        The health record identifier. 
+        For today the record identifier equals the insurant id (kvnr). The record identifier does not include any homeCommunity identification.
+      pattern: '^[A-Z]{1}\d{9}$'
+      example: Z123456789
+    UserAgentType:
+      description: "Information about client software with: ClientId (1 to 20 characters) + / + VersionNumber (1 to 15 characters)."
+      type: string
+      pattern: '^[a-zA-Z0-9\-]{1,20}\/[a-zA-Z0-9\-\.]{1,15}$'
+      example: CLIENTID1234567890AB/2.1.12-45
+    ErrorType:
+      description: Error object with additional information about the occurred error
+      type: object
+      properties:
+        errorCode:
+          description: Error condition specifier
+          type: string
+        errorDetail:
+          description: Additional details regarding the error condition (if applicable)
+          type: string
+      required:
+        - errorCode
+    Bundle:
+      $ref: '#/components/schemas/SearchBundle'
+    SearchBundle:
+      type: string
+      description: For details check the FHIR profile -> http://hl7.org/fhir/search-set-bundle.html
+    EPAOperationOutcome:
+      type: object
+      description: For details check the FHIR profile -> https://simplifier.net/packages/de.gematik.epa/1.0.5-ballot.1/files/2734323/~overview
+      properties:
+        resourceType:
+          type: string
+          description: For details check the FHIR profile -> http://hl7.org/fhir/operationoutcome.html
+        id:
+          type: string
+          format: UUID
+        meta:
+          type: object
+          properties:
+            profile:
+              type: array
+              items:
+                type: string
+                example: "https://gematik.de/fhir/epa/StructureDefinition/epa-operation-outcome"
+        issue:
+          type: array
+          minLength: 1
+          items:
+            type: string
+            description: For details check the FHIR profile -> http://hl7.org/fhir/operationoutcome.html
+

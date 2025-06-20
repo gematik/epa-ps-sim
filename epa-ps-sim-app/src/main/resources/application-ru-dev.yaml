@@ -1,0 +1,18 @@
+epa-proxy:
+  host: ${EPA_PROXY_HOST:10.11.98.80}
+  port: ${EPA_PROXY_PORT:8080}
+  username:
+  password:
+
+information-servers:
+  servers:
+    - name: information-server1
+      protocol: ${INF_SERVER1_PROTOCOL:https}
+      host: ${INF_SERVER1_HOST:epa-as-1.dev.epa4all.de}
+      port: ${INF_SERVER1_PORT:443}
+      user-agent: PSSIM123456789012345/1.2.4
+    - name: information-server2
+      protocol: ${INF_SERVER2_PROTOCOL:https}
+      host: ${INF_SERVER2_HOST:epa-as-2.dev.epa4all.de}
+      port: ${INF_SERVER2_PORT:443}
+      user-agent: PSSIM123456789012345/1.2.4

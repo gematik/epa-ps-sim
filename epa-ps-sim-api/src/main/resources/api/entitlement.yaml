@@ -1,0 +1,240 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Entitlement API
+  description: Entitlement related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+tags:
+  - name: Entitlement
+paths:
+  /epa/testdriver/api/v1/entitlements:
+    post:
+      tags:
+        - Entitlement
+      summary: 'Add a new or update an existing entitlement for an institution identified by displayname, telematikId or insurantId'
+      description: 'This operation executes the use case "Add a new entitlement" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId.'
+      operationId: postEntitlement
+      parameters:
+        - name: x-insurantid
+          in: header
+          schema:
+            $ref: 'shared.yaml#/components/schemas/KvnrType'
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostEntitlementRequestDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEntitlementResponseDTO'
+
+  /epa/testdriver/api/v1/blockedUsers:
+    get:
+      tags:
+        - Entitlement
+      summary: 'Get a list of all blocked users and institutions, their related user and validity period'
+      description: 'This operation executes the use case "List all blocked users" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
+      operationId: getBlockedUserList
+      parameters:
+        - name: x-insurantid
+          in: header
+          schema:
+            $ref: 'shared.yaml#/components/schemas/KvnrType'
+          required: true
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBlockedUserListResponseDTO'
+
+    post:
+      tags:
+        - Entitlement
+      summary: Add a new or update an existing blocked user identified by telematikId
+      description: 'This operation executes the use case "Add a new blocked user" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId.'
+      operationId: postBlockedUser
+      parameters:
+        - name: x-insurantid
+          in: header
+          schema:
+            $ref: 'shared.yaml#/components/schemas/KvnrType'
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetBlockedUserRequestDTO'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseDTO'
+
+  /epa/testdriver/api/v1/blockedusers/{telematikid}:
+    delete:
+      tags:
+        - Entitlement
+      summary: Delete a single specific blocked user
+      description: 'This operation executes the use case "Delete an existing entry for a blocked user" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId.'
+      operationId: deleteBlockedUser
+      parameters:
+        - in: header
+          name: x-insurantid
+          schema:
+            $ref: 'shared.yaml#/components/schemas/KvnrType'
+          required: true
+        - in: path
+          name: telematikid
+          schema:
+            $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+          required: true
+
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseDTO'
+
+components:
+  #  parameters:
+  #    recordId:
+  #      name: recordId
+  #      in: header
+  #      description: Health Record Identifier.
+  #      required: true
+  #      schema:
+  #        $ref: 'shared.yaml#/components/schemas/KvnrType'
+  schemas:
+    PostEntitlementRequestDTO:
+      type: object
+      required:
+        - kvnr
+      properties:
+        telematikId:
+          $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+        kvnr:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+        testCase:
+          type: string
+          enum: [ validHcv, noHcv, invalidHcvStructure, invalidHcvHash ]
+          description: 'Specifies the test case to trigger different behaviors'
+    PostEntitlementResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          required:
+            - validTo
+          properties:
+            validTo:
+              $ref: 'shared.yaml#/components/schemas/DateTimeType'
+    ActorIdType:
+      description: Identifier of an actor (kvnr or telematik-id)
+      type: string
+      pattern: '(^[A-Z]{1}\d{9}$)|([0-9]{1}[-]{1}\d{1,126}$)'
+      example: Z123456789 or 2-883110000118994
+    OidType:
+      description: A professionOID
+      type: string
+      pattern: '([0-2])((\.0)|(\.[1-9][0-9]*))*$'
+      example: 1.2.276.0.76.4.50
+
+    GetBlockedUserListResponseDTO:
+      description: Returns a list of all blocked users
+      allOf:
+        - $ref: '#/components/schemas/ResponseDTO'
+        - type: object
+          required:
+            - assignments
+          properties:
+            assignments:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/Assignment'
+                  - type: object
+                    required:
+                      - at
+                    properties:
+                      at:
+                        description: Creation timestamp
+                        allOf:
+                          - $ref: '#/components/schemas/DateTimeType'
+
+    SetBlockedUserRequestDTO:
+      type: object
+      required:
+        - actorId
+        - oid
+        - displayName
+      properties:
+        actorId:
+          $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+        oid:
+          $ref: '#/components/schemas/OidType'
+        displayName:
+          $ref: 'shared.yaml#/components/schemas/DisplayNameType'
+
+
+    ResponseDTO:
+      description: 'Return of the success status, whether the operation on the service interface of Health Record System was successful or not. In any error case the status message, containing the error indication (e.g. error code) is given.'
+      type: object
+      properties:
+        success:
+          type: boolean
+        statusMessage:
+          type: string
+      required:
+        - success
+    Assignment:
+      description: Properties of one blocked user
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/OidAndDisplayname'
+        - type: object
+          properties:
+            telematikId:
+              $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+          required:
+            - telematikId
+    OidAndDisplayname:
+      description: Properties to block one user
+      type: object
+      required:
+        - oid
+        - displayName
+      properties:
+        actorId:
+          $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+        oid:
+          $ref: '#/components/schemas/OidType'
+        displayName:
+          $ref: '#/components/schemas/DisplayNameType'
+
+    DisplayNameType:
+      description: A readable name
+      type: string
+      example: Praxis Dr. Annamaria Heckhausén
+
+    DateTimeType:
+      type: string
+      format: date-time
+      example: '2025-01-01T18:00:00Z'

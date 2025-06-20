@@ -1,0 +1,629 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Medication API
+  description: Medication related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+servers:
+  - url: '{protocol}://{host}:{port}/services'
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: http
+      host:
+        default: 'localhost'
+      port:
+        default: '8080'
+
+tags:
+  - name: Medication
+
+paths:
+  /epa/testdriver/api/v1/medication:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication list of a personal health record as FHIR objects.'
+      description: 'List all medications.'
+      operationId: getMedicationList
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - $ref: '#/components/parameters/_total'
+        - $ref: '#/components/parameters/_id'
+        - $ref: '#/components/parameters/_lastUpdated'
+        - $ref: '#/components/parameters/_identifier'
+        - $ref: '#/components/parameters/_include'
+        - $ref: '#/components/parameters/_revinclude'
+        - $ref: '#/components/parameters/_code'
+        - $ref: '#/components/parameters/_status'
+      responses:
+        200:
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationResponseDTO'
+  /epa/testdriver/api/v1/medication/render/eml/xhtml:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication list (eML) rendered in xHTML of a personal health record.'
+      description: 'This operation executes the use case "List all medications" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
+      operationId: getMedicationListAsXhtml
+      parameters:
+        - $ref: '#/components/parameters/_recordId'
+      responses:
+        default:
+          description: eML as XHTML
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationListAsXhtmlResponseDTO'
+  /epa/testdriver/api/v1/medication/render/eml/pdf:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication list (eML) rendered as PDF of a personal health record.'
+      description: 'This operation executes the use case "List all medications" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
+      operationId: getMedicationListAsPdf
+      parameters:
+        - $ref: '#/components/parameters/_recordId'
+      responses:
+        default:
+          description: eML as PDF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationListAsPdfResponseDTO'
+  /epa/testdriver/api/v1/medication/render/eml/fhir:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication list (eML) rendered as FHIR search bundle.'
+      description: 'Get a medication list (eML) rendered as FHIR search bundle.'
+      operationId: getEmlAsFhir
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/requestid'
+        - name: date
+          in: query
+          description: Limit the search to this date. Can specify upper or lower limits
+            and periods by providing an upper and a lower limit. 
+            By specifying maximum two dates (comma separated e.g. date=ge2024-01-01,le2024-07-01) the search is limited to the range between the two dates.
+            The syntax is in the FHIR search parameter format where a prefix can be used to specify the operator.
+          required: false
+          schema:
+            type: string
+          example:
+            - 'gt2021-01-01'
+            - 'lt2021-01-01'
+            - 'ge2021-01-01'
+            - 'le2021-01-01'
+            - 'eq2021-01-01'
+        - name: count
+          in: query
+          description: Limit the result bundle to this many entries. To get more entries request the next page.
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+          description: Defines the offset of the first entry in the collection.
+          required: false
+      responses:
+        default:
+          description: eML as FHIR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEmlAsFhirResponseDTO'
+  /epa/testdriver/api/v1/medication-request:
+    get:
+      tags:
+        - Medication
+      operationId: getMedicationRequests
+      description: |
+        #### **Allowed user groups [professionOID]**
+        * oid_versicherter
+        * oid_praxis_arzt 
+        * oid_krankenhaus
+        * oid_institution-vorsorge-reha
+        * oid_zahnarztpraxis 
+        * oid_praxis_psychotherapeut
+        * oid_institution-oegd
+        * oid_öffentliche_apotheke
+        * oid_institution-pflege
+        * oid_institution-geburtshilfe
+        * oid_praxis-physiotherapeut
+        * oid_institution-arbeitsmedizin
+
+        ***
+
+        #### **MedicationRequest-Specific Search Parameters**
+        | Name | Type | Description | Expression |
+        |------|------|-------------|------------|
+        | identifier | [token](https://hl7.org/fhir/R4/search.html#token) | Return medication requests with this external identifier | MedicationRequest.identifier |
+        | authoredon | [date](https://hl7.org/fhir/R4/search.html#date) | Return prescriptions written on this date | MedicationRequest.authoredOn |
+        | status | [token](https://hl7.org/fhir/R4/search.html#token) | Returns medication requests for this status | MedicationRequest.status |
+        | requester | [reference](https://hl7.org/fhir/R4/search.html#reference) | Returns prescriptions prescribed by this prescriber | 	MedicationRequest.requester (PractitionerRole) |
+
+        ***
+
+        #### **Error Handling**
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | If the insurant objects to the medication process in the ePA system, the Medication Service gets locked. | 423 | locked ||
+        | Unknown search parameter | 400 | | OperationOutcome | 
+        | Invalid query parameter(s) | 400 | | OperationOutcome | 
+        | Invalid request | 400 | | OperationOutcome | 
+        | Requestor role is not in the list of allowed user groups | 403 | invalidOid ||
+        | Unknown resource type | 404 | | OperationOutcome |
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+        #### **OperationOutcome**
+        ##### Profile: 
+        [https://gematik.de/fhir/epa-medication/StructureDefinition/epa-ms-operation-outcome|1.0.2](https://gematik.de/fhir/epa-medication/StructureDefinition/epa-ms-operation-outcome|1.0.2)
+
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - $ref: '#/components/parameters/_total'
+        - $ref: '#/components/parameters/_id'
+        - $ref: '#/components/parameters/_lastUpdated'
+        - $ref: '#/components/parameters/identifier'
+        - $ref: '#/components/parameters/_include'
+        - $ref: '#/components/parameters/_revinclude'
+        - name: authoredon
+          in: query
+          required: false
+          description: Return prescriptions written on this date
+          schema:
+            type: string
+            format: date-time
+        - name: status
+          in: query
+          required: false
+          description: Returns medications for a specific code
+          schema:
+            type: string
+        - name: requester
+          in: query
+          required: false
+          description: Returns prescriptions prescribed by this prescriber
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationRequestListDTO'
+  /epa/testdriver/api/v1/medication-dispense:
+    get:
+      tags:
+        - Medication
+      operationId: getMedicationDispenses
+      description: |
+        #### **Allowed user groups [professionOID]**
+        * oid_versicherter
+        * oid_praxis_arzt 
+        * oid_krankenhaus
+        * oid_institution-vorsorge-reha
+        * oid_zahnarztpraxis 
+        * oid_praxis_psychotherapeut
+        * oid_institution-oegd
+        * oid_öffentliche_apotheke
+        * oid_institution-pflege
+        * oid_institution-geburtshilfe
+        * oid_praxis-physiotherapeut
+        * oid_institution-arbeitsmedizin
+
+        ***
+
+        #### **MedicationDispense-Specific Search Parameters**
+        | Name | Type | Description | Expression |
+        |------|------|-------------|------------|
+        | identifier | [token](https://hl7.org/fhir/R4/search.html#token) | Return medication dispenses with this external identifier | MedicationDispense.identifier |
+        | whenhandedover | [date](https://hl7.org/fhir/R4/search.html#date) | Returns dispenses handed over on this date | MedicationDispense.whenHandedOver |
+        | prescription | [reference](https://hl7.org/fhir/R4/search.html#reference) | The identity of a prescription to list dispenses from |MedicationDispense.authorizingPrescription (MedicationRequest) |
+        | performer | [reference](https://hl7.org/fhir/R4/search.html#reference) | Returns dispenses performed by a specific individual | 	MedicationDispense.performer.actor (PractitionerRole) |
+        | status | [token](https://hl7.org/fhir/R4/search.html#token) | Returns dispenses with a specified dispense status | 	MedicationDispense.status |
+
+        ***
+
+        #### **Error Handling**
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | If the insurant objects to the medication process in the ePA system, the Medication Service gets locked. | 423 | locked ||
+        | Unknown search parameter | 400 | | OperationOutcome | 
+        | Invalid query parameter(s) | 400 | | OperationOutcome | 
+        | Invalid request | 400 | | OperationOutcome | 
+        | Requestor role is not in the list of allowed user groups | 403 | invalidOid ||
+        | Unknown resource type | 404 | | OperationOutcome |
+        | Health record is not in state ACTIVATED | 409 | statusMismatch | (see 'Retry interval') |
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+        #### **OperationOutcome**
+        ##### Profile: 
+        [https://gematik.de/fhir/epa-medication/StructureDefinition/epa-ms-operation-outcome|1.0.2](https://gematik.de/fhir/epa-medication/StructureDefinition/epa-ms-operation-outcome|1.0.2)
+
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - $ref: '#/components/parameters/_total'
+        - $ref: '#/components/parameters/_id'
+        - $ref: '#/components/parameters/_lastUpdated'
+        - $ref: '#/components/parameters/identifier'
+        - $ref: '#/components/parameters/_include'
+        - $ref: '#/components/parameters/_revinclude'
+        - name: whenhandedover
+          in: query
+          required: false
+          description: Returns dispenses handed over on this date
+          schema:
+            type: string
+            example:
+              - 'gt2021-01-01'
+              - 'lt2021-01-01'
+              - 'ge2021-01-01'
+              - 'le2021-01-01'
+              - 'eq2021-01-01'
+        - name: prescription
+          in: query
+          required: false
+          description: The identity of a prescription to list dispenses from
+          schema:
+            type: string
+        - name: performer
+          in: query
+          required: false
+          description: Returns dispenses performed by a specific individual
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Returns dispenses with a specified dispense status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationDispenseListDTO'
+  /epa/testdriver/api/v1/medication/eml/fhir:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication list (eML) as FHIR Transaction Bundle.'
+      description: 'This operation executes the use case in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
+      operationId: getMedicationListAsFhir
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - $ref: '#/components/parameters/_total'
+        - $ref: '#/components/parameters/_status'
+        - $ref: '#/components/parameters/_lastUpdated'
+      responses:
+        200:
+          description: A eML as FHIR Transaction Bundle containing the resources matching the given search criteria.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationListAsFhirResponseDTO'
+
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: 'shared.yaml#/components/schemas/KvnrType'
+    _recordId:
+      name: recordId
+      in: query
+      description: 'Determines optionally the health record for the operation'
+      schema:
+        $ref: 'shared.yaml#/components/schemas/KvnrType'
+    _count:
+      name: count
+      in: query
+      description: |
+        With "_count", the client can specify the maximum number of elements to be included on 
+        one "page" of the response. This means the Medication Service limits the result set to 
+        this maximum specified number. If no value for "_count" is provided, the default value 
+        set is "25".
+      schema:
+        type: integer
+    _offset:
+      name: offset
+      in: query
+      description: |
+        This URL parameter indicates the (zero-based) offset of the first returned element in the collection. 
+        If no value for "_offset" is provided, the default value set is "0".
+      schema:
+        type: integer
+    _id:
+      name: id
+      in: query
+      required: false
+      description: Refers to the logical id of the resource
+      schema:
+        type: string
+    _lastUpdated:
+      name: lastUpdated
+      in: query
+      required: false
+      description: Can be used to select resources based on the last time they were changed.
+      schema:
+        type: string
+        example:
+        - 'gt2021-01-01'
+        - 'lt2021-01-01'
+        - 'ge2021-01-01'
+        - 'le2021-01-01'
+        - 'eq2021-01-01'
+        - 'ne2021-01-01'
+    _identifier:
+      name: identifier
+      in: query
+      required: false
+      description: Returns resources with this external identifier
+      schema:
+        type: string
+    _code:
+      name: code
+      in: query
+      required: false
+      description: Returns medications for a specific code
+      schema:
+        type: string
+    _status:
+      name: status
+      in: query
+      required: false
+      description: Returns medications for this status
+      schema:
+        type: string
+    _total:
+      name: total
+      in: query
+      description: This parameter controls whether and how the Medication Service returns the total number of search results.
+      schema:
+        type: string
+    useragent:
+      name: x-useragent
+      in: header
+      description: user agent information
+      required: false
+      schema:
+        $ref: '#/components/schemas/UserAgentType'
+    requestid:
+      name: X-Request-ID
+      in: header
+      description: UUID of the request message
+      required: true
+      schema:
+        $ref: '#/components/schemas/RequestIDType'
+    identifier:
+      name: identifier
+      in: query
+      required: false
+      description: Returns resources with this external identifier
+      schema:
+        type: string
+    _include:
+      name: _include
+      in: query
+      required: false
+      description: Including other resources
+      schema:
+        type: string
+    _revinclude:
+      name: _revinclude
+      in: query
+      required: false
+      description: Reverse include other resources
+      schema:
+        type: string
+  schemas:
+    UserAgentType:
+      description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."
+      type: string
+      pattern: '^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$'
+      example: CLIENTID1234567890AB/2.1.12-45
+    RequestIDType:
+      description: "Unique ID given by the ePA-Client to identify the request message. The server must return this ID in the response message."
+      type: string
+      format: uuid
+      example: c3ab12eb-f78d-450b-a56f-a65369cec4cb
+    GetMedicationResponseDTO:
+      description: Returns a list of all medications using the FHIR representation as string array where the content is JSON
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          oneOf:
+            - $ref: "#/components/schemas/SearchSet_Bundle"
+            - type: object
+              properties:
+                medications:
+                  description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication'
+                  x-examples:
+                    Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication
+                  type: array
+                  items:
+                    type: string
+    GetMedicationDispenseListDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          oneOf:
+            - $ref: "#/components/schemas/SearchSet_Bundle"
+            - type: object
+              properties:
+                medicationDispenses:
+                  description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense|1.0.2'
+                  x-examples:
+                      Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense|1.0.2
+                  type: array
+                  items:
+                    type: string
+    GetMedicationRequestListDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          oneOf:
+            - $ref: "#/components/schemas/SearchSet_Bundle"
+            - type: object
+              properties:
+                medicationRequests:
+                  description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request|1.0.2'
+                  x-examples:
+                    Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request|1.0.2
+                  type: array
+                  items:
+                    type: string
+    MedicationRequest:
+      type: object
+      description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request|1.0.2'
+      example: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request|1.0.2
+    GetMedicationListAsPdfResponseDTO:
+      description: Response including the eML as PDF.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            eml:
+              description: 'The eML as PDF as an array of bytes.'
+              type: string
+              format: byte
+    GetMedicationListAsXhtmlResponseDTO:
+      description: Response including the eML as XHTML.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            eml:
+              description: 'The eML as XHTML as string.'
+              type: string
+    GetMedicationListAsFhirResponseDTO:
+      description: Response including the eML as FHIR Transaction Bundle
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            eml:
+              description: 'The eML as FHIR Transaction Bundle as JSON.'
+              example: --> https://build.fhir.org/bundle-transaction.json.html
+              type: string
+    GetEmlAsFhirResponseDTO:
+      description: Response including the eML as FHIR Search Bundle based on the given search criteria.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            eml:
+              description: 'The eML as FHIR Search Bundle as JSON.'
+              example: --> http://hl7.org/fhir/search-set-bundle.html
+              type: string
+    SearchSet_Bundle:
+      description: "Contains a collection of resources + Rule: entry.search only when a search"
+      type: object
+      properties:
+        resourceType:
+          type: string
+          enum:
+            - Bundle
+        id:
+          description: The logical id of the resource, as used in the URL for the
+            resource. Once assigned, this value never changes.
+          type: string
+          pattern: "[A-Za-z0-9\\-\\.]{1,64}"
+          example: "86604fc1-b356-57e3-8738-8ef36c8d608c"
+        meta:
+          type: object
+          properties:
+            lastUpdated:
+              description: When the resource last changed - e.g. when the version changed.
+              type: string
+              format: date-time
+        type:
+          type: string
+          enum:
+            - searchset
+        total:
+          type: integer
+          minimum: 0
+          example: 1
+        link:
+          type: array
+          items:
+            type: object
+            properties:
+              relation:
+                type: string
+                enum:
+                  - self
+                  - next
+                  - previous
+                  - first
+                  - last
+              url:
+                type: string
+                description: Reference details for the link, A Uniform Resource Locator (RFC 1738 ).
+                  Note URLs are accessed directly using the specified protocol. Common URL protocols are http{s}.
+        entry:
+          type: array
+          items:
+            type: object
+            properties:
+              fullUrl:
+                type: string
+                description: "URI for resource (Absolute URL server address or URI for UUID/OID)"
+              search:
+                type: object
+                description: Search related information
+                properties:
+                  mode:
+                    type: string
+                    description: match | include | outcome - why this is in the result set
+                    enum:
+                      - match
+                      - include
+                      - outcome
+                    example: match
+              resource:
+                type: string
+                description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication'
+                x-examples:
+                  Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication

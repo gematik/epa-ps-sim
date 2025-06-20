@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17.0.8_7-jre-alpine
+FROM eclipse-temurin:21-jdk
 
 # The STOPSIGNAL instruction sets the system call signal that will be sent to the container to exit
 # SIGTERM = 15 - https://de.wikipedia.org/wiki/Signal_(Unix)

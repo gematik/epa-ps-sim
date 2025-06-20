@@ -1,0 +1,1356 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "http://localhost:8084/fhir/Medication/5",
+      "resource": {
+        "resourceType": "Medication",
+        "id": "5",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension",
+            "valueIdentifier": {
+              "system": "https://gematik.de/fhir/epa-medication/sid/rx-prescription-process-identifier",
+              "value": "160.153.303.257.459_20240122"
+            }
+          }
+        ],
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+            "value": "B517B68E5764DD32896EF1F8771F861EC2DC30250A4EE6E2C2923CBE26DD8A9F"
+          },
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
+            "value": "6ae6a7ca-c9b5-46bf-9411-2ba49d96f988_160.153.303.257.459"
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://fhir.de/CodeSystem/ifa/pzn",
+              "code": "10019621",
+              "display": "IBU-ratiopharm 400mg akut Schmerztabletten"
+            },
+            {
+              "system": "http://fhir.de/CodeSystem/ask",
+              "code": "5682",
+              "display": "Ibuprofen"
+            }
+          ]
+        },
+        "status": "active"
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/Medication/6",
+      "resource": {
+        "resourceType": "Medication",
+        "id": "6",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension",
+            "valueIdentifier": {
+              "system": "https://gematik.de/fhir/epa-medication/sid/rx-prescription-process-identifier",
+              "value": "160.153.303.257.459_20240122"
+            }
+          }
+        ],
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+            "value": "8F6E41946E798D9C89384A0D2C9C7D9E4F6F0A2DE9EF62B7A4A26A329400735F"
+          },
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
+            "value": "6ae6a7ca-c9b5-46bf-9411-2ba49d96f988_160.153.303.257.459"
+          }
+        ],
+        "code": {
+          "text": "Infusion bestehend aus 85mg Doxorubicin aufgeloest zur Verabreichung in 250ml 5-%iger (50 mg/ml) Glucose-Infusionsloesung"
+        },
+        "status": "active",
+        "form": {
+          "coding": [
+            {
+              "system": "http://standardterms.edqm.eu",
+              "code": "11210000",
+              "display": "Solution for infusion"
+            }
+          ]
+        },
+        "ingredient": [
+          {
+            "itemCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://fhir.de/CodeSystem/bfarm/atc",
+                  "code": "L01DB01",
+                  "display": "Doxorubicin"
+                }
+              ]
+            },
+            "isActive": true,
+            "strength": {
+              "numerator": {
+                "value": 85,
+                "unit": "mg",
+                "system": "http://unitsofmeasure.org",
+                "code": "mg"
+              },
+              "denominator": {
+                "value": 250,
+                "unit": "Milliliter",
+                "system": "http://unitsofmeasure.org",
+                "code": "mL"
+              }
+            }
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/Medication/7",
+      "resource": {
+        "resourceType": "Medication",
+        "id": "7",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+          ]
+        },
+        "extension": [
+          {
+            "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension",
+            "valueIdentifier": {
+              "system": "https://gematik.de/fhir/epa-medication/sid/rx-prescription-process-identifier",
+              "value": "160.153.303.257.459_20240122"
+            }
+          }
+        ],
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+            "value": "E8827EB3FC26FE461BF2D7C0E0C91A703B233E13E4F309D88C138459D9EF48E3"
+          },
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
+            "value": "6ae6a7ca-c9b5-46bf-9411-2ba49d96f988_160.153.303.257.459"
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_ERP_Medication_Type",
+              "code": "freitext"
+            }
+          ],
+          "text": "250ml 5-%iger (50 mg/ml) Glucose-Infusionsloesung"
+        },
+        "status": "active"
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/Medication/8",
+      "resource": {
+        "resourceType": "Medication",
+        "id": "8",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+            "value": "48E951DFE10F5669D3C66D581E5767DE32CFD788C94693E5C78193DB2D3F095B"
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://fhir.de/CodeSystem/ifa/pzn",
+              "code": "03953522",
+              "display": "Metoprolol-ratiopharm® 100 mg Tabletten"
+            },
+            {
+              "system": "http://fhir.de/CodeSystem/bfarm/atc",
+              "version": "2022",
+              "code": "C07AB02",
+              "display": "Metoprolol"
+            },
+            {
+              "system": "http://snomed.info/sct",
+              "version": "http://snomed.info/sct/11000274103/version/20240515",
+              "code": "7092007",
+              "display": "Product containing metoprolol (medicinal product)"
+            }
+          ]
+        },
+        "form": {
+          "coding": [
+            {
+              "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_KBV_DARREICHUNGSFORM",
+              "version": "1.10",
+              "code": "TAB",
+              "display": "Tabletten"
+            },
+            {
+              "system": "http://standardterms.edqm.eu",
+              "code": "12200",
+              "display": "Tablet"
+            },
+            {
+              "system": "http://snomed.info/sct",
+              "version": "http://snomed.info/sct/11000274103/version/20240515",
+              "code": "385055001",
+              "display": "Tablet (basic dose form)"
+            }
+          ]
+        },
+        "amount": {
+          "numerator": {
+            "value": 100,
+            "unit": "MilliGram",
+            "system": "http://unitsofmeasure.org",
+            "code": "mg"
+          },
+          "denominator": {
+            "value": 1,
+            "unit": "Tablet",
+            "system": "http://unitsofmeasure.org",
+            "code": "{Tablet}"
+          }
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/Medication/9",
+      "resource": {
+        "resourceType": "Medication",
+        "id": "9",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/epa-medication-unique-identifier",
+            "value": "B849184C973EA5FA7D9751E6FAA6AFCFFD100183596239F84DD2C0DB4C751D67"
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://fhir.de/CodeSystem/ifa/pzn",
+              "code": "10019621",
+              "display": "IBU-ratiopharm 400mg akut Schmerztabletten"
+            },
+            {
+              "system": "http://fhir.de/CodeSystem/bfarm/atc",
+              "version": "2022",
+              "code": "M01AE01",
+              "display": "Ibuprofen"
+            }
+          ]
+        },
+        "form": {
+          "coding": [
+            {
+              "system": "https://fhir.kbv.de/CodeSystem/KBV_CS_SFHIR_KBV_DARREICHUNGSFORM",
+              "version": "1.10",
+              "code": "TAB",
+              "display": "Tabletten"
+            },
+            {
+              "system": "http://standardterms.edqm.eu",
+              "code": "12200",
+              "display": "Tablet"
+            },
+            {
+              "system": "http://snomed.info/sct",
+              "version": "http://snomed.info/sct/11000274103/version/20240515",
+              "code": "385055001",
+              "display": "Tablet (basic dose form)"
+            }
+          ]
+        },
+        "amount": {
+          "numerator": {
+            "value": 50,
+            "unit": "Tablet",
+            "system": "http://unitsofmeasure.org",
+            "code": "{Tablet}"
+          },
+          "denominator": {
+            "value": 1,
+            "unit": "Package",
+            "system": "http://unitsofmeasure.org",
+            "code": "{Package}"
+          }
+        },
+        "ingredient": [
+          {
+            "itemCodeableConcept": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "version": "http://snomed.info/sct/11000274103/version/20240515",
+                  "code": "387207008",
+                  "display": "Ibuprofen (substance)"
+                }
+              ]
+            },
+            "strength": {
+              "numerator": {
+                "value": 400,
+                "unit": "MilliGram",
+                "system": "http://unitsofmeasure.org",
+                "code": "mg"
+              },
+              "denominator": {
+                "value": 1,
+                "unit": "Tablet",
+                "system": "http://unitsofmeasure.org",
+                "code": "{Tablet}"
+              }
+            }
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationRequest/14",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "14",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "priority": "asap",
+        "medicationReference": {
+          "reference": "Medication/9"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "authoredOn": "2024-07-01T12:22:48Z",
+        "requester": {
+          "reference": "PractitionerRole/3"
+        },
+        "dosageInstruction": [
+          {
+            "text": "1-0-1"
+          }
+        ],
+        "dispenseRequest": {
+          "quantity": {
+            "value": 1,
+            "system": "http://unitsofmeasure.org",
+            "code": "{Package}"
+          }
+        },
+        "substitution": {
+          "allowedBoolean": true
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationDispense/15",
+      "resource": {
+        "resourceType": "MedicationDispense",
+        "id": "15",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
+            "value": "86d65df3-5ca4-457d-8859-285830fe091b_160.153.303.257.459"
+          }
+        ],
+        "status": "completed",
+        "medicationReference": {
+          "reference": "Medication/5"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "performer": [
+          {
+            "actor": {
+              "reference": "Organization/1"
+            }
+          }
+        ],
+        "authorizingPrescription": [
+          {
+            "reference": "MedicationRequest/10"
+          }
+        ],
+        "quantity": {
+          "value": 6,
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        },
+        "daysSupply": {
+          "value": 5,
+          "unit": "Day",
+          "system": "http://unitsofmeasure.org",
+          "code": "d"
+        },
+        "whenHandedOver": "2024-01-14T07:13:00+05:00",
+        "note": [
+          {
+            "text": "Patient soll es zum Essen einnehmen"
+          }
+        ],
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Zwei Tabletten auf einmal",
+            "additionalInstruction": [
+              {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "311504000",
+                    "display": "Zum Essen"
+                  }
+                ]
+              }
+            ],
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "route": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "26643006",
+                  "display": "Oral Route"
+                }
+              ]
+            },
+            "method": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "421521009",
+                  "display": "Swallow - dosing instruction imperative (qualifier value)"
+                }
+              ]
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 2,
+                  "unit": "TAB",
+                  "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+                  "code": "TAB"
+                }
+              }
+            ]
+          },
+          {
+            "sequence": 2,
+            "text": "Zwei Tabletten täglich für  4 Tage",
+            "additionalInstruction": [
+              {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "311504000",
+                    "display": "Zum Essen"
+                  }
+                ]
+              }
+            ],
+            "timing": {
+              "repeat": {
+                "boundsDuration": {
+                  "value": 4,
+                  "unit": "days",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "d"
+                },
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "route": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "26643006",
+                  "display": "Oral Route"
+                }
+              ]
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "TAB",
+                  "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+                  "code": "TAB"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationDispense/16",
+      "resource": {
+        "resourceType": "MedicationDispense",
+        "id": "16",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense"
+          ]
+        },
+        "status": "completed",
+        "medicationReference": {
+          "reference": "Medication/7"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "performer": [
+          {
+            "actor": {
+              "reference": "Organization/1"
+            }
+          }
+        ],
+        "authorizingPrescription": [
+          {
+            "reference": "MedicationRequest/12"
+          }
+        ],
+        "quantity": {
+          "value": 6,
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        },
+        "daysSupply": {
+          "value": 5,
+          "unit": "Day",
+          "system": "http://unitsofmeasure.org",
+          "code": "d"
+        },
+        "whenHandedOver": "2024-02-16T07:13:00+05:00",
+        "note": [
+          {
+            "text": "Patient soll es zum Essen einnehmen"
+          }
+        ],
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Zwei Tabletten auf einmal",
+            "additionalInstruction": [
+              {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "311504000",
+                    "display": "Zum Essen"
+                  }
+                ]
+              }
+            ],
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "route": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "26643006",
+                  "display": "Oral Route"
+                }
+              ]
+            },
+            "method": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "421521009",
+                  "display": "Swallow - dosing instruction imperative (qualifier value)"
+                }
+              ]
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 2,
+                  "unit": "TAB",
+                  "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+                  "code": "TAB"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationDispense/17",
+      "resource": {
+        "resourceType": "MedicationDispense",
+        "id": "17",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense"
+          ]
+        },
+        "status": "completed",
+        "medicationReference": {
+          "reference": "Medication/9"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "performer": [
+          {
+            "actor": {
+              "reference": "Organization/1"
+            }
+          }
+        ],
+        "authorizingPrescription": [
+          {
+            "reference": "MedicationRequest/11"
+          }
+        ],
+        "quantity": {
+          "value": 6,
+          "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+          "code": "TAB"
+        },
+        "daysSupply": {
+          "value": 5,
+          "unit": "Day",
+          "system": "http://unitsofmeasure.org",
+          "code": "d"
+        },
+        "whenHandedOver": "2024-01-17T07:13:00+05:00",
+        "note": [
+          {
+            "text": "Patient soll es zum Essen einnehmen"
+          }
+        ],
+        "dosageInstruction": [
+          {
+            "sequence": 1,
+            "text": "Zwei Tabletten auf einmal",
+            "additionalInstruction": [
+              {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "311504000",
+                    "display": "Zum Essen"
+                  }
+                ]
+              }
+            ],
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "route": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "26643006",
+                  "display": "Oral Route"
+                }
+              ]
+            },
+            "method": {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "421521009",
+                  "display": "Swallow - dosing instruction imperative (qualifier value)"
+                }
+              ]
+            },
+            "doseAndRate": [
+              {
+                "type": {
+                  "coding": [
+                    {
+                      "system": "http://terminology.hl7.org/CodeSystem/dose-rate-type",
+                      "code": "ordered",
+                      "display": "Ordered"
+                    }
+                  ]
+                },
+                "doseQuantity": {
+                  "value": 2,
+                  "unit": "TAB",
+                  "system": "http://terminology.hl7.org/CodeSystem/v3-orderableDrugForm",
+                  "code": "TAB"
+                }
+              }
+            ]
+          }
+        ],
+        "substitution": {
+          "wasSubstituted": true,
+          "type": {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-substanceAdminSubstitution",
+                "code": "TE",
+                "display": "therapeutic alternative"
+              }
+            ]
+          },
+          "reason": [
+            {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                  "code": "PAT",
+                  "display": "Patient request"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationDispense/18",
+      "resource": {
+        "resourceType": "MedicationDispense",
+        "id": "18",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense"
+          ]
+        },
+        "status": "completed",
+        "category": {
+          "coding": [
+            {
+              "system": "https://gematik.de/fhir/terminology/CodeSystem/EPAMedicationDispenseCategoryCS",
+              "code": "prescription",
+              "display": "prescription dispense"
+            }
+          ]
+        },
+        "medicationReference": {
+          "reference": "Medication/7"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "performer": [
+          {
+            "actor": {
+              "reference": "Organization/1"
+            }
+          }
+        ],
+        "authorizingPrescription": [
+          {
+            "reference": "MedicationRequest/13"
+          }
+        ],
+        "whenHandedOver": "2024-07-22",
+        "dosageInstruction": [
+          {
+            "text": "1-0-0-0"
+          }
+        ],
+        "substitution": {
+          "wasSubstituted": false
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationDispense/19",
+      "resource": {
+        "resourceType": "MedicationDispense",
+        "id": "19",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense"
+          ]
+        },
+        "status": "completed",
+        "category": {
+          "coding": [
+            {
+              "system": "https://gematik.de/fhir/terminology/CodeSystem/EPAMedicationDispenseCategoryCS",
+              "code": "prescription",
+              "display": "prescription dispense"
+            }
+          ]
+        },
+        "medicationReference": {
+          "reference": "Medication/9"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "performer": [
+          {
+            "actor": {
+              "reference": "Organization/1"
+            }
+          }
+        ],
+        "authorizingPrescription": [
+          {
+            "reference": "MedicationRequest/14"
+          }
+        ],
+        "whenHandedOver": "2024-07-25",
+        "dosageInstruction": [
+          {
+            "text": "1-0-0-0"
+          }
+        ],
+        "substitution": {
+          "wasSubstituted": false
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationRequest/10",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "10",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request"
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-prescription-process-identifier",
+            "value": "160.153.303.257.459_20250122"
+          },
+          {
+            "system": "https://gematik.de/fhir/epa-medication/sid/rx-originator-process-identifier",
+            "value": "6ae6a7ca-c9b5-46bf-9411-2ba49d96f988_160.153.303.257.459"
+          }
+        ],
+        "status": "active",
+        "intent": "order",
+        "priority": "asap",
+        "medicationReference": {
+          "reference": "Medication/5"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "authoredOn": "2024-01-13T12:22:48Z",
+        "requester": {
+          "reference": "PractitionerRole/3"
+        },
+        "dosageInstruction": [
+          {
+            "text": "1-0-1"
+          }
+        ],
+        "dispenseRequest": {
+          "quantity": {
+            "value": 1,
+            "system": "http://unitsofmeasure.org",
+            "code": "{Package}"
+          }
+        },
+        "substitution": {
+          "allowedBoolean": true
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationRequest/11",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "11",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "priority": "asap",
+        "medicationReference": {
+          "reference": "Medication/6"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "authoredOn": "2024-01-12T12:22:48Z",
+        "requester": {
+          "reference": "PractitionerRole/3"
+        },
+        "dosageInstruction": [
+          {
+            "text": "1-0-1"
+          }
+        ],
+        "dispenseRequest": {
+          "quantity": {
+            "value": 1,
+            "system": "http://unitsofmeasure.org",
+            "code": "{Package}"
+          }
+        },
+        "substitution": {
+          "allowedBoolean": true
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationRequest/12",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "12",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "priority": "asap",
+        "medicationReference": {
+          "reference": "Medication/7"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "authoredOn": "2024-01-01T12:22:48Z",
+        "requester": {
+          "reference": "PractitionerRole/3"
+        },
+        "dosageInstruction": [
+          {
+            "text": "1-0-1"
+          }
+        ],
+        "dispenseRequest": {
+          "quantity": {
+            "value": 1,
+            "system": "http://unitsofmeasure.org",
+            "code": "{Package}"
+          }
+        },
+        "substitution": {
+          "allowedBoolean": true
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/MedicationRequest/13",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "13",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request"
+          ]
+        },
+        "status": "active",
+        "intent": "order",
+        "priority": "asap",
+        "medicationReference": {
+          "reference": "Medication/7"
+        },
+        "subject": {
+          "identifier": {
+            "system": "http://fhir.de/sid/gkv/kvid-10",
+            "value": "Z123456783"
+          }
+        },
+        "authoredOn": "2024-07-01T12:22:48Z",
+        "requester": {
+          "reference": "PractitionerRole/3"
+        },
+        "dosageInstruction": [
+          {
+            "text": "1-0-1"
+          }
+        ],
+        "dispenseRequest": {
+          "quantity": {
+            "value": 1,
+            "system": "http://unitsofmeasure.org",
+            "code": "{Package}"
+          }
+        },
+        "substitution": {
+          "allowedBoolean": true
+        }
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/PractitionerRole/3",
+      "resource": {
+        "resourceType": "PractitionerRole",
+        "id": "3",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/directory/StructureDefinition/PractitionerRoleDirectory"
+          ],
+          "tag": [
+            {
+              "system": "https://gematik.de/fhir/directory/CodeSystem/Origin",
+              "code": "ldap"
+            }
+          ]
+        },
+        "identifier": [
+          {
+            "system": "http://www.acme.org/practitioners",
+            "value": "23"
+          }
+        ],
+        "active": true,
+        "practitioner": {
+          "reference": "Practitioner/2"
+        },
+        "organization": {
+          "reference": "Organization/1"
+        },
+        "code": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v2-0286",
+                "code": "RP"
+              }
+            ]
+          }
+        ],
+        "specialty": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "408443003",
+                "display": "General medical practice"
+              }
+            ]
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/Practitioner/2",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "2",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt"
+        },
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/sid/telematik-id",
+            "value": "1-1.58.00000040"
+          },
+          {
+            "system": "https://fhir.kbv.de/NamingSystem/KBV_NS_Base_ANR",
+            "value": "123456789"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "text": "Dr. Max Manfred Mustermann",
+            "family": "Mustermann",
+            "given": [
+              "Max",
+              "Manfred"
+            ],
+            "prefix": [
+              "Dr."
+            ]
+          }
+        ],
+        "qualification": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "https://gematik.de/fhir/directory/CodeSystem/PractitionerProfessionOID",
+                  "code": "010",
+                  "display": "FA Allgemeinmedizin"
+                }
+              ]
+            },
+            "issuer": {
+              "reference": "Organization/1"
+            }
+          }
+        ]
+      },
+      "search": {
+        "mode": "include"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8084/fhir/Organization/1",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "1",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-11-14T10:34:14.008+00:00",
+          "source": "#LjCsNKrbPMGXTErt",
+          "profile": [
+            "https://gematik.de/fhir/directory/StructureDefinition/OrganizationDirectory"
+          ],
+          "tag": [
+            {
+              "system": "https://gematik.de/fhir/directory/CodeSystem/Origin",
+              "code": "ldap"
+            }
+          ]
+        },
+        "identifier": [
+          {
+            "system": "https://gematik.de/fhir/sid/telematik-id",
+            "value": "2-2.58.00000040"
+          }
+        ],
+        "active": true,
+        "type": [
+          {
+            "coding": [
+              {
+                "system": "https://gematik.de/fhir/directory/CodeSystem/OrganizationProfessionOID",
+                "code": "1.2.276.0.76.4.50",
+                "display": "Betriebsstätte Arzt"
+              }
+            ]
+          }
+        ],
+        "name": "Arztpraxis Dr. Mustermann",
+        "alias": [
+          "Arztpraxis am Bahnhof"
+        ],
+        "contact": [
+          {
+            "purpose": {
+              "coding": [
+                {
+                  "system": "http://terminology.hl7.org/CodeSystem/contactentity-type",
+                  "code": "PATINF",
+                  "display": "Patient"
+                }
+              ]
+            },
+            "name": {
+              "text": "Empfang Arztpraxis Dr. Mustermann"
+            },
+            "telecom": [
+              {
+                "system": "phone",
+                "value": "030 1234567"
+              }
+            ]
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    }
+  ]
+}

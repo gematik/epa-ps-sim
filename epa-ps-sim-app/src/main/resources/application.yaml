@@ -2,6 +2,8 @@ server:
   port: ${SERVER_PORT:9016}
   ssl:
     enabled: false
+app:
+  userAgent: ${APP_USER_AGENT:PSSIM123456789012345/1.2.4}
 
 defaultdata:
   submissionSetAuthorConfiguration:
@@ -17,11 +19,13 @@ defaultdata:
 
 konnektor:
   connection:
+    connectOnStartup: false
     address:
-      protocol: https
+      protocol: ${KONNEKTOR_PROTOCOL:https}
       host: ${KONNEKTOR_HOST:kon33.e2e-test.gematik.solutions}
       port: ${KONNEKTOR_PORT:443}
     tlsConfig:
+      keystoreEnabled: ${KONNEKTOR_TLS_KEYSTORE_ENABLED:false}
       keystorefile:
         filePath: keys/tlsClient.p12
       keystorepassword: '12345678'
@@ -44,13 +48,16 @@ konnektor:
 logging:
   level:
     de.gematik.epa: INFO
-    #org.apache.cxf.services: DEBUG   # Activate this line to log the messages to and from the Konnektor
+    org.apache.cxf.services: INFO     # Use 'DEBUG' to log the messages to and from the Konnektor
 
 cxf:
   path: ${CXF_PATH:/services}
   jaxrs:
     component-scan: true
     classes-scan-packages: org.apache.cxf.jaxrs.swagger
+  openapi:
+    resource-packages: de.gematik.epa.api.testdriver
+    url: "${cxf.path}/openapi.json"
 
 info:
   app:
@@ -59,11 +66,10 @@ info:
     description: '@project.description@'
 
 management:
+  server:
+    port: ${MANAGEMENT_PORT:8016}
   endpoints:
-    web:
-      exposure:
-        include: "info,health"
-    enabled-by-default: false
+    enabled-by-default: true
   endpoint:
     health:
       enabled: true
@@ -71,5 +77,98 @@ management:
       enabled: true
     logfile:
       enabled: true
+    mappings:
+      enabled: true
+    beans:
+      enabled: true
     info:
       enabled: true
+
+document-server:
+  connection:
+    address:
+      protocol: http
+      host: ${DOCUMENT_SERVER_HOST:localhost}
+      port: ${DOCUMENT_SERVER_PORT:8080}
+      path: epa/xds-document/api/
+
+fhir-server:
+  protocol: http
+  host: ${FHIR_SERVER_HOST:localhost}
+  port: ${FHIR_SERVER_PORT:8080}
+  path: fhir
+  user-agent: ${FHIR_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+audit-server:
+  protocol: http
+  host: ${AUDIT_SERVER_HOST:localhost}
+  port: ${AUDIT_SERVER_PORT:8080}
+  path: fhir
+  user-agent: ${AUDIT_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+eml-render:
+  protocol: http
+  host: localhost
+  port: 8081
+  pdf-path: /epa/medication/render/v1/eml/pdf
+  xhtml-path: /epa/medication/render/v1/eml/xhtml
+  medication-list-path: /epa/medication/api/v1/fhir/$medication-list
+  user-agent: ${EML_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+auth-server:
+  protocol: http
+  host: ${AUTH_SERVER_HOST:localhost}
+  port: ${AUTH_SERVER_PORT:8086}
+  user-agent: ${AUTH_SERVER_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+idp-server:
+  protocol: http
+  host: ${IDP_SERVER_HOST:localhost}
+  port: ${IDP_SERVER_PORT:8082}
+  path: discoveryDocument
+  verify-ssl: true
+  follow-redirects: false
+
+vau-proxy:
+  protocol: http
+  host: ${VAU_PROXY_HOST:localhost}
+  port: ${VAU_PROXY_PORT:8080}
+  user-agent: ${VAU_PROXY_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+information-servers:
+  servers:
+    - name: information-server1
+      protocol: ${INF_SERVER1_PROTOCOL:http}
+      host: ${INF_SERVER1_HOST:localhost}
+      port: ${INF_SERVER1_PORT:8088}
+      user-agent: PSSIM123456789012345/1.2.4
+    - name: information-server2
+      protocol: ${INF_SERVER2_PROTOCOL:http}
+      host: ${INF_SERVER2_HOST:localhost}
+      port: ${INF_SERVER2_PORT:8089}
+      user-agent: PSSIM123456789012345/1.2.4
+
+entitlement-server:
+  protocol: http
+  host: ${ENTITLEMENT_SERVER_HOST:localhost}
+  port: ${ENTITLEMENT_SERVER_PORT:8084}
+  user-agent: ${ENTITLEMENT_SERVER_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+email-server:
+  protocol: http
+  host: ${EMAIL_SERVER_HOST:localhost}
+  port: ${EMAIL_SERVER_PORT:8088}
+  user-agent: ${EMAIL_SERVER_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+consent-decisions-server:
+  protocol: http
+  host: ${CONSENT_DECISIONS_SERVER_HOST:localhost}
+  port: ${CONSENT_DECISIONS_SERVER_PORT:8089}
+  user-agent: ${CONSENT_DECISIONS_SERVER_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+audit-render:
+  protocol: http
+  host: localhost
+  port: 8090
+  pdf-path: /epa/audit/render/v1/pdf
+  user-agent: ${AUDIT_USER_AGENT:PSSIM123456789012345/1.2.4}

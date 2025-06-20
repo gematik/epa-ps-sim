@@ -1,0 +1,14 @@
+{
+  "challenge": "eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIiwia2lkIjoicHVrX2lkcF9zaWcifQ.eyJpc3MiOiJodHRwczovL2lkcC5kZXYuZ2VtYXRpay5zb2x1dGlvbnMiLCJyZXNwb25zZV90eXBlIjoiY29kZSIsInNuYyI6IjZSTGlQaUkxUkFiZ25DSF8zS1ZJTXVjdC05Y3lNVWhhZDM2MDZiRk5wZkEiLCJjb2RlX2NoYWxsZW5nZV9tZXRob2QiOiJTMjU2IiwidG9rZW5fdHlwZSI6ImNoYWxsZW5nZSIsIm5vbmNlIjoiNzcyMTQzNTI3N2Y1ZDAxMzdiMTdlZjhiODM1Y2EwM2NmMDlkYzIzOTI2YWExNzY2ZTRmODEzMjQzM2ZmMzdkNiIsImNsaWVudF9pZCI6ImVQQSIsInNjb3BlIjoib3BlbmlkIGVwYSIsInN0YXRlIjoiQUJDVkRGR0hUNTY0IiwicmVkaXJlY3RfdXJpIjoiaHR0cDovL3Rlc3QtcHMuZ2VtYXRpay5kZS9lUEEiLCJleHAiOjE3MTAxNjE1MzEsImlhdCI6MTcxMDE2MTM1MSwiY29kZV9jaGFsbGVuZ2UiOiJJTWV2eTh6OWh5ZkZzRGFkNkpNMEUyME1RX2pMSW5KNkd0RTU1c0d5SDNZIiwianRpIjoiMzcxMmRjNzdkNGVlNGZmNSJ9.emACjli6G3c41rqwrFZn7jh59sQPkYCgbDudTETxOeugxRKCT5piTRodh7errrP28TRDYCB4B3u0rzB7p5jN4g",
+  "user_consent": {
+    "requested_scopes": {
+      "openid": "Zugriff auf den ID-Token.",
+      "epa": "epa scopes"
+    },
+    "requested_claims": {
+      "organizationName": "Zustimmung zur Verarbeitung der Organisationszugehörigkeit",
+      "professionOID": "Zustimmung zur Verarbeitung der Rolle",
+      "idNummer": "Zustimmung zur Verarbeitung der Id (z.B. Krankenversichertennummer, Telematik-Id)"
+    }
+  }
+}

@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,19 +15,25 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.utils;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.isismtt.ISISMTTObjectIdentifiers;
@@ -63,6 +72,14 @@ public class CertificateUtils {
               log.warn("No telematikId could be found in certificate {}", certificate);
               return null;
             });
+  }
+
+  public static List<String> getProfessionOidsFromCertificate(
+      @NonNull final X509Certificate certificate) {
+    final var professionInfo = getProfessionInfoFromCertificate(certificate);
+    return Optional.ofNullable(professionInfo).map(ProfessionInfo::getProfessionOIDs).stream()
+        .flatMap(obj -> Arrays.stream(obj).map(ASN1ObjectIdentifier::toString))
+        .toList();
   }
 
   // region private

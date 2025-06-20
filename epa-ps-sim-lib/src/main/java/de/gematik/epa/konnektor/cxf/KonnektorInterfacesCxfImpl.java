@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,30 +15,34 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.cxf;
 
+import static de.gematik.epa.utils.LoggingFeatureUtil.newLoggingFeature;
+import static de.gematik.epa.utils.XmlUtils.getJaxWsProxyFactoryBean;
 import static jakarta.xml.ws.soap.SOAPBinding.SOAP11HTTP_BINDING;
-import static jakarta.xml.ws.soap.SOAPBinding.SOAP12HTTP_BINDING;
-import static jakarta.xml.ws.soap.SOAPBinding.SOAP12HTTP_MTOM_BINDING;
 
-import de.gematik.epa.config.AddressConfig;
-import de.gematik.epa.config.BasicAuthenticationConfig;
-import de.gematik.epa.config.KonnektorConnectionConfiguration;
-import de.gematik.epa.config.KonnektorConnectionConfigurationDTO;
-import de.gematik.epa.config.ProxyAddressConfig;
+import de.gematik.epa.api.testdriver.config.AddressConfig;
+import de.gematik.epa.api.testdriver.config.BasicAuthenticationConfig;
+import de.gematik.epa.api.testdriver.config.KonnektorConnectionConfiguration;
+import de.gematik.epa.api.testdriver.config.KonnektorConnectionConfigurationDTO;
+import de.gematik.epa.api.testdriver.config.ProxyAddressConfig;
+import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
-import de.gematik.epa.konnektor.cxf.interceptors.HomeCommunityBlockOutInterceptor;
-import de.gematik.epa.konnektor.cxf.interceptors.MtomConfigOutInterceptor;
+import de.gematik.epa.konnektor.client.CardServiceClient;
 import de.gematik.epa.utils.ThrowingFunction;
 import de.gematik.epa.utils.XmlUtils;
+import jakarta.ws.rs.InternalServerErrorException;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -50,27 +57,21 @@ import lombok.experimental.Accessors;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.security.AuthorizationPolicy;
 import org.apache.cxf.ext.logging.LoggingFeature;
-import org.apache.cxf.ext.logging.event.EventType;
-import org.apache.cxf.ext.logging.event.LogEvent;
-import org.apache.cxf.ext.logging.slf4j.Slf4jEventSender;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.ws.addressing.WSAddressingFeature;
 import org.slf4j.event.Level;
 import telematik.ws.conn.SdsApi;
+import telematik.ws.conn.authsignatureservice.wsdl.v7_4.AuthSignatureService;
+import telematik.ws.conn.authsignatureservice.wsdl.v7_4.AuthSignatureServicePortType;
 import telematik.ws.conn.cardservice.wsdl.v8_1.CardService;
 import telematik.ws.conn.cardservice.wsdl.v8_1.CardServicePortType;
 import telematik.ws.conn.certificateservice.wsdl.v6_0.CertificateService;
 import telematik.ws.conn.certificateservice.wsdl.v6_0.CertificateServicePortType;
 import telematik.ws.conn.eventservice.wsdl.v6_1.EventService;
 import telematik.ws.conn.eventservice.wsdl.v6_1.EventServicePortType;
-import telematik.ws.conn.phrs.phrmanagementservice.wsdl.v2_5.PHRManagementService;
-import telematik.ws.conn.phrs.phrmanagementservice.wsdl.v2_5.PHRManagementServicePortType;
-import telematik.ws.conn.phrs.phrservice.wsdl.v2_0.PHRService;
-import telematik.ws.conn.phrs.phrservice.wsdl.v2_0.PHRServicePortType;
 import telematik.ws.conn.plus.ObjectFactory;
 import telematik.ws.conn.servicedirectory.xsd.v3_1.ConnectorServices;
 import telematik.ws.conn.serviceinformation.xsd.v2_0.EndpointType;
@@ -95,19 +96,18 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
   private final FileLoader fileLoader;
 
   @Getter(lazy = true)
-  private final LoggingFeature loggingFeature = newLoggingFeature();
+  private final LoggingFeature loggingFeature = newLoggingFeature(Level.DEBUG);
 
   Boolean isTlsPreferred = Boolean.TRUE;
 
   protected ConnectorServices connectorServices;
 
-  protected PHRServicePortType phrService;
-  protected PHRManagementServicePortType phrManagementService;
   protected EventServicePortType eventService;
   protected CardServicePortType cardService;
   protected CertificateServicePortType certificateService;
   protected SignatureServicePortType signatureService;
   protected VSDServicePortType vsdService;
+  protected AuthSignatureServicePortType authSignatureService;
 
   public KonnektorInterfacesCxfImpl(FileLoader fileLoader) {
     this.fileLoader = fileLoader;
@@ -125,14 +125,22 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
     this.configuration = newConfiguration;
     isTlsPreferred = determineIfTlsPreferred();
     connectorServices = sdsApi().getConnectorSds();
-    phrService = createPhrService();
-    phrManagementService = createPHRManagementService();
     eventService = createEventService();
     cardService = createCardService();
     certificateService = createCertificateService();
     signatureService = createSignatureService();
     vsdService = createVSDService();
+    authSignatureService = createAuthSignatureService();
     return this;
+  }
+
+  public void unlockSmb(KonnektorContextProvider contextProvider)
+      throws InternalServerErrorException {
+    try (CardServiceClient cardServiceClient = new CardServiceClient(contextProvider, this)) {
+      cardServiceClient.verifySmb();
+    } catch (Exception e) {
+      throw new InternalServerErrorException("Operation unlockSmb failed with an exception", e);
+    }
   }
 
   /**
@@ -190,15 +198,8 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
       @NonNull final String soapBinding,
       @NonNull final String endpointAddress,
       final Consumer<JaxWsProxyFactoryBean> addConf) {
-    final JaxWsProxyFactoryBean jaxWsProxyFactory = new JaxWsProxyFactoryBean();
-    jaxWsProxyFactory.setBindingId(soapBinding);
-    jaxWsProxyFactory.setServiceClass(portType);
-    jaxWsProxyFactory.setAddress(endpointAddress);
-    jaxWsProxyFactory.getFeatures().add(loggingFeature());
-
-    if (Objects.nonNull(addConf)) {
-      addConf.accept(jaxWsProxyFactory);
-    }
+    final JaxWsProxyFactoryBean jaxWsProxyFactory =
+        getJaxWsProxyFactoryBean(portType, soapBinding, endpointAddress, addConf);
 
     final T proxy = jaxWsProxyFactory.create(portType);
 
@@ -246,42 +247,6 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
 
   private <T> T getClientProxyImpl(final Class<T> portType, final String endpointAddress) {
     return getClientProxyImpl(portType, SOAP11HTTP_BINDING, endpointAddress, null);
-  }
-
-  /**
-   * Creates the actual client implementation of the Konnektors {@link PHRServicePortType}
-   * interface.<br>
-   * Endpoint of the Konnektor Service to talk to is retrieved from the information in the {@link
-   * #connectorServices()} bean.
-   *
-   * @return PHRServicePortType implementation
-   */
-  private PHRServicePortType createPhrService() {
-    return getClientProxyImpl(
-        PHRServicePortType.class,
-        SOAP12HTTP_MTOM_BINDING,
-        readServiceEndpoint(PHRService.SERVICE.getLocalPart(), "2.0.2", "2"),
-        jaxWsProxyFactory -> {
-          jaxWsProxyFactory.getFeatures().add(new WSAddressingFeature());
-          jaxWsProxyFactory.getOutInterceptors().add(new HomeCommunityBlockOutInterceptor());
-          jaxWsProxyFactory.getOutInterceptors().add(new MtomConfigOutInterceptor());
-        });
-  }
-
-  /**
-   * Creates the actual client implementation of the Konnektors {@link PHRManagementServicePortType}
-   * interface.<br>
-   * Endpoint of the Konnektor Service to talk to is retrieved from the information in the {@link
-   * #connectorServices()} bean.
-   *
-   * @return PHRManagementServicePortType_V2_0_1 implementation
-   */
-  private PHRManagementServicePortType createPHRManagementService() {
-    return getClientProxyImpl(
-        PHRManagementServicePortType.class,
-        SOAP12HTTP_BINDING,
-        readServiceEndpoint(PHRManagementService.SERVICE.getLocalPart(), "2.5.2", "2.5.3", "2.5"),
-        jaxWsProxyFactory -> jaxWsProxyFactory.getFeatures().add(new WSAddressingFeature()));
   }
 
   /**
@@ -355,6 +320,20 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
         readServiceEndpoint(CardService.SERVICE.getLocalPart(), "8.1.2", "8.1", "8"));
   }
 
+  /**
+   * Creates the actual client implementation of the Konnektors {@link AuthSignatureServicePortType}
+   * interface.<br>
+   * Endpoint of the Konnektor Service to talk to is retrieved from the information in the {@link
+   * #connectorServices()} bean.
+   *
+   * @return AuthSignatureServicePortType implementation
+   */
+  private AuthSignatureServicePortType createAuthSignatureService() {
+    return getClientProxyImpl(
+        AuthSignatureServicePortType.class,
+        readServiceEndpoint(AuthSignatureService.SERVICE.getLocalPart(), "7.4.1", "7.4", "7"));
+  }
+
   private String readServiceEndpoint(String serviceName, String... serviceVersionStartsWith) {
     for (String svsw : serviceVersionStartsWith) {
       var endpoint = readSingleServiceEndpoint(serviceName, svsw);
@@ -400,30 +379,31 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
             configuration.tlsConfig(),
             "No configuration data present for TLS connection to the Konnektor");
 
-    final KeyStore keyStore =
-        KeyStore.getInstance(Objects.requireNonNull(tlsConfig.keystoretype()));
-
-    var keystorePwd =
-        Objects.requireNonNull(
-                tlsConfig.keystorepassword(),
-                "No password is set in the TLS configuration for the Konnektor connection")
-            .toCharArray();
-
-    keyStore.load(
-        tlsConfig.keystorefile().isFilePath()
-            ? fileLoader.apply(tlsConfig.keystorefile().getFilePath())
-            : new ByteArrayInputStream(tlsConfig.keystorefile().getFileContent().value()),
-        keystorePwd);
-
-    final KeyManagerFactory keyFactory =
-        KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    keyFactory.init(keyStore, keystorePwd);
-
     var tlsParams = tlsClientParameters();
-
-    tlsParams.setKeyManagers(keyFactory.getKeyManagers());
-
     tlsParams.setCipherSuites(tlsConfig.ciphersuites());
+
+    if (tlsConfig.keystoreEnabled()) {
+      final KeyStore keyStore =
+          KeyStore.getInstance(Objects.requireNonNull(tlsConfig.keystoretype()));
+
+      var keystorePwd =
+          Objects.requireNonNull(
+                  tlsConfig.keystorepassword(),
+                  "No password is set in the TLS configuration for the Konnektor connection")
+              .toCharArray();
+
+      keyStore.load(
+          tlsConfig.keystorefile().isFilePath()
+              ? fileLoader.apply(tlsConfig.keystorefile().getFilePath())
+              : new ByteArrayInputStream(tlsConfig.keystorefile().getFileContent().value()),
+          keystorePwd);
+
+      final KeyManagerFactory keyFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      keyFactory.init(keyStore, keystorePwd);
+
+      tlsParams.setKeyManagers(keyFactory.getKeyManagers());
+    }
 
     httpConduit.setTlsClientParameters(tlsParams);
   }
@@ -450,36 +430,6 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
               httpConduit.getClient().setProxyServer(Objects.requireNonNull(pa.address()));
               httpConduit.getClient().setProxyServerPort(pa.port());
             });
-  }
-
-  private LoggingFeature newLoggingFeature() {
-    final var feature = new LoggingFeature();
-    final var sender =
-        new Slf4jEventSender() {
-          @Override
-          protected String getLogMessage(LogEvent event) {
-            StringBuilder buf = new StringBuilder().append("\n");
-            if (List.of(EventType.REQ_IN, EventType.REQ_OUT).contains(event.getType())) {
-              buf.append(event.getHttpMethod()).append(" ").append(event.getAddress()).append("\n");
-            } else {
-              buf.append(event.getResponseCode())
-                  .append(" ")
-                  .append(event.getAddress())
-                  .append("\n");
-            }
-            event
-                .getHeaders()
-                .forEach((key, value) -> buf.append(key).append(": ").append(value).append("\n"));
-            return buf.append("\n").append(event.getPayload()).toString();
-          }
-        };
-    sender.setLoggingLevel(Level.DEBUG);
-    feature.setSender(sender);
-    feature.setPrettyLogging(true);
-    feature.setLogBinary(true);
-    feature.setLogMultipart(true);
-
-    return feature;
   }
 
   public interface FileLoader extends ThrowingFunction<String, InputStream> {}

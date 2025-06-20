@@ -1,0 +1,89 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Card API
+  description: Card related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+tags:
+  - name: Card
+    description: Card API
+servers:
+  - url: 'http'
+paths:
+
+  /epa/testdriver/api/v1/cards:
+    get:
+      tags:
+        - Card
+      summary: 'Get cards information'
+      description: 'Get cards information'
+      operationId: getCardsInfo
+      responses:
+        '200':
+          description: 'Response containing the success status and the status message'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetCardsInfoResponseDTO'
+
+components:
+  schemas:
+    GetCardsInfoResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+      properties:
+        smbInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/SmbInformationDTO'
+        egkInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/EgkInformationDTO'
+        hbaInfo:
+          type: array
+          items:
+            $ref: '#/components/schemas/HbaInformationDTO'
+
+    SmbInformationDTO:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CardInformationDTO'
+      properties:
+        telematikId:
+          $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+
+
+    EgkInformationDTO:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CardInformationDTO'
+      properties:
+        kvnr:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+
+    HbaInformationDTO:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CardInformationDTO'
+      properties:
+        telematikId:
+          $ref: 'shared.yaml#/components/schemas/TelematikIdType'
+
+    CardInformationDTO:
+      type: object
+      properties:
+        iccsn:
+          type: string
+          example: '80276883110000163990'
+        cardHolderName:
+          $ref: 'shared.yaml#/components/schemas/DisplayNameType'
+        cardHandle:
+          type: string
+          example: 'SMB or EGK'

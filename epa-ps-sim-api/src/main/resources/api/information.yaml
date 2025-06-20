@@ -1,0 +1,198 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Information API
+  description: Information Service related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+tags:
+  - name: Information
+
+paths:
+  /epa/testdriver/api/v1/information/ehr:
+    parameters:
+      - name: x-insurantid
+        in: header
+        schema:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+    get:
+      tags:
+        - Information
+      summary: 'Get status of a personal health record'
+      description: 'Check the health record system for an existing health record matching _insurantid_.'
+      operationId: getRecordStatus
+      responses:
+        default:
+          description: 'Response containing the success status and the status message'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRecordStatusResponseDTO'
+
+  /epa/testdriver/api/v1/information/ehr/consentdecisions:
+    parameters:
+      - name: x-insurantid
+        in: header
+        schema:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+    get:
+      tags:
+        - Information
+      operationId: getConsentDecisionInformation
+      summary: 'Get current healthcare process relevant consent decisions'
+      responses:
+        default:
+          description: Ok.
+          content:
+            application/json:
+              example:
+                - functionId: "medication"
+                  decision: "deny"
+                - functionId: "erp-submission"
+                  decision: "permit"
+              schema:
+                $ref: "#/components/schemas/GetConsentDecisionInformationResponseDTO"
+  /epa/testdriver/api/v1/information/userexperience:
+    post:
+      tags:
+        - Information
+      operationId: setUserExperienceResult
+      summary: 'provide measurement for ux use cases'
+      description: |
+        Provide measurements for ux use cases.</br>
+
+        **Client**</br>
+        This operation may be invoked without login to any health record. </br>
+        Clients of health care institutions shall use the use case identifiers:
+        - UX_Login_PS
+        - UX_Doc_Upload_PS
+        - UX_Doc_Download_PS
+        only.
+        The provision of parameter _useragent_ is mandatory.
+
+        **Provider**</br>
+        The use case measurements shall be associated to _useragent_ and collected, 
+        processed and distributed according requirements defined in specification gemSpec_Perf
+
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 |||
+        | Request does not match schema | 400 | malformedRequest ||
+        | Any other error | 500 | internalError | (see 'Retry interval') |
+
+        </br>
+        | Postconditions                        | Remarks |
+        |---------------------------------------|---------|
+        | data collected ||
+
+      requestBody:
+        content:
+          application/json:
+            example:
+              useCase: "UX_Doc_Upload_PS"
+              measurement: 1299
+            schema:
+              $ref: "#/components/schemas/UxRequestType"
+      responses:
+        default:
+          description: 'Response containing the success status and the status message'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetUserExperienceResponseDTO'
+  /epa/testdriver/api/v1/information/fqdn:
+    put:
+      tags:
+        - Information
+      operationId: setFqdn
+      summary: 'Sets the FQDN for the given insurantId.'
+      description: 'This endpoint can be used by test suites to set a FQDN. Especially for testing the use case where the FQDN for a given insurantId does not exist.'
+      requestBody:
+        content:
+          application/json:
+            example:
+              insurantId: 1299
+              fqdn: "https://epa.forall.de:443"
+            schema:
+              $ref: "#/components/schemas/SetFqdnRequestDTO"
+      responses:
+        default:
+          description: 'Response containing the success status and the status message'
+          content:
+            application/json:
+              schema:
+                $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+components:
+  schemas:
+    GetRecordStatusResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+      properties:
+        fqdn:
+          type: string
+    GetConsentDecisionInformationResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            consentDecisions:
+              type: array
+              items:
+                $ref: "#/components/schemas/ConsentDecisionsResponseType"
+    SetUserExperienceResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+    ConsentDecisionsResponseType:
+      description: "Consent Decisions Response"
+      type: object
+      properties:
+        functionId:
+          type: string
+          enum: [ "medication", "erp-submission" ]
+          description: function id of consent related functions of a health record.
+        decision:
+          type: string
+          enum: [ "permit", "deny" ]
+          description: "Decision"
+      required:
+        - functionId
+        - decision
+      example:
+        functionId: "medication"
+        decision: "deny"
+    UxRequestType:
+      type: object
+      properties:
+        useCase:
+          description: Use case identifier
+          type: string
+          enum:
+            - UX_Login_PS
+            - UX_Doc_Upload_PS
+            - UX_Doc_Download_PS
+            - UX_Login_V
+            - UX_Doc_Upload_V
+            - UX_Doc_Download_V
+            - UX_LEI_search
+        measurement:
+          description: Use case execution time in milliseconds
+          type: integer
+      required:
+        - useCase
+        - measurement
+    SetFqdnRequestDTO:
+      type: object
+      properties:
+        insurantId:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+        fqdn:
+          type: string
+          description: An URI including protocol and port
+      required:
+        - insurantId
+        - fqdn

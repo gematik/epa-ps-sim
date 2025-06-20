@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,15 +15,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor;
 
-import de.gematik.epa.dto.response.AuthorizedApplication;
-import de.gematik.epa.dto.response.GetAuthorizationStateResponseDTO;
-import de.gematik.epa.dto.response.ResponseDTO;
-import java.util.ArrayList;
-import java.util.List;
+import de.gematik.epa.api.testdriver.dto.response.ResponseDTO;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -28,8 +31,6 @@ import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import telematik.ws.conn.connectorcommon.xsd.v5_0.Status;
-import telematik.ws.conn.phrs.phrmanagementservice.xsd.v2_5.AuthorizedApplicationType;
-import telematik.ws.conn.phrs.phrmanagementservice.xsd.v2_5.GetAuthorizationStateResponse;
 import telematik.ws.tel.error.telematikerror.xsd.v2_0.Error;
 
 @UtilityClass
@@ -75,36 +76,6 @@ public class KonnektorUtils {
     var statusMsgBuilder = new StringBuilder().append(throwable);
 
     return new ResponseDTO(false, appendCauses(throwable, statusMsgBuilder).toString());
-  }
-
-  public static GetAuthorizationStateResponseDTO getAuthorizationStateResponse(
-      @NonNull GetAuthorizationStateResponse response) {
-    List<AuthorizedApplication> authorizedApplications = new ArrayList<>();
-
-    GetAuthorizationStateResponse.AuthorizationStatusList authorizationStatusList =
-        response.getAuthorizationStatusList();
-    if (authorizationStatusList != null) {
-      List<AuthorizedApplicationType> authorizedApplicationList =
-          authorizationStatusList.getAuthorizedApplication();
-      if (authorizedApplicationList != null) {
-        authorizedApplicationList.forEach(
-            authorizedApplicationType -> {
-              final var authorizedApplication =
-                  new AuthorizedApplication(
-                      authorizedApplicationType.getApplicationName(),
-                      authorizedApplicationType
-                          .getValidTo()
-                          .toGregorianCalendar()
-                          .toZonedDateTime()
-                          .toLocalDate());
-              authorizedApplications.add(authorizedApplication);
-            });
-      }
-    }
-    return new GetAuthorizationStateResponseDTO(
-        true,
-        Optional.ofNullable(response.getStatus().getError()).map(Error::toString).orElse(null),
-        authorizedApplications);
   }
 
   // region private

@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,8 +15,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.konnektor.client;
 
 import de.gematik.epa.konnektor.KonnektorContextProvider;
@@ -143,8 +150,9 @@ public class CardServiceClient extends KonnektorServiceClient {
 
     switch (pinStatus) {
       case VERIFIED -> log.info("PIN is already {}.", pinStatus);
-      case DISABLED -> log.info(
-          "PIN is {}. PIN protection switched off (verification not required).", pinStatus);
+      case DISABLED ->
+          log.info(
+              "PIN is {}. PIN protection switched off (verification not required).", pinStatus);
       case TRANSPORT_PIN -> {
         var errMsg =
             String.format(

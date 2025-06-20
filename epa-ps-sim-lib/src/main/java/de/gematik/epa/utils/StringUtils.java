@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,10 +15,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.utils;
 
+import java.nio.charset.Charset;
 import java.util.Objects;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
@@ -80,5 +88,37 @@ public class StringUtils {
     }
 
     return new ImmutablePair<>(firstname, lastname);
+  }
+
+  /**
+   * Appends the causes of a given throwable to a provided StringBuilder.
+   *
+   * <p>This method iterates through the chain of causes of the provided throwable and appends each
+   * cause to the provided StringBuilder. Each cause is prefixed with a tab character and a
+   * semicolon.
+   *
+   * @param throwable the throwable whose causes are to be appended; must not be null
+   * @param builder the StringBuilder to which the causes will be appended; must not be null
+   * @return the StringBuilder with the appended causes
+   */
+  public static StringBuilder appendCauses(
+      @NonNull Throwable throwable, @NonNull StringBuilder builder) {
+    Throwable cause = throwable.getCause();
+
+    while (Objects.nonNull(cause)) {
+      builder.append(";\t").append(cause);
+      cause = cause.getCause();
+    }
+
+    return builder;
+  }
+
+  /***
+   * This method converts string literals to a byte array based on ISO-8859-15 charset
+   * @param string the  string literal to convert
+   * @return byte array based on ISO-8859-15 charset
+   */
+  public static byte[] toISO885915(@NonNull String string) {
+    return string.getBytes(Charset.forName("ISO-8859-15"));
   }
 }

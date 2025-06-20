@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-lib
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,9 +15,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.utils;
+
+import static de.gematik.epa.utils.LoggingFeatureUtil.newLoggingFeature;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
@@ -29,7 +38,9 @@ import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.stream.XMLInputFactory;
@@ -38,7 +49,10 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.experimental.UtilityClass;
+import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.frontend.ClientProxyFactoryBean;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.slf4j.event.Level;
 
 @UtilityClass
 @Accessors(fluent = true)
@@ -53,6 +67,9 @@ public class XmlUtils {
 
   @Getter(lazy = true)
   private static final DatatypeFactory datatypeFactory = DatatypeFactory.newDefaultInstance();
+
+  @Getter(lazy = true)
+  private final LoggingFeature loggingFeature = newLoggingFeature(Level.DEBUG);
 
   /**
    * Marshall an object into XML.<br>
@@ -151,6 +168,24 @@ public class XmlUtils {
               return factoryBean.getProperties();
             })
         .put(JAXB_ADDITIONAL_CONTEXT_CLASSES_PROPERTY_KEY, objectFactoryClasses);
+  }
+
+  public static <T> JaxWsProxyFactoryBean getJaxWsProxyFactoryBean(
+      Class<T> portType,
+      String soapBinding,
+      String endpointAddress,
+      Consumer<JaxWsProxyFactoryBean> addConf) {
+    final JaxWsProxyFactoryBean jaxWsProxyFactory = new JaxWsProxyFactoryBean();
+    jaxWsProxyFactory.setBindingId(soapBinding);
+    jaxWsProxyFactory.setServiceClass(portType);
+    jaxWsProxyFactory.setAddress(endpointAddress);
+
+    jaxWsProxyFactory.getFeatures().add(loggingFeature());
+
+    if (Objects.nonNull(addConf)) {
+      addConf.accept(jaxWsProxyFactory);
+    }
+    return jaxWsProxyFactory;
   }
 
   // region private

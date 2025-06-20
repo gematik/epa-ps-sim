@@ -1,0 +1,54 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Authentication API
+  description: Authentication related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+tags:
+  - name: Login
+    description: starts an user session
+paths:
+  /epa/testdriver/api/v1/login:
+    get:
+      tags:
+        - Login / Logout
+      summary: Login user session
+      description: 'This operation establishes a user session. The user is identified by "insurantId".If "insurantId" is not set, the operation uses a given default user.'
+      operationId: login
+      parameters:
+        - $ref: 'shared.yaml#/components/parameters/telematikId'
+        - $ref: 'shared.yaml#/components/parameters/fqdn'
+        - $ref: '#/components/parameters/recordId'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponseDTO'
+components:
+  parameters:
+    recordId:
+      name: recordId
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: 'shared.yaml#/components/schemas/KvnrType'
+  schemas:
+    LoginResponseDTO:
+      description: 'Returns the telematikId of the user that has logged in'
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          required:
+            - telematikId
+          properties:
+            telematikId:
+              $ref: 'shared.yaml#/components/schemas/TelematikIdType'

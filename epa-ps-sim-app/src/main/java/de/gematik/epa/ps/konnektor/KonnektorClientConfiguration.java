@@ -1,6 +1,9 @@
-/*
- * Copyright 2023 gematik GmbH
- *
+/*-
+ * #%L
+ * epa-ps-sim-app
+ * %%
+ * Copyright (C) 2025 gematik GmbH
+ * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,8 +15,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * #L%
  */
-
 package de.gematik.epa.ps.konnektor;
 
 import de.gematik.epa.konnektor.KonnektorConfigurationProvider;
@@ -26,6 +33,7 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,9 +62,13 @@ public class KonnektorClientConfiguration {
 
   private KonnektorContextProvider konnektorContextProvider;
 
+  @Value("${konnektor.connection.connectOnStartup:true}")
+  protected boolean connectOnStartup;
+
   @Autowired
   public KonnektorClientConfiguration(
-      KonnektorConfigurationData konnektorConfiguration, ResourceLoader resourceLoader) {
+      final KonnektorConfigurationData konnektorConfiguration,
+      final ResourceLoader resourceLoader) {
     this.konnektorConfiguration = konnektorConfiguration;
     this.resourceLoader = resourceLoader;
   }
@@ -77,16 +89,24 @@ public class KonnektorClientConfiguration {
 
   @Bean
   public KonnektorContextProvider konnektorContextProvider() {
-    return Optional.ofNullable(konnektorContextProvider)
-        .orElse(
-            konnektorContextProvider =
-                new KonnektorContextProvider(
-                    konnektorConfigurationProvider(), konnektorInterfaceAssembly()));
+    final var konnektorContextProvider1 =
+        Optional.ofNullable(konnektorContextProvider)
+            .orElse(
+                konnektorContextProvider =
+                    new KonnektorContextProvider(
+                        konnektorConfigurationProvider(), konnektorInterfaceAssembly()));
+    konnektorInterfaceAssembly().unlockSmb(konnektorContextProvider1);
+    return konnektorContextProvider1;
   }
 
   protected KonnektorInterfacesCxfImpl createNewKonnektorInterfaceAssembly() {
-    return new KonnektorInterfacesCxfImpl(
-            filePath -> SpringUtils.findReadableResource(resourceLoader, filePath).getInputStream())
-        .update(konnektorConfiguration.connection());
+    var impl =
+        new KonnektorInterfacesCxfImpl(
+            filePath ->
+                SpringUtils.findReadableResource(resourceLoader, filePath).getInputStream());
+    if (connectOnStartup) {
+      impl = impl.update(konnektorConfiguration.connection());
+    }
+    return impl;
   }
 }
