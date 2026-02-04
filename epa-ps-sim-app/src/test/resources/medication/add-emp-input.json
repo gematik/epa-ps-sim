@@ -1,0 +1,22 @@
+{
+  "resourceType": "Parameters",
+  "id": "${json-unit.any-string}",
+  "meta": {
+    "profile": [
+      "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-op-add-emp-entry-input-parameters"
+    ]
+  },
+  "parameter": [
+    {
+      "name": "empEntry"
+    },
+    {
+      "name": "medication",
+      "part": [
+        {
+          "name": "resource"
+        }
+      ]
+    }
+  ]
+}

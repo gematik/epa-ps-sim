@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.utils;
@@ -32,7 +33,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
-import org.glassfish.jersey.internal.util.collection.MultivaluedStringMap;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,8 +47,8 @@ class RequestFilterTest {
   @BeforeEach
   void setup() {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
-    when(uriInfo.getPathParameters()).thenReturn(new MultivaluedStringMap());
-    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedStringMap());
+    when(uriInfo.getPathParameters()).thenReturn(new MultivaluedHashMap<>());
+    when(uriInfo.getQueryParameters()).thenReturn(new MultivaluedHashMap<>());
   }
 
   @AfterEach

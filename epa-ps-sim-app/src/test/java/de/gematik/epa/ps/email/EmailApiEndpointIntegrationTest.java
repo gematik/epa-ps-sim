@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.email;
@@ -30,8 +31,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static de.gematik.epa.unit.AppTestDataFactory.clearFqdnProvider;
 import static de.gematik.epa.unit.AppTestDataFactory.setupFqdnProvider;
-import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
-import static de.gematik.epa.unit.util.TestDataFactory.X_INSURANTID;
+import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -135,7 +135,7 @@ class EmailApiEndpointIntegrationTest {
             .withHeader(X_INSURANTID, equalTo(KVNR))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", contentTypeJson)
+                    .withHeader(CONTENT_TYPE_HEADER, contentTypeJson)
                     .withStatus(200)
                     .withBody(
                         "{ \"email\": \"test@example.com\", \"actor\": \"Test Actor\", \"createdAt\": \"2025-04-22T14:23:01Z\" }")));
@@ -146,7 +146,7 @@ class EmailApiEndpointIntegrationTest {
         get(urlEqualTo("/epa/basic/api/v1/emailaddress"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", contentTypeJson)
+                    .withHeader(CONTENT_TYPE_HEADER, contentTypeJson)
                     .withStatus(statusCode)
                     .withBody(body)));
   }

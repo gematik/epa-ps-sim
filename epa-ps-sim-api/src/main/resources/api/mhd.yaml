@@ -1,0 +1,724 @@
+openapi: 3.0.3
+info:
+  title: EPA MHD Service (Document Consumer - Client)
+  version: 1.0.1-b.1
+  description: openAPI Spec für den ePA MHD Service (Document Consumer - Client)
+paths:
+  /epa/testdriver/api/v1/mdh/fhir/DocumentReference:
+    get:
+      summary: Search for DocumentReference
+      tags:
+        - MhdReference
+      parameters:
+        - name: x-insurantid
+          in: header
+          required: true
+          description: Health Record Identifier
+          schema:
+            type: string
+            pattern: ^[A-Z]{1}\d{9}$
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: _format
+          in: query
+          required: false
+          description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable acccess accept: header)'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: _count
+          in: query
+          required: false
+          description: With _count, the client can specify the maximum number of elements
+            to be included on one page of the response. This means the Medication Service
+            limits the result set to this maximum specified number. If no value for
+            _count is provided, the default value set is 25.
+          schema:
+            type: string
+        - name: _offset
+          in: query
+          required: false
+          description: This URL parameter indicates the (zero-based) offset of the first
+            returned element in the collection. If no value for _offset is provided,
+            the default value set is 0.
+          schema:
+            type: integer
+        - name: _total
+          in: query
+          required: false
+          description: This parameter controls whether and how the AuditEvent Service
+            returns the total number of search results.
+          schema:
+            type: string
+        - name: _id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Aktenweit eindeutige Kennung des Dokuments auf Basis von DocumentReference.entryUUID
+        - name: _content
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Angaben für inhaltsbasierte Volltextsuche in von DocumentReference
+            referenzierten Dokumenten
+        - name: _lastUpdated
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Änderungszeitpunkt der DocumentReference
+        - name: author.given
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Vorname der dokumenterstellenden Person auf Basis von DocumentReference.author,
+            welcher dem authorPerson-Slot der DocumentEntry.author-Classification entspricht
+        - name: author.family
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Nachname der dokumenterstellenden Person auf Basis von DocumentReference.author,
+            welcher dem authorPerson-Slot der DocumentEntry.author-Classification entspricht
+        - name: author.organization.name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Name der dokumenterstellenden Leistungserbringerinstitution auf
+            Basis von DocumentReference.author, welcher dem authorInstitution-Slot der
+            DocumentEntry.author-Classification entspricht
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Grobe Klassifizierung des Dokuments auf Basis von DocumentReference.category
+        - name: contenttype
+          in: query
+          required: false
+          schema:
+            type: string
+          description: MimeType des Dokuments auf Basis von DocumentReference.content.attachment.contenttype
+        - name: creation
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Erstellungszeitpunkt des Dokuments auf Basis von DocumentReference.content.attachment.creation
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Erstellungszeitpunkt der DocumentReference
+        - name: description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Ergänzende Hinweise in Freitext auf Basis von DocumentReference.description
+        - name: event
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Die zur Erstellung des Dokuments geführten Ereignisse auf Basis
+            von DocumentReference.context.event
+        - name: facility
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Die auf Basis von DocumentReference.context.facilityTypeArt benannte
+            Art der Einrichtung des dokumentierenden Ereignisses
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Global eindeutiger Code für das Dokumentenformat  auf Basis von
+            DocumentReference.content.format
+        - name: identifier
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Aktenweit eindeutige Kennung des Dokuments auf Basis von DocumentReference.entryUUID
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sprache in der ein Dokument verfasst ist
+        - name: patient
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: Aktenkontoinhaber
+        - name: patient.identifier
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Identifikator des Aktenkontoinhabers
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Zeitraum des dokumentierenden Ereignisses auf Basis von DocumentReference.context.period
+        - name: related
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: ID-Liste mit assoziierten Dokumenten auf Basis von DocumentReference.context.related
+        - name: security-label
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Vertraulichkeitskennzeichnung/Datenkategorie des Dokuments auf
+            Basis von DocumentReference.securityLabel
+        - name: setting
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Art der Fachrichtung der erstellenden Einrichtung auf Basis von
+            DocumentReference.context.practiceSetting
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Status des Dokuments auf Basis von DocumentReference.status
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Titel des Dokuments auf Basis von DocumentReference.content.attachment.title
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Art des Dokuments auf Basis von DocumentReference.type
+      responses:
+        '200':
+          description: Search successful
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/MhdResponseBundle'
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /epa/testdriver/api/v1/mdh/fhir/DocumentReference/{id}:
+    get:
+      summary: Read a specific DocumentReference
+      tags:
+        - MhdReference
+      parameters:
+        - name: x-insurantid
+          in: header
+          required: true
+          description: Health Record Identifier
+          schema:
+            type: string
+            pattern: ^[A-Z]{1}\d{9}$
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource ID
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: _format
+          in: query
+          required: false
+          description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable acccess accept: header)'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+      responses:
+        '200':
+          description: DocumentReference successfully read
+          content:
+            application/fhir+json:
+              schema:
+                $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /epa/testdriver/api/v1/mdh/fhir/DocumentReference/_search:
+    post:
+      summary: Search for DocumentReference
+      tags:
+        - MhdReference
+      parameters:
+        - name: x-insurantid
+          in: header
+          required: true
+          description: Health Record Identifier
+          schema:
+            type: string
+            pattern: ^[A-Z]{1}\d{9}$
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: _format
+          in: query
+          required: false
+          description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable acccess accept: header)'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: _count
+          in: query
+          required: false
+          description: With _count, the client can specify the maximum number of elements
+            to be included on one page of the response. This means the Medication Service
+            limits the result set to this maximum specified number. If no value for
+            _count is provided, the default value set is 25.
+          schema:
+            type: string
+        - name: _offset
+          in: query
+          required: false
+          description: This URL parameter indicates the (zero-based) offset of the first
+            returned element in the collection. If no value for _offset is provided,
+            the default value set is 0.
+          schema:
+            type: integer
+        - name: _total
+          in: query
+          required: false
+          description: This parameter controls whether and how the AuditEvent Service
+            returns the total number of search results.
+          schema:
+            type: string
+        - name: _id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Aktenweit eindeutige Kennung des Dokuments auf Basis von DocumentReference.entryUUID
+        - name: _content
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Angaben für inhaltsbasierte Volltextsuche in von DocumentReference
+            referenzierten Dokumenten
+        - name: _lastUpdated
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Änderungszeitpunkt der DocumentReference
+        - name: author.given
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Vorname der dokumenterstellenden Person auf Basis von DocumentReference.author,
+            welcher dem authorPerson-Slot der DocumentEntry.author-Classification entspricht
+        - name: author.family
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Nachname der dokumenterstellenden Person auf Basis von DocumentReference.author,
+            welcher dem authorPerson-Slot der DocumentEntry.author-Classification entspricht
+        - name: author.organization.name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Name der dokumenterstellenden Leistungserbringerinstitution auf
+            Basis von DocumentReference.author, welcher dem authorInstitution-Slot der
+            DocumentEntry.author-Classification entspricht
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Grobe Klassifizierung des Dokuments auf Basis von DocumentReference.category
+        - name: contenttype
+          in: query
+          required: false
+          schema:
+            type: string
+          description: MimeType des Dokuments auf Basis von DocumentReference.content.attachment.contenttype
+        - name: creation
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Erstellungszeitpunkt des Dokuments auf Basis von DocumentReference.content.attachment.creation
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Erstellungszeitpunkt der DocumentReference
+        - name: description
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Ergänzende Hinweise in Freitext auf Basis von DocumentReference.description
+        - name: event
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Die zur Erstellung des Dokuments geführten Ereignisse auf Basis
+            von DocumentReference.context.event
+        - name: facility
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Die auf Basis von DocumentReference.context.facilityTypeArt benannte
+            Art der Einrichtung des dokumentierenden Ereignisses
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Global eindeutiger Code für das Dokumentenformat  auf Basis von
+            DocumentReference.content.format
+        - name: identifier
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Aktenweit eindeutige Kennung des Dokuments auf Basis von DocumentReference.entryUUID
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Sprache in der ein Dokument verfasst ist
+        - name: patient
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: Aktenkontoinhaber
+        - name: patient.identifier
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Identifikator des Aktenkontoinhabers
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+          description: Zeitraum des dokumentierenden Ereignisses auf Basis von DocumentReference.context.period
+        - name: related
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+          description: ID-Liste mit assoziierten Dokumenten auf Basis von DocumentReference.context.related
+        - name: security-label
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Vertraulichkeitskennzeichnung/Datenkategorie des Dokuments auf
+            Basis von DocumentReference.securityLabel
+        - name: setting
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Art der Fachrichtung der erstellenden Einrichtung auf Basis von
+            DocumentReference.context.practiceSetting
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Status des Dokuments auf Basis von DocumentReference.status
+        - name: title
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Titel des Dokuments auf Basis von DocumentReference.content.attachment.title
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Art des Dokuments auf Basis von DocumentReference.type
+      responses:
+        '200':
+          description: Search successful
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/MhdResponseBundle'
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /epa/testdriver/api/v1/mdh/content/{DocumentReferenceMasterIdentifier}.{file_extension}:
+    get:
+      tags:
+        - MhdReference
+      operationId: retrieveDocument_MHDSvc
+      description: Retrieve Document
+      parameters:
+        - name: x-insurantid
+          in: header
+          required: true
+          description: Health Record Identifier
+          schema:
+            type: string
+            pattern: ^[A-Z]{1}\d{9}$
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/pdf
+              - text/plain
+              - application/xml
+              - application/hl7-v3
+              - application/pkcs7-mime
+              - application/fhir+xml
+              - application/fhir+json
+              - application/json
+        - name: DocumentReferenceMasterIdentifier
+          in: path
+          required: true
+          schema:
+            type: string
+          description: DocumentReferenceMasterIdentifier
+        - name: file_extension
+          in: path
+          required: true
+          schema:
+            type: string
+          description: file_extension
+      responses:
+        '200':
+          description: Successful operation - Returns the requested document
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+            application/xml:
+              schema:
+                type: string
+            application/hl7-v3:
+              schema:
+                type: string
+            application/pkcs7-mime:
+              schema:
+                type: string
+                format: binary
+            application/fhir+xml:
+              schema:
+                type: object
+            application/fhir+json:
+              schema:
+                type: object
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '406':
+          $ref: '#/components/responses/Error406'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /epa/testdriver/api/v1/mhd/setup:
+    get:
+      summary: index test documents
+      tags:
+        - MhdReference
+      responses:
+        '200':
+          description: Indexing successful
+          content:
+            application/json:
+              schema:
+                $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /epa/testdriver/api/v1/mhd/cleanup:
+    get:
+      summary: remove test documents
+      tags:
+        - MhdReference
+      responses:
+        '200':
+          description: removal successful
+          content:
+            application/json:
+              schema:
+                $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        '500':
+          $ref: '#/components/responses/Error500'
+components:
+  schemas:
+    MhdResponseBundle:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - properties:
+            bundle:
+              type: object
+    ErrorType:
+      description: Error object with additional information about the occurred error
+      type: object
+      properties:
+        errorCode:
+          description: Error condition specifier
+          type: string
+        errorDetail:
+          description: Additional details regarding the error condition (if applicable)
+          type: string
+      required:
+        - errorCode
+  responses:
+    Error400BadRequest:
+      description: Unknown or invalid request
+      content:
+        application/json:
+          example:
+            errorCode: unknownSearchParameter
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error403:
+      description: Requestor not authorized, Requestor has no valid entitlement, Requestor role is not in the list of allowed user groups or Device registration does not exist
+      content:
+        application/json:
+          example:
+            errorCode: invalAuth, notEntitled, invalidOid or unregisteredDevice
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error404:
+      description: Requested resource not found or health record is in state UNKNOWN or INITIALIZED
+      content:
+        application/json:
+          example:
+            errorCode: notFound or noHealthRecord
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error406:
+      description: Requested mimeType not supported
+      content:
+        application/json:
+          example:
+            errorCode: notAcceptable
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error409:
+      description: Health record is in state SUSPENDED
+      content:
+        application/json:
+          example:
+            errorCode: statusMismatch
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+    Error500:
+      description: Internal Server Error
+      content:
+        application/json:
+          example:
+            errorCode: internalError
+          schema:
+            $ref: '#/components/schemas/ErrorType'
+  headers: { }
+servers:
+  - url: http://localhost:9016

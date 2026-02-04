@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,14 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.medication.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
-import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
-import static de.gematik.epa.unit.util.TestDataFactory.X_INSURANTID;
-import static de.gematik.epa.unit.util.TestDataFactory.X_USERAGENT;
+import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.http.MediaType.APPLICATION_PDF_VALUE;
 
@@ -105,11 +103,33 @@ class EmlRenderClientApiEndpointIntegrationTest extends AbstractIntegrationTest 
     var count = 10;
     var offset = 0;
     stubSuccessfulGetEmlAsFhir(requestId, date, count, offset);
-    var response = medicationApiEndpoint.getEmlAsFhir(KVNR, requestId, date, count, offset);
+    var response = medicationApiEndpoint.getEmlAsFhir(KVNR, requestId, date, count, offset, null);
 
     assertThat(response.getSuccess()).isTrue();
     assertThat(response.getStatusMessage()).isBlank();
     assertThat(response.getEml()).isNotEmpty();
+  }
+
+  @Test
+  void getEmlAsPdfShouldReturnNotSuccessWhenApiReturns404() {
+    stubHttp404GetEmlAsPdf();
+    var response = medicationApiEndpoint.getMedicationListAsPdf(KVNR);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getStatusMessage()).isNotEmpty();
+    assertThat(response.getStatusMessage()).contains("noEntries");
+  }
+
+  @Test
+  void getEmlAsXhtmlShouldReturnNotSuccessWhenApiReturns404() {
+    stubHttp404GetEmlAsXhtml();
+    var response = medicationApiEndpoint.getMedicationListAsXhtml(KVNR);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getStatusMessage()).isNotEmpty();
+    assertThat(response.getStatusMessage()).contains("noEntries");
   }
 
   private void stubSuccessfulGetEmlAsXhtml() {
@@ -119,7 +139,7 @@ class EmlRenderClientApiEndpointIntegrationTest extends AbstractIntegrationTest 
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.TEXT_HTML.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.TEXT_HTML.getMimeType())
                     .withStatus(200)
                     .withBody(
                         """
@@ -143,11 +163,24 @@ class EmlRenderClientApiEndpointIntegrationTest extends AbstractIntegrationTest 
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(403)
                     .withBody(
 """
 {"errorCode":"invalidParam","errorDetail":"Missing x-insurantid"}""")));
+  }
+
+  private void stubHttp404GetEmlAsXhtml() {
+    mockEmlRender.stubFor(
+        get(urlPathEqualTo("/epa/medication/render/v1/eml/xhtml"))
+            .withHeader(X_USERAGENT, equalTo(USER_AGENT))
+            .willReturn(
+                aResponse()
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
+                    .withStatus(403)
+                    .withBody(
+                        """
+                                            {"errorCode":"noEntries","errorDetail":"Rendering led to empty list"}""")));
   }
 
   private void stubSuccessfulGetEmlAsPdf() {
@@ -158,7 +191,7 @@ class EmlRenderClientApiEndpointIntegrationTest extends AbstractIntegrationTest 
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", APPLICATION_PDF_VALUE)
+                    .withHeader(CONTENT_TYPE_HEADER, APPLICATION_PDF_VALUE)
                     .withStatus(200)
                     .withBody(pdfBody)));
   }
@@ -169,11 +202,24 @@ class EmlRenderClientApiEndpointIntegrationTest extends AbstractIntegrationTest 
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(403)
                     .withBody(
                         """
                     {"errorCode":"invalidParam","errorDetail":"Missing x-insurantid"}""")));
+  }
+
+  private void stubHttp404GetEmlAsPdf() {
+    mockEmlRender.stubFor(
+        get(urlPathEqualTo("/epa/medication/render/v1/eml/pdf"))
+            .withHeader(X_USERAGENT, equalTo(USER_AGENT))
+            .willReturn(
+                aResponse()
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
+                    .withStatus(404)
+                    .withBody(
+                        """
+                                        {"errorCode":"noEntries","errorDetail":"Rendering led to empty list"}""")));
   }
 
   @SneakyThrows
@@ -190,5 +236,60 @@ class EmlRenderClientApiEndpointIntegrationTest extends AbstractIntegrationTest 
             .withQueryParam("_count", equalTo(String.valueOf(count)))
             .withQueryParam("_offset", equalTo(String.valueOf(offset)))
             .willReturn(aResponse().withStatus(200).withBody(eml)));
+  }
+
+  private void stubSuccessfulGetEmpAsPdf() {
+    byte[] pdfBody = new byte[] {0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34};
+    mockEmlRender.stubFor(
+        get(urlPathEqualTo("/epa/medication/render/v1/emp/pdf"))
+            .withHeader(X_INSURANTID, equalTo(KVNR))
+            .withHeader(X_USERAGENT, equalTo(USER_AGENT))
+            .willReturn(
+                aResponse()
+                    .withHeader(CONTENT_TYPE_HEADER, APPLICATION_PDF_VALUE)
+                    .withStatus(200)
+                    .withBody(pdfBody)));
+  }
+
+  @Test
+  void shouldReturnEmpAsPdf() {
+    stubSuccessfulGetEmpAsPdf();
+    var response = medicationApiEndpoint.getMedicationPlanAsPdf(KVNR);
+
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getStatusMessage()).isBlank();
+
+    byte[] emlBytes = response.getEmp();
+    String pdfHeader = new String(emlBytes, 0, 4);
+
+    assertThat(pdfHeader).isEqualTo("%PDF");
+  }
+
+  private void stubHttp403GetEmpAsPdf(String errorCode, String errorDetail) {
+    mockEmlRender.stubFor(
+        get(urlPathEqualTo("/epa/medication/render/v1/emp/pdf"))
+            .withHeader(X_USERAGENT, equalTo(USER_AGENT))
+            .willReturn(
+                aResponse()
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
+                    .withStatus(403)
+                    .withBody(errorCode + ", " + errorDetail)));
+  }
+
+  @Test
+  void getEmpAsPdfShouldReturnNotSuccessWhenApiReturns403() {
+    String errorCode = "stub error Code";
+    String errorDetail = "stub error Detail";
+    stubHttp403GetEmpAsPdf(errorCode, errorDetail);
+    var response = medicationApiEndpoint.getMedicationPlanAsPdf(KVNR);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getStatusMessage()).isNotEmpty();
+    assertThat(response.getStatusMessage()).contains("stub error Code");
+    assertThat(response.getStatusMessage()).contains("stub error Detail");
+    assertThat(response.getEmp()).isNull();
+
+    assertThat(response.getStatusMessage()).doesNotContain("Wrong Error Code / Detail Example");
   }
 }

@@ -1,0 +1,71 @@
+openapi: 3.0.1
+info:
+  title: POPP Token Generator API
+  version: 1.0.0
+  description: API for generating POPP tokens
+paths:
+  /epa/testdriver/api/v1/popp/token:
+    post:
+      summary: Generates POPP tokens
+      operationId: generateToken
+      tags:
+        - PoppTokenReference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenGenerationParams'
+      responses:
+        '200':
+          description: Successfully generated POPP tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPoppTokenResponseDto'
+components:
+  schemas:
+    TokenGenerationParams:
+      type: object
+      description: Parameters for token generation
+      properties:
+        tokenParamsList:
+          type: array
+          description: List of token parameters
+          items:
+            $ref: '#/components/schemas/TokenParams'
+    TokenParams:
+      type: object
+      description: Parameters for a single token
+      properties:
+        proofMethod:
+          type: string
+          description: Method of proof
+        patientProofTime:
+          type: number
+        iat:
+          type: number
+          description: Issued at time, epoch
+        patientId:
+          type: string
+        insurerId:
+          type: string
+        actorId:
+          type: string
+        actorProfessionOid:
+          type: string
+          description: 1.2.276.0.76.4.32
+      required:
+        - patientId
+        - insurerId
+        - actorId
+        - actorProfessionOid
+    GetPoppTokenResponseDto:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            tokenResults:
+              type: array
+              items:
+                type: string

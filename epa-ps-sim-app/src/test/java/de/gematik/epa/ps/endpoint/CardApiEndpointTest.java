@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.endpoint;
@@ -43,11 +44,12 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.client.RestTestClient;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -58,11 +60,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
     })
 @ActiveProfiles("test")
 @Slf4j
+@AutoConfigureRestTestClient
 class CardApiEndpointTest {
 
   @LocalServerPort private int port;
 
-  @Autowired private TestRestTemplate restTemplate;
+  @Autowired private RestTestClient restTestClient;
 
   @MockitoBean private SmbInformationProvider smbInformationProvider;
 
@@ -79,9 +82,11 @@ class CardApiEndpointTest {
 
     // Act
     final var response =
-        this.restTemplate.getForObject(
-            "http://localhost:" + port + "/services/epa/testdriver/api/v1/cards",
-            GetCardsInfoResponseDTO.class);
+        this.restTestClient
+            .get()
+            .uri("http://localhost:" + port + "/services/epa/testdriver/api/v1/cards")
+            .exchange()
+            .returnResult(GetCardsInfoResponseDTO.class);
 
     // Assert
     final var expectedResponse =
@@ -109,6 +114,6 @@ class CardApiEndpointTest {
                         .iccsn(hbaInformation.iccsn())
                         .telematikId(hbaInformation.telematikId())));
 
-    assertThat(response).isEqualTo(expectedResponse);
+    assertThat(response.getResponseBody()).isEqualTo(expectedResponse);
   }
 }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,19 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.utils;
+
+import static de.gematik.epa.medication.client.EmlRenderClient.ALLOWED_FHIR_FORMATS;
 
 import jakarta.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 public class MiscUtils {
@@ -57,5 +61,16 @@ public class MiscUtils {
   @Nullable
   public static String extractInsurantId(Map<String, List<String>> headers, String key) {
     return headers.getOrDefault(key, List.of()).stream().findFirst().orElse(null);
+  }
+
+  public static String expectedFormat(String format) {
+    if (!StringUtils.isBlank(format)) {
+      format = format.replace(" ", "+"); // normalize
+      if (!ALLOWED_FHIR_FORMATS.contains(format)) {
+        throw new IllegalArgumentException("Unsupported format: " + format);
+      }
+    }
+
+    return format;
   }
 }

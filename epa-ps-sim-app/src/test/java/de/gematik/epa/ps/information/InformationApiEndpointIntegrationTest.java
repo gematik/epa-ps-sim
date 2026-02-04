@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.information;
@@ -27,6 +28,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static de.gematik.epa.information.InformationService.NO_RECORD_FOUND;
 import static de.gematik.epa.information.InformationService.UNKNOWN_ERROR;
+import static de.gematik.epa.unit.util.TestDataFactory.CONTENT_TYPE_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -178,7 +180,7 @@ class InformationApiEndpointIntegrationTest extends AbstractIntegrationTest {
         get(urlEqualTo("/information/api/v1/ehr/consentdecisions"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(501)));
 
     getGetRecordStatus();
@@ -197,7 +199,7 @@ class InformationApiEndpointIntegrationTest extends AbstractIntegrationTest {
         post(urlEqualTo("/information/api/v1/userexperience"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(201)));
 
     // when
@@ -221,7 +223,7 @@ class InformationApiEndpointIntegrationTest extends AbstractIntegrationTest {
         post(urlEqualTo("/information/api/v1/userexperience"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withBody(body)
                     .withStatus(400)));
 
@@ -243,7 +245,7 @@ class InformationApiEndpointIntegrationTest extends AbstractIntegrationTest {
         post(urlEqualTo("/information/api/v1/userexperience"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(501)));
 
     // when

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.unit.util;
@@ -27,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.gematik.epa.api.testdriver.dto.request.AppendDocumentsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.FindRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.PutDocumentsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.ReadVSDRequest;
@@ -74,8 +76,12 @@ public class ResourceLoader {
   public static final String FIND_BY_REFERENCE_ID_REQUEST =
       REQUEST_PATH + "findByReferenceIdRequest.json";
 
+  public static final String GET_DOCUMENTS_AND_ASSOCIATIONS_REQUEST =
+      REQUEST_PATH + "getDocumentsAndAssociationsRequest.json";
+
   public static final String FIND_BY_COMMENT_REQUEST = REQUEST_PATH + "findByCommentRequest.json";
   public static final String REPLACE_DOCUMENTS_REQUEST = REQUEST_PATH + "replaceDocuments.json";
+  public static final String APPEND_DOCUMENTS_REQUEST = REQUEST_PATH + "appendDocuments.json";
 
   public static final String SIGN_DOCUMENT_REQUEST = REQUEST_PATH + "signDocumentRequest.json";
   public static final String READ_VSD_REQUEST = REQUEST_PATH + "readVSDRequest.json";
@@ -101,6 +107,10 @@ public class ResourceLoader {
       loadDtoFromJsonFile(ReplaceDocumentsRequestDTO.class, REPLACE_DOCUMENTS_REQUEST);
 
   @Getter(lazy = true)
+  private static final AppendDocumentsRequestDTO appendDocumentsRequest =
+      loadDtoFromJsonFile(AppendDocumentsRequestDTO.class, APPEND_DOCUMENTS_REQUEST);
+
+  @Getter(lazy = true)
   private static final FindRequestDTO findByPatientIdRequest =
       loadDtoFromJsonFile(FindRequestDTO.class, FIND_BY_PATIENT_ID_REQUEST);
 
@@ -111,6 +121,10 @@ public class ResourceLoader {
   @Getter(lazy = true)
   private static final FindRequestDTO findByCommentRequest =
       loadDtoFromJsonFile(FindRequestDTO.class, FIND_BY_COMMENT_REQUEST);
+
+  @Getter(lazy = true)
+  private static final FindRequestDTO getDocumentsAndAssociationsRequest =
+      loadDtoFromJsonFile(FindRequestDTO.class, GET_DOCUMENTS_AND_ASSOCIATIONS_REQUEST);
 
   @Getter(lazy = true)
   private static final SignDocumentRequest signDocumentRequest =

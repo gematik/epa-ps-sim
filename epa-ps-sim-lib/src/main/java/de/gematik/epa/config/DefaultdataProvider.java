@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.config;
@@ -42,7 +43,7 @@ import lombok.experimental.Delegate;
 @Accessors(fluent = true)
 public class DefaultdataProvider {
 
-  @Getter @Setter @Delegate private DefaultdataInterface defaultdata;
+  @Getter @Setter @Delegate private DefaultdataInterface defaultData;
 
   @Getter(lazy = true)
   private final Boolean useFirstDocumentAuthorForSubmissionSet =
@@ -64,10 +65,6 @@ public class DefaultdataProvider {
               .map(SubmissionSetAuthorConfiguration::authorInstitutionConfiguration)
               .map(AuthorInstitutionConfiguration::authorInstitution)
               .orElse(null);
-
-  public Author getSubmissionSetAuthorFromDocuments(List<? extends DocumentInterface> documents) {
-    return getFirstValidAuthorFromDocuments(documents);
-  }
 
   public Author getSubmissionSetAuthorFromConfig(
       AuthorInstitutionProvider authorInstitutionProvider) {
@@ -91,13 +88,18 @@ public class DefaultdataProvider {
         null);
   }
 
-  private Author getFirstValidAuthorFromDocuments(
+  public Author getFirstValidAuthorFromDocuments(
       @NonNull List<? extends DocumentInterface> documents) {
-    return documents.stream()
-        .map(DocumentInterface::documentMetadata)
-        .map(DocumentMetadata::author)
-        .flatMap(Collection::stream)
-        .findFirst()
-        .orElse(null);
+    var author =
+        documents.stream()
+            .map(DocumentInterface::documentMetadata)
+            .map(DocumentMetadata::author)
+            .flatMap(Collection::stream)
+            .findFirst()
+            .orElse(null);
+    if (author == null) {
+      throw new NullPointerException("No valid author found in documents");
+    }
+    return author;
   }
 }

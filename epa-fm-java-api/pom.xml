@@ -6,14 +6,14 @@
     <parent>
         <groupId>de.gematik.epa</groupId>
         <artifactId>epa-ps-sim</artifactId>
-        <version>2.1.0</version>
+        <version>2.2.0</version>
     </parent>
 
     <artifactId>epa-fm-java-api</artifactId>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cxf-xjc.version>4.1.0</cxf-xjc.version>
+        <cxf-xjc.version>4.1.2</cxf-xjc.version>
         <xml.bind.jaxb.version>2.3.1</xml.bind.jaxb.version>
         <jaxb.fluent.api.version>3.0</jaxb.fluent.api.version>
         <generated.sources.path>${project.build.directory}/generated-sources</generated.sources.path>

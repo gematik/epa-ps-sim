@@ -5,7 +5,7 @@
     <parent>
         <artifactId>epa-ps-sim</artifactId>
         <groupId>de.gematik.epa</groupId>
-        <version>2.1.0</version>
+        <version>2.2.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,7 @@
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-        <swagger.v3.version>2.2.33</swagger.v3.version>
+        <swagger.v3.version>2.2.42</swagger.v3.version>
         <yaml.directory>${project.build.directory}/generated-sources/resources/openapi</yaml.directory>
         <yaml.zip.path>${project.build.directory}/${project.artifactId}-${project.version}-openapi.zip</yaml.zip.path>
         <api.config.dir>${project.build.directory}/config</api.config.dir>
@@ -47,7 +47,7 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-            <version>4.1.2</version>
+            <version>4.1.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
-            <version>0.2.6</version>
+            <version>0.2.8</version>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -122,7 +122,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>create-archive</id>
@@ -152,14 +152,16 @@
                         </goals>
                         <configuration>
                             <items>
+                                <item>audit</item>
                                 <item>authentication</item>
+                                <item>card</item>
+                                <item>consentDecision</item>
+                                <item>email</item>
+                                <item>entitlement</item>
                                 <item>information</item>
                                 <item>medication</item>
-                                <item>entitlement</item>
-                                <item>email</item>
-                                <item>consentDecision</item>
-                                <item>audit</item>
-                                <item>card</item>
+                                <item>mhd</item>
+                                <item>poppToken</item>
                                 <item>vau</item>
                             </items>
                             <pluginExecutors>
@@ -167,7 +169,7 @@
                                     <plugin>
                                         <groupId>org.openapitools</groupId>
                                         <artifactId>openapi-generator-maven-plugin</artifactId>
-                                        <version>7.13.0</version>
+                                        <version>7.19.0</version>
                                     </plugin>
                                     <goal>generate</goal>
                                     <configuration>
@@ -193,7 +195,7 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.13.0</version>
+                <version>7.19.0</version>
                 <executions>
                     <execution>
                         <goals>

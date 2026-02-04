@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.medication;
@@ -49,6 +50,9 @@ public class MedicationsSearch {
   private OffsetDateTime authoredon;
   private String requester;
   private String whenhandedover;
-  private String prescription;
   private String performer;
+  private String prescription;
+  private String ingredientCode;
+  private String context;
+  private String format;
 }

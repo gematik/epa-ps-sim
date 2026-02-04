@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.unit.util;
@@ -134,6 +135,10 @@ public class TestDataFactory {
   public static final String USER_AGENT = "PSSIM123456789012345/1.2.4";
   public static final String X_INSURANTID = "x-insurantid";
   public static final String X_USERAGENT = "x-useragent";
+  public static final String ACCEPT_FHIR_JSON = "application/fhir+json";
+  public static final String X_REQUESTING_ORGANIZATION = "X-Requesting-Organization";
+  public static final String ACCEPT_HEADER = "Accept";
+  public static final String CONTENT_TYPE_HEADER = "Content-Type";
 
   private static final String ALLGEMEINE_VERSICHERUNGSDATEN =
       "H4sIAAAAAAAAAM1S30/CMBD+V5a9s+tmZpgpJQjGEASM6DS+LHU7toXtZtaChr/ejhCzEYKvvrS57+77kV758LssrB3WKq9oYLsOsy2kuEpySgf2dLXs9ft+0HN9eyj4yzgaFUWKJeaEYcOJM6y3lKpEaqS3+YNl1EgN7EzrzxuAL+WYaanzjZMgrCXsVFI2B+x8x7Ot8WQehXdPq+lyMbANYtwF/xXWWLeqxkbF2VbvBb/FNCcSHvMYc70rDkeAzyplguhaYtqQO+UGiYyIcFngMxZcBxzO9rusQiIlWJsXQTE5YbR7fCFLFM+otHU/C3urkMMB4aOPGuOMDpP/MB5cyAen9dllvG+V1Puc1pXqFMans0yStRZ+S+QItTnRMY3Rjw781+WjYC6H5uZwaRJOraETDLrfCv7+y+IHk1/iLhwDAAA=";
@@ -530,33 +535,6 @@ public class TestDataFactory {
     return new DocumentConnectionConfigurationMutableForTest().address(createAddress());
   }
 
-  @Data
-  @Accessors(fluent = true)
-  static class DocumentConnectionConfigurationMutableForTest
-      implements DocumentConnectionConfigurationMutable {
-
-    private AddressConfig address;
-  }
-
-  @Data
-  @Accessors(fluent = true)
-  static class KonnektorConnectionConfigurationMutableForTest
-      implements KonnektorConnectionConfigurationMutable {
-
-    private AddressConfig address;
-    private BasicAuthenticationConfig basicAuthentication;
-    private ProxyAddressConfig proxyAddress;
-    private TlsConfig tlsConfig;
-  }
-
-  @Data
-  @Accessors(fluent = true)
-  static class KonnektorConfigurationMutableForTest implements KonnektorConfigurationMutable {
-
-    private KonnektorConnectionConfigurationMutable connection;
-    private Context context;
-  }
-
   public static Response simulateInbound(final Response asOutbound) {
     final Response toReturn = spy(asOutbound);
     doAnswer(answer((Class<?> type) -> readEntity(toReturn, type)))
@@ -602,5 +580,32 @@ public class TestDataFactory {
   public static HbaInformation createHbaInformation() {
     return new HbaInformation(
         "telematikId2", "iccsn2", "cardHolderName2", "cardHandle2", List.of("professionOids"));
+  }
+
+  @Data
+  @Accessors(fluent = true)
+  static class DocumentConnectionConfigurationMutableForTest
+      implements DocumentConnectionConfigurationMutable {
+
+    private AddressConfig address;
+  }
+
+  @Data
+  @Accessors(fluent = true)
+  static class KonnektorConnectionConfigurationMutableForTest
+      implements KonnektorConnectionConfigurationMutable {
+
+    private AddressConfig address;
+    private BasicAuthenticationConfig basicAuthentication;
+    private ProxyAddressConfig proxyAddress;
+    private TlsConfig tlsConfig;
+  }
+
+  @Data
+  @Accessors(fluent = true)
+  static class KonnektorConfigurationMutableForTest implements KonnektorConfigurationMutable {
+
+    private KonnektorConnectionConfigurationMutable connection;
+    private Context context;
   }
 }

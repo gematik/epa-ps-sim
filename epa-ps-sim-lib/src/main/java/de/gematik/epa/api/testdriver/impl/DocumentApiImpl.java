@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.api.testdriver.impl;
 
 import de.gematik.epa.LibIheXdsMain;
 import de.gematik.epa.api.testdriver.DocumentsApi;
+import de.gematik.epa.api.testdriver.dto.request.AppendDocumentsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.DeleteObjectsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.FindRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.PutDocumentsRequestDTO;
@@ -41,6 +43,7 @@ import de.gematik.epa.document.DocumentInterfaceAssembly;
 import de.gematik.epa.document.client.DocumentServiceClient;
 import de.gematik.epa.ihe.model.document.DocumentInterface;
 import de.gematik.epa.ihe.model.request.DeleteObjectsRequest;
+import de.gematik.epa.ihe.model.request.DocumentAppendRequest;
 import de.gematik.epa.ihe.model.request.DocumentReplaceRequest;
 import de.gematik.epa.ihe.model.request.DocumentSubmissionRequest;
 import de.gematik.epa.ihe.model.request.FindRequest;
@@ -187,6 +190,26 @@ public class DocumentApiImpl implements DocumentsApi {
     }
   }
 
+  @Override
+  public ResponseDTO appendDocuments(String insurantId, AppendDocumentsRequestDTO request) {
+    log.info("Running operation appendDocuments");
+    try (var documentServiceClient = newDocumentServiceClient()) {
+
+      var provideAndRegisterRequest =
+          LibIheXdsMain.convertDocumentAppendRequest(
+              toDocumentAppendRequest(request, documentServiceClient));
+
+      var provideAndRegisterResponse =
+          documentServiceClient.documentRepositoryProvideAndRegisterDocumentSetB(
+              provideAndRegisterRequest);
+
+      return toResponseDTO(provideAndRegisterResponse);
+    } catch (Exception e) {
+      log.error("Operation appendDocuments failed with an exception", e);
+      return KonnektorUtils.fromThrowable(e);
+    }
+  }
+
   // region private
 
   private FindObjectsResponseDTO handleFaultInFindDocuments(WebServiceException f) {
@@ -254,7 +277,7 @@ public class DocumentApiImpl implements DocumentsApi {
     return new SubmissionSetMetadata(
         Collections.singletonList(
             Boolean.TRUE.equals(defaultdataProvider.useFirstDocumentAuthorForSubmissionSet())
-                ? defaultdataProvider.getSubmissionSetAuthorFromDocuments(documentSet)
+                ? defaultdataProvider.getFirstValidAuthorFromDocuments(documentSet)
                 : defaultdataProvider.getSubmissionSetAuthorFromConfig(
                     documentServiceClient.authorInstitutionProvider())),
         null,
@@ -298,6 +321,14 @@ public class DocumentApiImpl implements DocumentsApi {
   private DocumentReplaceRequest toDocumentReplaceRequest(
       ReplaceDocumentsRequestDTO request, DocumentServiceClient documentServiceClient) {
     return new DocumentReplaceRequest(
+        insurantIdBuilder.buildInsurantId(request.kvnr()),
+        request.documentSets(),
+        getSubmissionSetMetadata(request.documentSets(), documentServiceClient));
+  }
+
+  private DocumentAppendRequest toDocumentAppendRequest(
+      AppendDocumentsRequestDTO request, DocumentServiceClient documentServiceClient) {
+    return new DocumentAppendRequest(
         insurantIdBuilder.buildInsurantId(request.kvnr()),
         request.documentSets(),
         getSubmissionSetMetadata(request.documentSets(), documentServiceClient));

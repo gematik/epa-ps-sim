@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.authentication;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static de.gematik.epa.unit.util.TestDataFactory.SMB_AUT_TELEMATIK_ID;
-import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
-import static de.gematik.epa.unit.util.TestDataFactory.X_USERAGENT;
+import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.epa.ps.endpoint.AuthenticationApiEndpoint;
@@ -66,13 +65,13 @@ class AuthenticationApiEndpointIntegrationTest extends AbstractIntegrationTest {
     mockAuthzServer.stubFor(
         post(urlEqualTo("/epa/authz/v1/send_authcode_sc"))
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
-            .withHeader("Content-Type", equalTo("application/json"))
+            .withHeader(CONTENT_TYPE_HEADER, equalTo("application/json"))
             .withRequestBody(
                 matchingJsonPath("$.authorizationCode", containing("eyJ"))
                     .and(matchingJsonPath("$.clientAttest", containing("eyJ"))))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(500)
                     .withBody(
                         "{\"errorCode\":\"internalError\",\"errorDetail\":\""
@@ -95,7 +94,7 @@ class AuthenticationApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withBody(
                         String.format(
                             """

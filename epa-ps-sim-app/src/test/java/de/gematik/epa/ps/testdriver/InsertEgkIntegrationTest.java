@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.testdriver;
@@ -94,10 +95,11 @@ class InsertEgkIntegrationTest extends AbstractTestdriverIntegrationTest {
         performTestdriverCall("/patient/insert-egk", new InsertEgk().patient(MY_HAPPY_LITTLE_KVNR));
 
     // then
-    assertThat(insertEgkResponse.getStatusCode().is2xxSuccessful()).isTrue();
+    assertThat(insertEgkResponse.getStatus().is2xxSuccessful()).isTrue();
+    assertThat(insertEgkResponse.getResponseBody()).isNotNull();
 
     // wait for action to complete
-    final UUID insertEgkActionId = insertEgkResponse.getBody().getId();
+    final UUID insertEgkActionId = insertEgkResponse.getResponseBody().getId();
     val insertEgkAction = kobActionsService.retrieveAction(insertEgkActionId);
     insertEgkAction.retrieveCompletionFuture().get();
 
@@ -111,13 +113,15 @@ class InsertEgkIntegrationTest extends AbstractTestdriverIntegrationTest {
     // check the actions API
     val retrievedAction =
         performTestdriverCall("/actions/" + insertEgkActionId, null, Action.class, HttpMethod.GET);
-    assertThat(retrievedAction.getStatusCode().is2xxSuccessful()).isTrue();
-    assertThat(retrievedAction.getBody().getId()).isEqualTo(insertEgkActionId);
-    assertThat(retrievedAction.getBody().getStatus()).isEqualTo(Status.SUCCESSFUL);
+    assertThat(retrievedAction.getStatus().is2xxSuccessful()).isTrue();
+    assertThat(retrievedAction.getResponseBody()).isNotNull();
+    assertThat(retrievedAction.getResponseBody().getId()).isEqualTo(insertEgkActionId);
+    assertThat(retrievedAction.getResponseBody().getStatus()).isEqualTo(Status.SUCCESSFUL);
 
     val actionsList =
         performTestdriverCall(
             "/actions", null, new ParameterizedTypeReference<List<Action>>() {}, HttpMethod.GET);
-    assertThat(actionsList.getBody()).anyMatch(action -> action.getId().equals(insertEgkActionId));
+    assertThat(actionsList.getResponseBody())
+        .anyMatch(action -> action.getId().equals(insertEgkActionId));
   }
 }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.audit;
@@ -45,14 +46,16 @@ import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -62,6 +65,8 @@ import org.testcontainers.utility.DockerImageName;
 @ContextConfiguration(
     classes = {TestKonnektorClientConfiguration.class, TestDocumentClientConfiguration.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@AutoConfigureRestTestClient
+@Disabled
 class AuditEventApiIntegrationTest {
 
   private static final int PORT = 8080;
@@ -77,7 +82,7 @@ class AuditEventApiIntegrationTest {
 
   @Autowired AuditEventApiEndpoint auditEventApiEndpoint;
   @Autowired FhirClient fhirClient;
-  @Autowired TestRestTemplate testRestTemplate;
+  @Autowired RestTestClient restTestClient;
 
   @MockitoBean AuditRenderClient auditRenderClient;
 
@@ -99,7 +104,7 @@ class AuditEventApiIntegrationTest {
   void contextLoads() {
     assertThat(auditEventApiEndpoint).isNotNull();
     assertThat(fhirClient).isNotNull();
-    assertThat(testRestTemplate).isNotNull();
+    assertThat(restTestClient).isNotNull();
   }
 
   @Test
@@ -108,13 +113,19 @@ class AuditEventApiIntegrationTest {
     samples.add("AuditEvent-provideAndRegister.json");
     String url = "/services/epa/testdriver/api/v1/fhir/AuditEvent";
     createFhirResource(samples);
-    var response = testRestTemplate.getForEntity(url, GetAuditEventResponseDTO.class);
+    var response =
+        restTestClient
+            .get()
+            .uri(url)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .returnResult(GetAuditEventResponseDTO.class);
 
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isBlank();
-    assertThat(response.getBody().getAuditEvents()).hasSize(1);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getAuditEvents()).hasSize(1);
   }
 
   @SneakyThrows

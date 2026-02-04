@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.client;
@@ -49,7 +50,7 @@ import org.slf4j.event.Level;
 @Getter
 public class JaxRsClientWrapper<T> {
   public static final String ERROR_MESSAGE = "serverUrl for underlying API must not be null";
-  private static final long TEN_SECONDS = 10000L;
+  private static final long TIMEOUT_IN_MILLISECONDS = 30000L;
   private final T serviceApi;
   private final LoggingFeature loggingFeature = LoggingFeatureUtil.newLoggingFeature(Level.INFO);
   private final String userAgent;
@@ -93,8 +94,14 @@ public class JaxRsClientWrapper<T> {
 
     var api = factoryBean.create(serviceClass);
     WebClient.client(api).accept("application/json");
-    WebClient.getConfig(api).getHttpConduit().getClient().setConnectionTimeout(TEN_SECONDS);
-    WebClient.getConfig(api).getHttpConduit().getClient().setReceiveTimeout(TEN_SECONDS);
+    WebClient.getConfig(api)
+        .getHttpConduit()
+        .getClient()
+        .setConnectionTimeout(TIMEOUT_IN_MILLISECONDS);
+    WebClient.getConfig(api)
+        .getHttpConduit()
+        .getClient()
+        .setReceiveTimeout(TIMEOUT_IN_MILLISECONDS);
 
     if (StringUtils.isNotBlank(proxyHost) && StringUtils.isNotBlank(proxyPort)) {
       WebClient.getConfig(api).getHttpConduit().getClient().setProxyServer(proxyHost);

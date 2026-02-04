@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-api
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.api.testdriver;
 
+import de.gematik.epa.api.testdriver.dto.request.AppendDocumentsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.DeleteObjectsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.FindRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.PutDocumentsRequestDTO;
@@ -255,4 +257,42 @@ public interface DocumentsApi {
           @HeaderParam("x-insurantid")
           String insurantId,
       UpdateDocumentsRequestDTO request);
+
+  /**
+   * Dokument im Aktenkonto mit anderem Dokument verknüpfen
+   *
+   * @param request Aktenkonte-ID (KVNR), entryUUIDs der zu verknüpfenden Dokumente und die neuen
+   *     Dokumente samt Metadaten
+   * @return Statusinformationen über den Ablauf der Operation
+   */
+  @POST
+  @Path("/appendDocuments")
+  @Consumes({"application/json"})
+  @Produces({"application/json"})
+  @Operation(
+      summary = "Dokument(e) in einem Aktenkonto verknüpfen",
+      description =
+          "Mittels dieser Operation können Dokumente in einem Aktenkonto miteinander verknüpft werden",
+      requestBody =
+          @RequestBody(
+              required = true,
+              description =
+                  "Dokument(e) und deren Metadaten, die andere Dokumente, identifiziert durch ihre entryUUID, verknüpfen sollen",
+              content =
+                  @Content(schema = @Schema(implementation = AppendDocumentsRequestDTO.class))),
+      responses = {
+        @ApiResponse(
+            responseCode = "200",
+            description =
+                "Statusinformation, ob die Operation erfolgreich ausgeführt werden konnte.",
+            content = @Content(schema = @Schema(implementation = ResponseDTO.class)))
+      })
+  ResponseDTO appendDocuments(
+      @Parameter(
+              description = "Header parameter for insurant ID",
+              required = true,
+              example = "X110123123")
+          @HeaderParam("x-insurantid")
+          String insurantId,
+      AppendDocumentsRequestDTO request);
 }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.konnektor.client;
@@ -142,8 +143,51 @@ public class CardServiceClient extends KonnektorServiceClient {
 
   // endregion private
 
+  /**
+   * Verifies PIN for all cards of the specified type.
+   *
+   * @param cardTypeType the type of card
+   * @param pinType the type of PIN
+   */
+  public void verifyPins(CardTypeType cardTypeType, String pinType) {
+    verifyPin(cardTypeType, pinType, true);
+  }
+
+  /**
+   * Verifies PIN for a single card of the specified type.
+   *
+   * @param cardTypeType the type of card
+   * @param pinType the type of PIN
+   */
   public void verifyPin(CardTypeType cardTypeType, String pinType) {
-    String cardHandle = eventServiceClient.getCardHandle(cardTypeType);
+    verifyPin(cardTypeType, pinType, false);
+  }
+
+  /**
+   * Verifies PIN for cards of the specified type.
+   *
+   * @param cardTypeType the type of card
+   * @param pinType the type of PIN
+   * @param verifyAll if true, verifies PIN for all cards of the specified type; otherwise, verifies
+   *     only the first card
+   */
+  protected void verifyPin(CardTypeType cardTypeType, String pinType, boolean verifyAll) {
+    if (verifyAll) {
+      eventServiceClient
+          .getCardHandles(cardTypeType)
+          .forEach(
+              cardHandle -> {
+                log.debug("Verifying PIN for card handle: {}", cardHandle);
+                doPinVerification(pinType, cardHandle);
+                log.debug("PIN verification completed for card handle: {}", cardHandle);
+              });
+    } else {
+      String cardHandle = eventServiceClient.getCardHandle(cardTypeType);
+      doPinVerification(pinType, cardHandle);
+    }
+  }
+
+  private void doPinVerification(String pinType, String cardHandle) {
     GetPinStatusResponse getResponse = getPinStatusResponse(cardHandle, pinType);
     PinStatusEnum pinStatus = getResponse.getPinStatus();
     BigInteger leftTries = getResponse.getLeftTries();
@@ -193,5 +237,9 @@ public class CardServiceClient extends KonnektorServiceClient {
 
   public void verifySmb() {
     verifyPin(CardTypeType.SM_B, PIN_SMC);
+  }
+
+  public void verifySmbs() {
+    verifyPins(CardTypeType.SM_B, PIN_SMC);
   }
 }

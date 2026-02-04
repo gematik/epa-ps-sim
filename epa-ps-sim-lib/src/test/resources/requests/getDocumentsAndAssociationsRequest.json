@@ -1,0 +1,10 @@
+{
+  "returnType": "LeafClass",
+  "query": "GetDocumentsAndAssociations",
+  "queryData": {
+    "XDSDocumentEntryEntryUUID": [
+      "urn:uuid:80da52bd-df14-4e99-a72b-2623673cab9c"
+    ]
+  },
+  "kvnr": "X110435031"
+}

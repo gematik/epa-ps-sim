@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.medication;
@@ -30,6 +31,7 @@ import ca.uhn.fhir.rest.api.SearchTotalModeEnum;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.IQuery;
 import ca.uhn.fhir.rest.gclient.IUntypedQuery;
+import ca.uhn.fhir.rest.gclient.TokenClientParam;
 import ca.uhn.fhir.rest.param.DateParam;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
@@ -37,6 +39,7 @@ import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.medication.client.EmlRenderClient;
 import de.gematik.epa.utils.FhirUtils;
+import de.gematik.epa.utils.MiscUtils;
 import java.util.List;
 import java.util.UUID;
 import lombok.NonNull;
@@ -59,6 +62,7 @@ public class MedicationService {
     this.emlRenderClient = emlRenderClient;
 
     FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
+    FhirUtils.setXmlParser(fhirClient.getContext().newXmlParser());
   }
 
   private static GetMedicationResponseDTO fromThrowableToMedicationResponse(
@@ -121,6 +125,95 @@ public class MedicationService {
     return query;
   }
 
+  private static GetMedicationHistoryResponseDTO notFoundResponse(
+      MedicationsHistorySearch searchRequest) {
+    final GetMedicationHistoryResponseDTO response = new GetMedicationHistoryResponseDTO();
+    var statusMessage = "No medication historyBundle found for ID: " + searchRequest.id();
+    log.warn(statusMessage);
+    return response.success(Boolean.TRUE).statusMessage(statusMessage);
+  }
+
+  private static IQuery<IBaseBundle> addContext(
+      MedicationsSearch searchRequest, IQuery<IBaseBundle> baseQuery) {
+    if (StringUtils.isNotEmpty(searchRequest.context())) {
+      baseQuery =
+          baseQuery.and(new TokenClientParam("context").exactly().code(searchRequest.context()));
+    }
+    return baseQuery;
+  }
+
+  private static IQuery<IBaseBundle> addInclude(
+      MedicationsSearch searchRequest, IQuery<IBaseBundle> baseQuery) {
+    if (StringUtils.isNotEmpty(searchRequest.include())) {
+      String[] includes = searchRequest.include().trim().split(",");
+      for (String include : includes) {
+        baseQuery = baseQuery.include(new Include(include.trim()));
+      }
+    }
+    return baseQuery;
+  }
+
+  private static IQuery<IBaseBundle> addRevInclude(
+      MedicationsSearch searchRequest, IQuery<IBaseBundle> baseQuery) {
+    if (StringUtils.isNotEmpty(searchRequest.revinclude())) {
+      String[] revIncludes = searchRequest.revinclude().trim().split(",");
+      for (String include : revIncludes) {
+        baseQuery = baseQuery.revInclude(new Include(include.trim()));
+      }
+    }
+    return baseQuery;
+  }
+
+  private static IQuery<IBaseBundle> addLastUpdated(
+      MedicationsSearch searchRequest, IQuery<IBaseBundle> baseQuery) {
+    if (StringUtils.isNotEmpty(searchRequest.lastUpdated())) {
+      baseQuery =
+          baseQuery.lastUpdated(new DateRangeParam(new DateParam(searchRequest.lastUpdated())));
+    }
+    return baseQuery;
+  }
+
+  private static IQuery<IBaseBundle> addRxPrescription(
+      MedicationsSearch searchRequest, IQuery<IBaseBundle> baseQuery) {
+    if (StringUtils.isNotEmpty(searchRequest.prescription())) {
+      String prescription = searchRequest.prescription();
+      // Check if format is system|value
+      if (prescription.contains("|")) {
+        String[] parts = prescription.split("\\|", 2);
+        baseQuery =
+            baseQuery.and(
+                new TokenClientParam("rx-prescription")
+                    .exactly()
+                    .systemAndIdentifier(parts[0], parts[1]));
+      } else {
+        // Search by value only
+        baseQuery =
+            baseQuery.and(
+                new TokenClientParam("rx-prescription").exactly().identifier(prescription));
+      }
+    }
+    return baseQuery;
+  }
+
+  private static IQuery<IBaseBundle> addIngredientCode(
+      MedicationsSearch searchRequest, IQuery<IBaseBundle> baseQuery) {
+    if (StringUtils.isNotEmpty(searchRequest.ingredientCode())) {
+      String ingredientCode = searchRequest.ingredientCode();
+      if (ingredientCode.contains("|")) {
+        String[] parts = ingredientCode.split("\\|", 2);
+        baseQuery =
+            baseQuery.and(
+                new TokenClientParam("ingredient-code")
+                    .exactly()
+                    .systemAndCode(parts[0], parts[1]));
+      } else {
+        baseQuery =
+            baseQuery.and(new TokenClientParam("ingredient-code").exactly().code(ingredientCode));
+      }
+    }
+    return baseQuery;
+  }
+
   public GetMedicationResponseDTO executeGetById(String id) {
     final Medication medication;
     try {
@@ -154,10 +247,13 @@ public class MedicationService {
               .count(searchRequest.count())
               .offset(searchRequest.offset())
               .totalMode(FhirUtils.calculateTotalMode(searchRequest.total()));
-      if (StringUtils.isNotEmpty(searchRequest.lastUpdated())) {
-        baseQuery =
-            baseQuery.lastUpdated(new DateRangeParam(new DateParam(searchRequest.lastUpdated())));
-      }
+      baseQuery = addLastUpdated(searchRequest, baseQuery);
+      baseQuery = addRevInclude(searchRequest, baseQuery);
+      baseQuery = addInclude(searchRequest, baseQuery);
+      baseQuery = addContext(searchRequest, baseQuery);
+      baseQuery = addIngredientCode(searchRequest, baseQuery);
+      baseQuery = addRxPrescription(searchRequest, baseQuery);
+
       final Bundle result = baseQuery.returnBundle(Bundle.class).execute();
 
       var response = new GetMedicationResponseDTO();
@@ -167,7 +263,10 @@ public class MedicationService {
         return response.success(Boolean.TRUE).statusMessage(statusMessage);
       }
 
-      return response.success(Boolean.TRUE).medications(FhirUtils.extractData(result));
+      var expectedFormat = MiscUtils.expectedFormat(searchRequest.format());
+      return response
+          .success(Boolean.TRUE)
+          .medications(FhirUtils.extractData(result, expectedFormat));
     } catch (Exception e) {
       log.error("Error occurred during search for medication", e);
       return fromThrowableToMedicationResponse(e);
@@ -199,19 +298,25 @@ public class MedicationService {
       final String insurantId,
       final String date,
       final Integer count,
-      final Integer offset) {
+      final Integer offset,
+      final String format) {
     var response = new GetEmlAsFhirResponseDTO();
-    var renderResponse =
-        emlRenderClient.getMedicationList(
-            insurantId,
-            requestId != null ? requestId.toString() : UUID.randomUUID().toString(),
-            date,
-            count,
-            offset);
-    response
-        .success(renderResponse.httpStatusCode() == 200)
-        .eml(renderResponse.emlAsFhir())
-        .statusMessage(renderResponse.errorMessage());
+    try {
+      var renderResponse =
+          emlRenderClient.getMedicationList(
+              insurantId,
+              requestId != null ? requestId.toString() : UUID.randomUUID().toString(),
+              date,
+              count,
+              offset,
+              MiscUtils.expectedFormat(format));
+      response
+          .success(renderResponse.httpStatusCode() == 200)
+          .eml(renderResponse.emlAsFhir())
+          .statusMessage(renderResponse.errorMessage());
+    } catch (IllegalArgumentException e) {
+      response.success(Boolean.FALSE).statusMessage(e.getMessage());
+    }
     return response;
   }
 
@@ -233,11 +338,10 @@ public class MedicationService {
               .count(medicationRequestsSearch.count())
               .offset(medicationRequestsSearch.offset());
 
-      if (StringUtils.isNotEmpty(medicationRequestsSearch.lastUpdated())) {
-        query =
-            query.lastUpdated(
-                new DateRangeParam(new DateParam(medicationRequestsSearch.lastUpdated())));
-      }
+      query = addLastUpdated(medicationRequestsSearch, query);
+      query = addInclude(medicationRequestsSearch, query);
+      query = addRevInclude(medicationRequestsSearch, query);
+
       var result = query.totalMode(SearchTotalModeEnum.NONE).returnBundle(Bundle.class).execute();
 
       if (result.getEntry().isEmpty()) {
@@ -246,7 +350,7 @@ public class MedicationService {
         log.warn(statusMessage);
         return response.success(Boolean.TRUE).statusMessage(statusMessage);
       }
-      return response.success(Boolean.TRUE).medicationRequests(FhirUtils.extractData(result));
+      return response.success(Boolean.TRUE).medicationRequests(FhirUtils.extractDataAsJson(result));
     } catch (Exception e) {
       log.error("Error occurred during search for medication request", e);
       return fromThrowableToMedicationRequestResponse(e);
@@ -293,11 +397,7 @@ public class MedicationService {
       var whenHandedOver = medicationDispensesSearch.whenhandedover();
       query = filterByWhenHandedOver(whenHandedOver, query);
 
-      if (StringUtils.isNotEmpty(medicationDispensesSearch.lastUpdated())) {
-        query =
-            query.lastUpdated(
-                new DateRangeParam(new DateParam(medicationDispensesSearch.lastUpdated())));
-      }
+      query = addLastUpdated(medicationDispensesSearch, query);
       var result = query.totalMode(SearchTotalModeEnum.NONE).returnBundle(Bundle.class).execute();
 
       if (result.getEntry().isEmpty()) {
@@ -306,7 +406,9 @@ public class MedicationService {
         log.warn(statusMessage);
         return response.success(Boolean.TRUE).statusMessage(statusMessage);
       }
-      return response.success(Boolean.TRUE).medicationDispenses(FhirUtils.extractData(result));
+      return response
+          .success(Boolean.TRUE)
+          .medicationDispenses(FhirUtils.extractDataAsJson(result));
     } catch (Exception e) {
       log.error("Error occurred during search for medication dispense", e);
       return fromThrowableToMedicationDispenseResponse(e);
@@ -350,11 +452,7 @@ public class MedicationService {
               .revInclude(new Include(MEDICATION_DISPENSE_MEDICATION))
               .totalMode(FhirUtils.calculateTotalMode(searchRequest.total()));
 
-      if (StringUtils.isNotEmpty(searchRequest.lastUpdated())) {
-        iBaseBundleIQuery =
-            iBaseBundleIQuery.lastUpdated(
-                new DateRangeParam(new DateParam(searchRequest.lastUpdated())));
-      }
+      iBaseBundleIQuery = addLastUpdated(searchRequest, iBaseBundleIQuery);
 
       final Bundle medications = iBaseBundleIQuery.returnBundle(Bundle.class).execute();
 
@@ -396,6 +494,49 @@ public class MedicationService {
     } catch (Exception e) {
       log.error("Error occurred during get medication list as FHIR", e);
       return fromThrowableToMedicationListAsFhirResponse(e);
+    }
+  }
+
+  public GetMedicationPlanAsPdfResponseDTO getEmpAsPdf(String insurantId) {
+    GetMedicationPlanAsPdfResponseDTO medicationPlanAsPdfRespDTO =
+        new GetMedicationPlanAsPdfResponseDTO();
+    var renderResponse = emlRenderClient.getEmpAsPdf(insurantId);
+    medicationPlanAsPdfRespDTO
+        .success(renderResponse.httpStatusCode() == 200)
+        .emp(renderResponse.pdf())
+        .statusMessage(renderResponse.errorMessage());
+    return medicationPlanAsPdfRespDTO;
+  }
+
+  public GetMedicationHistoryResponseDTO searchMedicationsHistory(
+      MedicationsHistorySearch searchRequest) {
+    try {
+      var expectedFormat = MiscUtils.expectedFormat(searchRequest.format());
+      final GetMedicationHistoryResponseDTO response = new GetMedicationHistoryResponseDTO();
+      var client = fhirClient.getClient();
+
+      var historyBundle =
+          client
+              .history()
+              .onInstance(new IdType("Medication", searchRequest.id()))
+              .returnBundle(Bundle.class)
+              .execute();
+
+      if (historyBundle.getEntry().isEmpty()) {
+        return notFoundResponse(searchRequest);
+      }
+
+      return response
+          .success(Boolean.TRUE)
+          .medications(FhirUtils.extractData(historyBundle, expectedFormat));
+    } catch (ResourceNotFoundException e) {
+      return notFoundResponse(searchRequest);
+    } catch (Exception e) {
+      var statusMsgBuilder = new StringBuilder().append(e);
+
+      return new GetMedicationHistoryResponseDTO()
+          .success(false)
+          .statusMessage(appendCauses(e, statusMsgBuilder).toString());
     }
   }
 }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.testdriver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import de.gematik.epa.api.psTestdriver.dto.Action;
 import de.gematik.epa.api.psTestdriver.dto.EmlRetrieval;
@@ -68,10 +70,11 @@ class DownloadEmlIntegrationTest extends AbstractTestdriverIntegrationTest {
             new EmlRetrieval().emlType(EmlType.PDF).patient(MY_HAPPY_LITTLE_KVNR));
 
     // then
-    assertThat(insertEgkResponse.getStatusCode().is2xxSuccessful()).isTrue();
+    assertThat(insertEgkResponse.getStatus().is2xxSuccessful()).isTrue();
+    assertNotNull(insertEgkResponse.getResponseBody());
 
     // wait for action to complete
-    final UUID downloadEmlActionId = insertEgkResponse.getBody().getId();
+    final UUID downloadEmlActionId = insertEgkResponse.getResponseBody().getId();
     val insertEgkAction = kobActionsService.retrieveAction(downloadEmlActionId);
     insertEgkAction.retrieveCompletionFuture().get();
 
@@ -79,15 +82,16 @@ class DownloadEmlIntegrationTest extends AbstractTestdriverIntegrationTest {
     val retrievedAction =
         performTestdriverCall(
             "/actions/" + downloadEmlActionId, null, Action.class, HttpMethod.GET);
-    assertThat(retrievedAction.getStatusCode().is2xxSuccessful()).isTrue();
-    assertThat(retrievedAction.getBody().getId()).isEqualTo(downloadEmlActionId);
-    assertThat(retrievedAction.getBody().getStatus()).isEqualTo(Status.SUCCESSFUL);
+    assertThat(retrievedAction.getStatus().is2xxSuccessful()).isTrue();
+    assertNotNull(retrievedAction.getResponseBody());
+    assertThat(retrievedAction.getResponseBody().getId()).isEqualTo(downloadEmlActionId);
+    assertThat(retrievedAction.getResponseBody().getStatus()).isEqualTo(Status.SUCCESSFUL);
 
     // and take screenshot
     val screenshotResponse =
         performTestdriverCall(
             "/actions/" + downloadEmlActionId + "/screenshot", null, byte[].class, HttpMethod.GET);
-    assertThat(screenshotResponse.getStatusCode().is2xxSuccessful()).isTrue();
-    assertThat(screenshotResponse.getBody()).isNotNull().hasSizeGreaterThan(100);
+    assertThat(screenshotResponse.getStatus().is2xxSuccessful()).isTrue();
+    assertThat(screenshotResponse.getResponseBody()).isNotNull().hasSizeGreaterThan(100);
   }
 }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.konnektor.cxf;
@@ -138,6 +139,15 @@ public class KonnektorInterfacesCxfImpl implements KonnektorInterfaceAssembly {
       throws InternalServerErrorException {
     try (CardServiceClient cardServiceClient = new CardServiceClient(contextProvider, this)) {
       cardServiceClient.verifySmb();
+    } catch (Exception e) {
+      throw new InternalServerErrorException("Operation unlockSmb failed with an exception", e);
+    }
+  }
+
+  public void unlockSmbs(KonnektorContextProvider contextProvider)
+      throws InternalServerErrorException {
+    try (CardServiceClient cardServiceClient = new CardServiceClient(contextProvider, this)) {
+      cardServiceClient.verifySmbs();
     } catch (Exception e) {
       throw new InternalServerErrorException("Operation unlockSmb failed with an exception", e);
     }

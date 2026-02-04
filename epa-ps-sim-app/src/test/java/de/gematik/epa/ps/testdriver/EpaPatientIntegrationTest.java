@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.testdriver;
@@ -32,7 +33,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 
 class EpaPatientIntegrationTest extends AbstractTestdriverIntegrationTest {
@@ -61,21 +61,23 @@ class EpaPatientIntegrationTest extends AbstractTestdriverIntegrationTest {
               """;
     stubGetConsentDecisions(mockInformationServer1, 200, consentPermit);
 
-    var headers = new HttpHeaders();
-    headers.set("kvnr", MY_HAPPY_LITTLE_KVNR);
     val getStatusAction =
-        performTestdriverCall(endpoint, null, Action.class, HttpMethod.POST, headers);
+        performTestdriverCall(
+            endpoint, "{}", Action.class, HttpMethod.POST, "kvnr", MY_HAPPY_LITTLE_KVNR);
 
     // wait for action to complete
-    val actionId = getStatusAction.getBody().getId();
+    Assertions.assertThat(getStatusAction.getResponseBody()).isNotNull();
+    val actionId = getStatusAction.getResponseBody().getId();
     val action = kobActionsService.retrieveAction(actionId);
     action.retrieveCompletionFuture().get();
 
     // check the actions API
     val retrievedAction =
         performTestdriverCall("/actions/" + actionId, null, Action.class, HttpMethod.GET);
-    Assertions.assertThat(retrievedAction.getStatusCode().is2xxSuccessful()).isTrue();
-    Assertions.assertThat(retrievedAction.getBody().getId()).isEqualTo(actionId);
-    Assertions.assertThat(retrievedAction.getBody().getStatus()).isEqualTo(Status.SUCCESSFUL);
+    Assertions.assertThat(retrievedAction.getStatus().is2xxSuccessful()).isTrue();
+    Assertions.assertThat(retrievedAction.getResponseBody()).isNotNull();
+    Assertions.assertThat(retrievedAction.getResponseBody().getId()).isEqualTo(actionId);
+    Assertions.assertThat(retrievedAction.getResponseBody().getStatus())
+        .isEqualTo(Status.SUCCESSFUL);
   }
 }
