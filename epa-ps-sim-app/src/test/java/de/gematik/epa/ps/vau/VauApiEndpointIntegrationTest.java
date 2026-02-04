@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.vau;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static de.gematik.epa.unit.util.TestDataFactory.CONTENT_TYPE_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.epa.ps.endpoint.VauApiEndpoint;
@@ -48,7 +50,7 @@ class VauApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withBody(
                         """
                     {
@@ -69,7 +71,7 @@ class VauApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .willReturn(
                 aResponse()
                     .withStatus(404)
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withBody(
                         """
                                         {

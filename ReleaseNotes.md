@@ -2,6 +2,33 @@
 
 # Release notes ePA-PS-Sim
 
+## Release 2.2.0 (contains ePA 3.0.5 and dgMP parts of upcoming ePA 3.1.3)
+
+### added
+- PoPP (Proof of Patient Presence) Token Generator and test scenario support
+- Medication Service (eML/eMP):
+    - `$add-eml-entry`: add new eML entries
+    - `$update-emp-entry`: update eMP entries
+    - `$cancel-eml-entry`: cancel eML entries
+    - `$link-emp`: add eML-eMP linking
+    - `$medication-plan-log`: retrieve eMP logs (provenance)
+    - Get eMP as PDF via new render API endpoint
+- Document Management: support AppendDocument
+- MHD Service: support Find Document References (MHD search)
+- VAU: New endpoint `/destroy` to destroy VAU session
+- Format query parameter (`_format`) to control format of eML as FHIR (JSON or XML)
+    - Test driver endpoint `/medication/render/eml/fhir` extended with `format` parameter
+    - Default format remains JSON when no parameter is provided
+
+### changed
+- Upgraded epa-medication-render API client to support new operations
+- Auto-unlock all SMBs on application start
+- Enhanced logging (card info, null author handling)
+- Upgraded version of lib-ihe-xds to 3.0.3 (https://github.com/gematik/lib-ihe-xds/blob/main/ReleaseNotes.md#release-303)
+- Upgraded spring-boot version to 4.0.2
+- Upgraded spring-web version to 7.0.3
+
+
 ## Release 2.1.0
 ### added
 - Added copyright header to all files

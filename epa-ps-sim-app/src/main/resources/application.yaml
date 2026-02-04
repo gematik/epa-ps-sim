@@ -109,11 +109,19 @@ audit-server:
 eml-render:
   protocol: http
   host: localhost
-  port: 8081
+  port: 8085
   pdf-path: /epa/medication/render/v1/eml/pdf
+  emp-pdf-path: /epa/medication/render/v1/emp/pdf
   xhtml-path: /epa/medication/render/v1/eml/xhtml
   medication-list-path: /epa/medication/api/v1/fhir/$medication-list
+  add-eml-entry-path: /epa/medication/api/v1/fhir/MedicationStatement/$add-eml-entry
+  add-emp-entry-path: /epa/medication/api/v1/fhir/$add-emp-entry
+  cancel-eml-entry-path: /epa/medication/api/v1/fhir/MedicationStatement/{id}/$cancel-eml-entry
+  update-emp-entry-path: /epa/medication/api/v1/fhir/$update-emp-entry
+  medication-plan-log-path: /epa/medication/api/v1/fhir/$medication-plan-log
+  link-emp-path: /epa/medication/api/v1/fhir/MedicationStatement/{id}/$link-emp
   user-agent: ${EML_USER_AGENT:PSSIM123456789012345/1.2.4}
+
 
 auth-server:
   protocol: http
@@ -172,3 +180,15 @@ audit-render:
   port: 8090
   pdf-path: /epa/audit/render/v1/pdf
   user-agent: ${AUDIT_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+mhd-server:
+  protocol: http
+  host: ${MHD_SERVER_HOST:localhost}
+  port: ${MHD_SERVER_PORT:8080}
+  user-agent: ${MHD_USER_AGENT:PSSIM123456789012345/1.2.4}
+
+popp-token-server:
+  protocol: http
+  host: ${POPP_TOKEN_SERVER_HOST:localhost}
+  port: ${POPP_TOKEN_SERVER_PORT:8090}
+  user-agent: ${POPP_TOKEN_USER_AGENT:PSSIM123456789012345/1.2.4}

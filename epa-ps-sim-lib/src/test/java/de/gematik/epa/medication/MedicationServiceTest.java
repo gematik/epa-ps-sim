@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.medication;
@@ -41,10 +42,7 @@ import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationDispenseListDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationListAsFhirResponseDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationRequestListDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationResponseDTO;
+import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.medication.client.EmlRenderClient;
 import de.gematik.epa.medication.client.RenderResponse;
@@ -330,11 +328,15 @@ class MedicationServiceTest {
               "type": "searchset",
               "total": 16
                 }""";
+    var format = "application/fhir+json";
     var renderResponse = new RenderResponse().emlAsFhir(bundle).httpStatusCode(200);
-    when(emlRenderClient.getMedicationList(insurantId, requestId.toString(), date, count, offset))
+
+    when(emlRenderClient.getMedicationList(
+            insurantId, requestId.toString(), date, count, offset, format))
         .thenReturn(renderResponse);
 
-    var response = medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset);
+    var response =
+        medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset, format);
 
     assertThat(response.getSuccess()).isTrue();
     assertThat(response.getEml()).isEqualTo(bundle);
@@ -349,11 +351,14 @@ class MedicationServiceTest {
     var count = 10;
     var offset = 0;
     var errorMessage = "Invalid date format";
+    var format = "application/fhir+json";
     var renderResponse = new RenderResponse().errorMessage(errorMessage).httpStatusCode(400);
-    when(emlRenderClient.getMedicationList(insurantId, requestId.toString(), date, count, offset))
+    when(emlRenderClient.getMedicationList(
+            insurantId, requestId.toString(), date, count, offset, format))
         .thenReturn(renderResponse);
 
-    var response = medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset);
+    var response =
+        medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset, format);
 
     assertThat(response.getSuccess()).isFalse();
     assertThat(response.getStatusMessage()).isEqualTo(errorMessage);
@@ -777,6 +782,177 @@ class MedicationServiceTest {
     verify(query, never()).and(any());
   }
 
+  @Test
+  void getEmlAsFhirShouldHandleInvalidFormat() {
+    var requestId = UUID.randomUUID();
+    var insurantId = "insurantId";
+    var date = "2023-01-01";
+    var count = 10;
+    var offset = 0;
+    var format = "invalid/format";
+
+    var response =
+        medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset, format);
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationWithContextFilter() {
+    // given
+    Integer count = 10;
+    Integer offset = 0;
+    String status = "active";
+    String contextQuery = "EMP";
+
+    final var executable = mockSearchMedications(Medication.class);
+    final Bundle resultBundle = new Bundle();
+    final Bundle.BundleEntryComponent bc = new Bundle.BundleEntryComponent();
+    final Medication medication = getMedication();
+    bc.setResource(medication);
+    resultBundle.addEntry(bc);
+    when(executable.execute()).thenReturn(resultBundle);
+
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    final GetMedicationResponseDTO response =
+        medicationService.searchMedications(
+            new MedicationsSearch()
+                .status(status)
+                .context(contextQuery)
+                .count(count)
+                .offset(offset));
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationWithPrescription() {
+    // given
+    Integer count = 10;
+    Integer offset = 0;
+    String status = "active";
+    String prescription = "160.000.000.000.000.00";
+
+    final var executable = mockSearchMedications(Medication.class);
+    final Bundle resultBundle = new Bundle();
+    final Bundle.BundleEntryComponent bc = new Bundle.BundleEntryComponent();
+    final Medication medication = getMedication();
+    bc.setResource(medication);
+    resultBundle.addEntry(bc);
+    when(executable.execute()).thenReturn(resultBundle);
+
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    final GetMedicationResponseDTO response =
+        medicationService.searchMedications(
+            new MedicationsSearch()
+                .status(status)
+                .prescription(prescription)
+                .count(count)
+                .offset(offset));
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationWithPrescriptionSystemAndValue() {
+    // given
+    Integer count = 10;
+    Integer offset = 0;
+    String status = "active";
+    String prescription = "https://gematik.de/fhir/sid/erp-prescription-id|160.000.000.000.000.00";
+
+    final var executable = mockSearchMedications(Medication.class);
+    final Bundle resultBundle = new Bundle();
+    final Bundle.BundleEntryComponent bc = new Bundle.BundleEntryComponent();
+    final Medication medication = getMedication();
+    bc.setResource(medication);
+    resultBundle.addEntry(bc);
+    when(executable.execute()).thenReturn(resultBundle);
+
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    final GetMedicationResponseDTO response =
+        medicationService.searchMedications(
+            new MedicationsSearch()
+                .status(status)
+                .prescription(prescription)
+                .count(count)
+                .offset(offset));
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationWithIngredientCode() {
+    // given
+    Integer count = 10;
+    Integer offset = 0;
+    String ingredientCode = "24421";
+
+    final var executable = mockSearchMedications(Medication.class);
+    final Bundle resultBundle = new Bundle();
+    final Bundle.BundleEntryComponent bc = new Bundle.BundleEntryComponent();
+    final Medication medication = getMedication();
+    bc.setResource(medication);
+    resultBundle.addEntry(bc);
+    when(executable.execute()).thenReturn(resultBundle);
+
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    final GetMedicationResponseDTO response =
+        medicationService.searchMedications(
+            new MedicationsSearch().ingredientCode(ingredientCode).count(count).offset(offset));
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationWithIngredientCodeSystemAndValue() {
+    // given
+    Integer count = 10;
+    Integer offset = 0;
+    String ingredientCode = "http://fhir.de/CodeSystem/ask|24421";
+
+    final var executable = mockSearchMedications(Medication.class);
+    final Bundle resultBundle = new Bundle();
+    final Bundle.BundleEntryComponent bc = new Bundle.BundleEntryComponent();
+    final Medication medication = getMedication();
+    bc.setResource(medication);
+    resultBundle.addEntry(bc);
+    when(executable.execute()).thenReturn(resultBundle);
+
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    final GetMedicationResponseDTO response =
+        medicationService.searchMedications(
+            new MedicationsSearch().ingredientCode(ingredientCode).count(count).offset(offset));
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
   private <T extends IBaseResource> IClientExecutable mockSearchMedications(
       final Class<T> resourceClass) {
     final IGenericClient client = mock(IGenericClient.class);
@@ -795,6 +971,8 @@ class MedicationServiceTest {
     when(where.offset(anyInt())).thenReturn(where);
     when(where.totalMode(any(SearchTotalModeEnum.class))).thenReturn(where);
     when(where.lastUpdated(any(DateRangeParam.class))).thenReturn(where);
+    when(where.revInclude(any(Include.class))).thenReturn(where);
+    when(where.include(any(Include.class))).thenReturn(where);
 
     final IQuery<Bundle> bundle = mock(IQuery.class);
     when(where.returnBundle(Bundle.class)).thenReturn(bundle);
@@ -817,5 +995,211 @@ class MedicationServiceTest {
     when(resource.withId(id)).thenReturn(resourceIReadExecutable);
     when(resourceIReadExecutable.encodedJson()).thenReturn(resourceIReadExecutable);
     return resourceIReadExecutable;
+  }
+
+  @Test
+  void shouldGetEmpAsPdf() {
+    /*
+    Uses a mock of the EmlRenderClient.
+    The method from the mock is configurated to return a RenderResponse which is configured
+    to contain the given byte array and the 200 HTTP status code.
+
+    This way the method actually returns the ResponseRender with the preconfigured values.
+    This can then be tested.
+
+    The MedicationService.getEmpAsPdf calls upon the EmlRenderClient.getEmpAsPdf method.
+     */
+
+    // given
+    final String insurantId = "12345";
+    final byte[] pdf = new byte[] {1, 2, 3};
+    when(emlRenderClient.getEmpAsPdf(insurantId))
+        .thenReturn(new RenderResponse().pdf(pdf).httpStatusCode(200));
+
+    // when
+    var result = medicationService.getEmpAsPdf(insurantId);
+
+    // then
+    assertThat(result.getEmp()).isEqualTo(pdf);
+    assertThat(result.getSuccess()).isTrue();
+
+    final byte[] wrongBytes = new byte[] {4, 5, 6};
+
+    assertThat(result.getEmp()).isNotEqualTo(wrongBytes);
+  }
+
+  @Test
+  void shouldSearchMedicationsHistoryWithJsonFormat() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    var historyBundle = new Bundle();
+    var entry = new Bundle.BundleEntryComponent();
+    var medication = new Medication();
+    medication.setId(id);
+    entry.setResource(medication);
+    historyBundle.addEntry(entry);
+
+    when(historyTyped.execute()).thenReturn(historyBundle);
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    var response = medicationService.searchMedicationsHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getMedications().getFirst()).isEqualTo(medicationAsString);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationsHistoryWithXmlFormat() {
+    // given
+    var id = "123";
+    var format = "application/fhir+xml";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    var historyBundle = new Bundle();
+    var entry = new Bundle.BundleEntryComponent();
+    var medication = new Medication();
+    medication.setId(id);
+    entry.setResource(medication);
+    historyBundle.addEntry(entry);
+
+    when(historyTyped.execute()).thenReturn(historyBundle);
+
+    var xmlParser = mock(IParser.class);
+    when(context.newXmlParser()).thenReturn(xmlParser);
+    FhirUtils.setXmlParser(xmlParser);
+    when(xmlParser.encodeResourceToString(medication)).thenReturn("<Medication/>");
+
+    // when
+    var response = medicationService.searchMedicationsHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getMedications().getFirst()).isEqualTo("<Medication/>");
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void searchMedicationsHistoryShouldReturnSuccessAndStatusMessageWhenNoResourceFound() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    var historyBundle = new Bundle();
+    when(historyTyped.execute()).thenReturn(historyBundle);
+
+    // when
+    var response = medicationService.searchMedicationsHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+    assertThat(response.getStatusMessage()).contains("No medication historyBundle found for ID");
+  }
+
+  @Test
+  void searchMedicationsHistoryShouldHandleException() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    when(historyTyped.execute()).thenThrow(InvalidResponseException.class);
+
+    // when
+    var response = medicationService.searchMedicationsHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getMedications()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  void searchMedicationsHistoryShouldHandleResourceNotFoundException() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    when(historyTyped.execute()).thenThrow(ResourceNotFoundException.class);
+
+    // when
+    var response = medicationService.searchMedicationsHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+    assertThat(response.getStatusMessage()).contains("No medication historyBundle found for ID");
   }
 }

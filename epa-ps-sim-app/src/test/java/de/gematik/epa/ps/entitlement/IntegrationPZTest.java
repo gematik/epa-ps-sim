@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.entitlement;
@@ -34,6 +35,7 @@ import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
 import static de.gematik.epa.unit.util.TestDataFactory.X_INSURANTID;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import de.gematik.epa.api.entitlement.client.EntitlementsApi;
 import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementRequestDTO;
@@ -53,13 +55,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -69,6 +69,7 @@ import org.testcontainers.utility.DockerImageName;
 @ContextConfiguration(
     classes = {TestDocumentClientConfiguration.class, TestKonnektorClientConfiguration.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@AutoConfigureRestTestClient
 class IntegrationPZTest {
 
   private static final int PORT = 8080;
@@ -85,7 +86,7 @@ class IntegrationPZTest {
                   .forStatusCode(200)
                   .withStartupTimeout(Duration.ofMinutes(5L)));
 
-  @Autowired TestRestTemplate testRestTemplate;
+  @Autowired RestTestClient restTestClient;
   @Autowired EntitlementApiEndpoint entitlementApiEndpoint;
   @Autowired EntitlementService entitlementService;
   @Autowired private TestKonnektorClientConfiguration testKonnektorClientConfiguration;
@@ -126,7 +127,7 @@ class IntegrationPZTest {
   void contextLoads() {
     assertThat(entitlementApiEndpoint).isNotNull();
     assertThat(jaxRsClientWrapper).isNotNull();
-    assertThat(testRestTemplate).isNotNull();
+    assertThat(restTestClient).isNotNull();
   }
 
   @Test
@@ -136,22 +137,22 @@ class IntegrationPZTest {
             .kvnr(KVNR)
             .telematikId(SMB_AUT_TELEMATIK_ID)
             .testCase(PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV);
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.set(X_INSURANTID, KVNR);
-    HttpEntity<PostEntitlementRequestDTO> entity = new HttpEntity<>(request, httpHeaders);
     assertDoesNotThrow(
         () -> {
           var response =
-              testRestTemplate.postForEntity(
-                  "/services/epa/testdriver/api/v1/entitlements",
-                  entity,
-                  PostEntitlementResponseDTO.class);
-          assertThat(response.getStatusCode().value()).isEqualTo(200);
-
-          assertThat(response.getBody())
-              .isNotNull()
+              restTestClient
+                  .post()
+                  .uri("/services/epa/testdriver/api/v1/entitlements")
+                  .header(X_INSURANTID, KVNR)
+                  .body(request)
+                  .exchange()
+                  .expectStatus()
+                  .isOk()
+                  .returnResult(PostEntitlementResponseDTO.class);
+          assertThat(response.getResponseBody())
               .satisfies(
                   body -> {
+                    assertNotNull(body);
                     assertThat(body.getSuccess()).isTrue();
                     assertThat(body.getStatusMessage()).isBlank();
                     assertThat(body.getValidTo()).isNotNull();
@@ -166,22 +167,20 @@ class IntegrationPZTest {
             .kvnr(KVNR)
             .telematikId(SMB_AUT_TELEMATIK_ID)
             .testCase(PostEntitlementRequestDTO.TestCaseEnum.NO_HCV);
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.set(X_INSURANTID, KVNR);
-    HttpEntity<PostEntitlementRequestDTO> entity = new HttpEntity<>(request, httpHeaders);
-
-    ResponseEntity<PostEntitlementResponseDTO> response =
-        testRestTemplate.postForEntity(
-            "/services/epa/testdriver/api/v1/entitlements",
-            entity,
-            PostEntitlementResponseDTO.class);
-
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-
-    assertThat(response.getBody())
-        .isNotNull()
+    var response =
+        restTestClient
+            .post()
+            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .header(X_INSURANTID, KVNR)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .returnResult(PostEntitlementResponseDTO.class);
+    assertThat(response.getResponseBody())
         .satisfies(
             body -> {
+              assertNotNull(body);
               assertThat(body.getSuccess()).isFalse();
               assertThat(body.getStatusMessage())
                   .contains("409", "hcvMissing", "hcv-value of jwt does not exist");
@@ -196,22 +195,20 @@ class IntegrationPZTest {
             .kvnr(KVNR)
             .telematikId(SMB_AUT_TELEMATIK_ID)
             .testCase(PostEntitlementRequestDTO.TestCaseEnum.INVALID_HCV_HASH);
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.set(X_INSURANTID, KVNR);
-    HttpEntity<PostEntitlementRequestDTO> entity = new HttpEntity<>(request, httpHeaders);
-
-    ResponseEntity<PostEntitlementResponseDTO> response =
-        testRestTemplate.postForEntity(
-            "/services/epa/testdriver/api/v1/entitlements",
-            entity,
-            PostEntitlementResponseDTO.class);
-
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-
-    assertThat(response.getBody())
-        .isNotNull()
+    var response =
+        restTestClient
+            .post()
+            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .header(X_INSURANTID, KVNR)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .returnResult(PostEntitlementResponseDTO.class);
+    assertThat(response.getResponseBody())
         .satisfies(
             body -> {
+              assertNotNull(body);
               assertThat(body.getSuccess()).isFalse();
               assertThat(body.getStatusMessage())
                   .contains(
@@ -229,22 +226,20 @@ class IntegrationPZTest {
             .kvnr(KVNR)
             .telematikId(SMB_AUT_TELEMATIK_ID)
             .testCase(PostEntitlementRequestDTO.TestCaseEnum.INVALID_HCV_STRUCTURE);
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.set(X_INSURANTID, KVNR);
-    HttpEntity<PostEntitlementRequestDTO> entity = new HttpEntity<>(request, httpHeaders);
-
-    ResponseEntity<PostEntitlementResponseDTO> response =
-        testRestTemplate.postForEntity(
-            "/services/epa/testdriver/api/v1/entitlements",
-            entity,
-            PostEntitlementResponseDTO.class);
-
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-
-    assertThat(response.getBody())
-        .isNotNull()
+    var response =
+        restTestClient
+            .post()
+            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .header(X_INSURANTID, KVNR)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .returnResult(PostEntitlementResponseDTO.class);
+    assertThat(response.getResponseBody())
         .satisfies(
             body -> {
+              assertNotNull(body);
               assertThat(body.getSuccess()).isFalse();
               assertThat(body.getStatusMessage())
                   .contains("400", "malformedRequest", "HCV in JWT is not a valid base64 string");
@@ -261,23 +256,20 @@ class IntegrationPZTest {
             .kvnr(KVNR)
             .telematikId(SMB_AUT_TELEMATIK_ID)
             .testCase(PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV);
-
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.set(X_INSURANTID, KVNR);
-    HttpEntity<PostEntitlementRequestDTO> entity = new HttpEntity<>(request, httpHeaders);
-
-    ResponseEntity<PostEntitlementResponseDTO> response =
-        testRestTemplate.postForEntity(
-            "/services/epa/testdriver/api/v1/entitlements",
-            entity,
-            PostEntitlementResponseDTO.class);
-
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-
-    assertThat(response.getBody())
-        .isNotNull()
+    var response =
+        restTestClient
+            .post()
+            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .header(X_INSURANTID, KVNR)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .returnResult(PostEntitlementResponseDTO.class);
+    assertThat(response.getResponseBody())
         .satisfies(
             body -> {
+              assertNotNull(body);
               assertThat(body.getSuccess()).isFalse();
               assertThat(body.getStatusMessage())
                   .contains("400", "malformedRequest", "eGK is locked");
@@ -296,22 +288,20 @@ class IntegrationPZTest {
             .kvnr(KVNR)
             .telematikId(SMB_AUT_TELEMATIK_ID)
             .testCase(PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV);
-
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.set(X_INSURANTID, wrongInsurantId);
-    HttpEntity<PostEntitlementRequestDTO> entity = new HttpEntity<>(request, httpHeaders);
-
-    ResponseEntity<PostEntitlementResponseDTO> response =
-        testRestTemplate.postForEntity(
-            "/services/epa/testdriver/api/v1/entitlements",
-            entity,
-            PostEntitlementResponseDTO.class);
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-
-    assertThat(response.getBody())
-        .isNotNull()
+    var response =
+        restTestClient
+            .post()
+            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .header(X_INSURANTID, wrongInsurantId)
+            .body(request)
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .returnResult(PostEntitlementResponseDTO.class);
+    assertThat(response.getResponseBody())
         .satisfies(
             body -> {
+              assertNotNull(body);
               assertThat(body.getSuccess()).isFalse();
               assertThat(body.getStatusMessage())
                   .contains("400", "malformedRequest", "Prüfziffer for wrong KVNR (Attack?)");

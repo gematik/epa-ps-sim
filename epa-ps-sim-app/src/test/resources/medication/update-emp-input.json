@@ -1,0 +1,25 @@
+{
+  "resourceType": "Parameters",
+  "id": "${json-unit.any-string}",
+  "meta": {
+    "profile": [
+      "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-op-update-emp-entry-input-parameters"
+    ]
+  },
+  "parameter": [
+    {
+      "name": "empEntry"
+    },
+    {
+      "name": "acknowledgedChronologyId",
+      "valueId": "221f3c6d-20e6-443e-b7dc-580a40fa3d14"
+    },
+    {
+      "name": "medicationPlanIdentifier",
+      "valueIdentifier": {
+        "system": "https://gematik.de/fhir/sid/emp-identifier",
+        "value": "881f3c6d-20e6-443e-b7dc-580a40fa3d14"
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.medication.config;
@@ -35,7 +36,14 @@ public class EmlRenderClientConfiguration {
   private String port;
   private String path;
   private String pdfPath;
+  private String empPdfPath;
   private String xhtmlPath;
   private String userAgent;
   private String medicationListPath;
+  private String addEmlEntryPath;
+  private String cancelEmlEntryPath;
+  private String addEmpEntryPath;
+  private String updateEmpEntryPath;
+  private String medicationPlanLogPath;
+  private String linkEmpPath;
 }

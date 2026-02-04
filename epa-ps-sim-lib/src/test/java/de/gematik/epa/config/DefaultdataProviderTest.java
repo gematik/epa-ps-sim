@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.config;
@@ -31,6 +32,7 @@ import de.gematik.epa.unit.util.ResourceLoader;
 import de.gematik.epa.unit.util.TestBase;
 import de.gematik.epa.unit.util.TestDataFactory;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -46,10 +48,10 @@ class DefaultdataProviderTest extends TestBase {
     var tstObj = new DefaultdataProvider();
     var testdata = TestDataFactory.defaultdata(true, true);
 
-    assertDoesNotThrow(() -> tstObj.defaultdata(testdata));
+    assertDoesNotThrow(() -> tstObj.defaultData(testdata));
 
     var submissionSetAuthor =
-        assertDoesNotThrow(() -> tstObj.getSubmissionSetAuthorFromDocuments(documents));
+        assertDoesNotThrow(() -> tstObj.getFirstValidAuthorFromDocuments(documents));
 
     assertNotNull(submissionSetAuthor);
     assertTrue(
@@ -64,7 +66,7 @@ class DefaultdataProviderTest extends TestBase {
   void getSubmissionSetAuthorFromConfigOnlyTest() {
     var tstObj = new DefaultdataProvider();
     var testdata = TestDataFactory.defaultdata(false, false);
-    tstObj.defaultdata(testdata);
+    tstObj.defaultData(testdata);
 
     var submissionSetAuthor =
         assertDoesNotThrow(
@@ -122,12 +124,9 @@ class DefaultdataProviderTest extends TestBase {
   @Test
   void getSubmissionSetAuthorFromConfigAuthorRoleDefaultTest() {
     var tstObj = new DefaultdataProvider();
-    var defaultdata = TestDataFactory.defaultdata(false, false);
-    tstObj.defaultdata(defaultdata);
-
-    var submissionSetAuthor =
-        assertDoesNotThrow(() -> tstObj.getSubmissionSetAuthorFromDocuments(List.of()));
-
-    assertNull(submissionSetAuthor);
+    tstObj.defaultData(TestDataFactory.defaultdata(false, false));
+    assertThrows(
+        NullPointerException.class,
+        () -> tstObj.getFirstValidAuthorFromDocuments(Collections.emptyList()));
   }
 }

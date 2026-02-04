@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,15 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.entitlement;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.epa.unit.AppTestDataFactory.getReadVSDResponsePZ2;
-import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
-import static de.gematik.epa.unit.util.TestDataFactory.SMB_AUT_TELEMATIK_ID;
-import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
-import static de.gematik.epa.unit.util.TestDataFactory.X_INSURANTID;
-import static de.gematik.epa.unit.util.TestDataFactory.X_USERAGENT;
+import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.epa.api.testdriver.entitlement.dto.GetBlockedUserListResponseDTO;
@@ -64,7 +61,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
         post(urlEqualTo("/epa/basic/api/v1/ps/entitlements"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(201)
                     .withBody("{" + "  \"validTo\": \"2025-12-31T23:59:59+01:00\"" + "}")));
 
@@ -87,7 +84,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
         post(urlEqualTo("/epa/basic/api/v1/ps/entitlements"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(403)
                     .withBody("{" + "  \"errorCode\": \"notEntitled\"" + "}")));
 
@@ -109,7 +106,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(200)
                     .withBody(
                         """
@@ -137,7 +134,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(404)
                     .withBody("{" + "  \"errorCode\": \"noResource\"" + "}")));
 
@@ -156,7 +153,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(201)
                     .withBody(
                         """
@@ -183,7 +180,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(403)
                     .withBody("{" + "  \"errorCode\": \"notEntitled\"" + "}")));
 
@@ -203,7 +200,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .withHeader(X_INSURANTID, equalTo(KVNR))
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
-                aResponse().withHeader("Content-Type", "application/json").withStatus(204)));
+                aResponse().withHeader(CONTENT_TYPE_HEADER, "application/json").withStatus(204)));
 
     ResponseDTO response = entitlementApiEndpoint.deleteBlockedUser(KVNR, SMB_AUT_TELEMATIK_ID);
     assertThat(response.getSuccess()).isTrue();
@@ -218,7 +215,7 @@ class EntitlementApiEndpointIntegrationTest extends AbstractIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(400)
                     .withBody("{" + "  \"errorCode\": \"malformedRequest\"" + "}")));
 

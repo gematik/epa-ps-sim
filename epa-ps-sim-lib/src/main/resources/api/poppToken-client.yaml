@@ -1,0 +1,85 @@
+openapi: 3.0.1
+info:
+  title: POPP Token Generator API
+  version: 1.0.0
+  description: API for generating POPP tokens
+paths:
+  /popp/test/api/v1/token-generator:
+    post:
+      summary: Generates POPP tokens
+      tags:
+        - PoppTokenClientReference
+      operationId: generateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenGenerationParams'
+      responses:
+        '200':
+          description: Successfully generated tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tokenResults:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+components:
+  schemas:
+    TokenGenerationParams:
+      type: object
+      description: Parameters for token generation
+      properties:
+        tokenParamsList:
+          type: array
+          description: List of token parameters
+          items:
+            $ref: '#/components/schemas/TokenParams'
+    TokenParams:
+      type: object
+      description: Parameters for a single token
+      properties:
+        proofMethod:
+          type: string
+          description: Method of proof
+        patientProofTime:
+          type: number
+        iat:
+          type: number
+          description: Issued at time, epoch
+        patientId:
+          type: string
+        insurerId:
+          type: string
+        actorId:
+          type: string
+        actorProfessionOid:
+          type: string
+          description: 1.2.276.0.76.4.32
+      required:
+        - patientId
+        - insurerId
+        - actorId
+        - actorProfessionOid

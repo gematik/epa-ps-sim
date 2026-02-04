@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.kob.services;
 
 import static de.gematik.epa.konnektor.client.CertificateServiceClient.*;
-import static de.gematik.epa.utils.MiscUtils.X_TARGET_FQDN;
+import static de.gematik.epa.utils.MiscUtils.X_ACTOR_ID;
+import static java.util.Optional.empty;
 
 import de.gematik.epa.api.psTestdriver.dto.Action.TypeEnum;
 import de.gematik.epa.api.psTestdriver.dto.ErrorMessage;
@@ -35,20 +37,16 @@ import de.gematik.epa.konnektor.SmbInformationProvider;
 import de.gematik.epa.ps.kob.config.VauProxyConfiguration;
 import de.gematik.epa.ps.kob.util.KobTestdriverAction;
 import de.gematik.epa.utils.HealthRecordProvider;
-import java.io.IOException;
+import de.gematik.epa.utils.TelematikIdHolder;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.stereotype.Service;
@@ -86,8 +84,49 @@ public class KobSystemService {
           val telematikId = determineSmcb();
           log.info("Performing Authentication API login, using telematik ID: {}", telematikId);
           authenticationApi.login(telematikId, patient, "<unused parameters>");
-          return Optional.empty();
+          return empty();
         });
+  }
+
+  @SneakyThrows
+  private Optional<ErrorMessage> doResetVAUSession() {
+    log.info("Resetting the VAU session ...");
+    try (final HttpClient client = HttpClient.newHttpClient()) {
+      var telematikId = TelematikIdHolder.getTelematikId();
+      if (telematikId == null) {
+        log.warn("No telematik ID found, cannot destroy VAU session, that's okay for now.");
+        return empty();
+      }
+      var requestBuilder =
+          HttpRequest.newBuilder()
+              .uri(URI.create(getVauHostUrl() + "/destroy"))
+              .header(X_ACTOR_ID, telematikId)
+              .POST(BodyPublishers.noBody());
+      var response = client.send(requestBuilder.build(), BodyHandlers.ofString());
+
+      if (response.statusCode() == 200) {
+        log.info("Successfully destroyed VAU session for telematik ID: {}", telematikId);
+        return empty();
+      } else if (response.statusCode() == 404
+          && response.body() != null
+          && response.body().contains("VAU identity not found.")) {
+        log.info("No VAU session for telematik ID: {}", telematikId);
+        return empty();
+      } else {
+        var msg =
+            "Failed to destroy VAU session for telematik ID: %s. Status code: %s, Response: %s"
+                .formatted(telematikId, response.statusCode(), response.body());
+        log.error(msg);
+        return Optional.of(new ErrorMessage().message(msg).details(response.body()));
+      }
+    }
+  }
+
+  private Optional<ErrorMessage> doResetCachedHealthRecords() {
+    log.info("Resetting the cached health records ...");
+    HealthRecordProvider.getAllHealthRecords()
+        .forEach((recordKey, fqdn) -> HealthRecordProvider.clearHealthRecord(recordKey));
+    return Optional.empty();
   }
 
   public KobTestdriverAction reset(final ResetPrimaersystem resetPrimaersystem) {
@@ -96,52 +135,11 @@ public class KobSystemService {
         () -> {
           log.info("Resetting the system...");
           if (Boolean.TRUE.equals(resetPrimaersystem.getCloseAllEpaSessions())) {
-            log.info(
-                "Closing all EPA sessions... (found {} sessions)",
-                HealthRecordProvider.getAllHealthRecords().size());
-            final Set<Entry<String, String>> sessions =
-                new HashSet<>(HealthRecordProvider.getAllHealthRecords().entrySet());
-            sessions.add(null); // default session
-            val errorMessage =
-                sessions.stream()
-                    .map(this::closeEpaSession)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .findFirst();
-            if (errorMessage.isPresent()) {
-              return errorMessage;
-            }
+            // it is not an "Or" - it works as "and" but sequentially
+            return doResetVAUSession().or(this::doResetCachedHealthRecords);
           }
           return Optional.empty();
         });
-  }
-
-  private Optional<ErrorMessage> closeEpaSession(final Map.Entry<String, String> sessionEntry) {
-    try (final HttpClient client = HttpClient.newHttpClient()) {
-      val insurantId = sessionEntry == null ? "default session" : sessionEntry.getKey();
-      log.info("Closing EPA session for insurant ID: {}", insurantId);
-      final Builder requestBuilder =
-          HttpRequest.newBuilder()
-              .uri(URI.create(getVauHostUrl() + "/restart"))
-              .POST(BodyPublishers.noBody());
-      if (sessionEntry != null) {
-        requestBuilder.header(X_TARGET_FQDN, sessionEntry.getValue());
-      }
-      final HttpRequest request = requestBuilder.build();
-
-      val response = client.send(request, BodyHandlers.ofString());
-      if (response.statusCode() != 200) {
-        return Optional.of(
-            new ErrorMessage().message("Failed to restart VAU").details(response.body()));
-      }
-      HealthRecordProvider.clearHealthRecord(insurantId);
-      return Optional.empty();
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    } catch (final InterruptedException e) {
-      Thread.currentThread().interrupt();
-      return Optional.of(new ErrorMessage().message("Interrupted while closing EPA session"));
-    }
   }
 
   private String getVauHostUrl() {

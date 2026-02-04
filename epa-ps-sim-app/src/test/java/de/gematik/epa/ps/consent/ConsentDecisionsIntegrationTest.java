@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.consent;
@@ -35,10 +36,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathTemplate;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static de.gematik.epa.unit.AppTestDataFactory.clearFqdnProvider;
 import static de.gematik.epa.unit.AppTestDataFactory.setupFqdnProvider;
-import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
-import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
-import static de.gematik.epa.unit.util.TestDataFactory.X_INSURANTID;
-import static de.gematik.epa.unit.util.TestDataFactory.X_USERAGENT;
+import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -114,7 +112,7 @@ public class ConsentDecisionsIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(USER_AGENT))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withStatus(200)
                     .withBody(bodyAsString)));
 
@@ -134,7 +132,7 @@ public class ConsentDecisionsIntegrationTest {
         get(urlEqualTo("/epa/basic/api/v1/consents"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withHeader(X_INSURANTID, "X12345678")
                     .withStatus(200)
                     .withBody(body)));
@@ -160,7 +158,7 @@ public class ConsentDecisionsIntegrationTest {
                 equalToJson("{\"decision\": \"${json-unit.regex}(?i)deny\"}", true, true))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(200)
                     .withBody("{\"success\": true}")));
 
@@ -196,7 +194,7 @@ public class ConsentDecisionsIntegrationTest {
                 equalToJson("{\"decision\": \"${json-unit.regex}(?i)deny\"}", true, true))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withBody(body)
                     .withStatus(400)));
 

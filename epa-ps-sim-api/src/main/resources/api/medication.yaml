@@ -25,6 +25,8 @@ servers:
 
 tags:
   - name: Medication
+  - name: MedicationStatement
+  - name: Emp
 
 paths:
   /epa/testdriver/api/v1/medication:
@@ -48,6 +50,25 @@ paths:
         - $ref: '#/components/parameters/_revinclude'
         - $ref: '#/components/parameters/_code'
         - $ref: '#/components/parameters/_status'
+        - $ref: '#/components/parameters/format'
+        - name: ingredientCode
+          in: query
+          required: false
+          description: Returns medications for a specific ingredient code (Medication.ingredient.item as CodeableConcept)
+          schema:
+            type: string
+        - name: context
+          in: query
+          required: false
+          description: Returns medications for a specific context (Medication.extension:context)
+          schema:
+            type: string
+        - name: prescription
+          in: query
+          required: false
+          description: Returns medications related to teh specified prescription id (Medication.extension)
+          schema:
+            type: string
       responses:
         200:
           description: A list of resources
@@ -55,6 +76,31 @@ paths:
             application/fhir+json:
               schema:
                 $ref: '#/components/schemas/GetMedicationResponseDTO'
+  /epa/testdriver/api/v1/medication/{id}/history:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication history list of a personal health record as FHIR objects.'
+      description: 'List all medication histories.'
+      operationId: getMedicationHistoryList
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the Medication resource.'
+          schema:
+            type: string
+        - $ref: '#/components/parameters/format'
+      responses:
+        200:
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationHistoryResponseDTO'
   /epa/testdriver/api/v1/medication/render/eml/xhtml:
     get:
       tags:
@@ -87,6 +133,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetMedicationListAsPdfResponseDTO'
+  /epa/testdriver/api/v1/medication/render/emp/pdf:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication plan (eMP) rendered as PDF of a personal health record.'
+      description: 'Get the medication Plan (eMP) as a PDF. The insurant is identified by the insurantId.'
+      operationId: getMedicationPlanAsPdf
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+      responses:
+        default:
+          description: eMP as PDF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationPlanAsPdfResponseDTO'
   /epa/testdriver/api/v1/medication/render/eml/fhir:
     get:
       tags:
@@ -100,7 +162,7 @@ paths:
         - name: date
           in: query
           description: Limit the search to this date. Can specify upper or lower limits
-            and periods by providing an upper and a lower limit. 
+            and periods by providing an upper and a lower limit.
             By specifying maximum two dates (comma separated e.g. date=ge2024-01-01,le2024-07-01) the search is limited to the range between the two dates.
             The syntax is in the FHIR search parameter format where a prefix can be used to specify the operator.
           required: false
@@ -124,6 +186,15 @@ paths:
             type: integer
           description: Defines the offset of the first entry in the collection.
           required: false
+        - name: format
+          in: query
+          required: false
+          description: 'Specify in which format the search bundle shall be returned. If not specified, the default format is application/fhir+json.'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
       responses:
         default:
           description: eML as FHIR
@@ -339,6 +410,146 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetMedicationListAsFhirResponseDTO'
+  /epa/testdriver/api/v1/medication-statement/eml-entry:
+    post:
+      tags:
+        - MedicationStatement
+      summary: 'Adds eML entry.'
+      description: 'Triggers the call to the $add-eml-entry in the underlying medication service.'
+      operationId: addEmlEntry
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+      requestBody:
+        $ref: "#/components/requestBodies/AddEmlEntryRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $add-eml-entry operation as FHIR Parameters resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddEmlEntryResponseDTO'
+  /epa/testdriver/api/v1/medication-statement/{id}/eml-entry:
+    put:
+      tags:
+        - MedicationStatement
+      summary: 'Cancel an eML entry.'
+      description: 'Triggers the call to the $cancel-eml-entry in the underlying medication service.'
+      operationId: cancelEmlEntry
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the MedicationStatement resource.'
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/CancelEmlEntryRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $cancel-eml-entry operation as FHIR Parameters resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelEmlEntryResponseDTO'
+  /epa/testdriver/api/v1/medication-statement/{id}/link-emp:
+    put:
+      tags:
+        - MedicationStatement
+      summary: 'Link eML with eMP.'
+      description: 'Triggers the call to the $link-emp in the underlying medication service.'
+      operationId: linkEmp
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the MedicationStatement resource.'
+          schema:
+            type: string
+      requestBody:
+          $ref: "#/components/requestBodies/LinkEmpRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $link-emp operation as FHIR Parameters resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkEmpResponseDTO'
+  /epa/testdriver/api/v1/add-emp-entry:
+    post:
+      tags:
+        - Emp
+      summary: 'Adds eMP entry.'
+      description: 'Triggers the call to the $add-emp-entry in the underlying medication service.'
+      operationId: addEmpEntry
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+      requestBody:
+        $ref: "#/components/requestBodies/AddEmpEntryRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $add-emp-entry operation as FHIR Parameters resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddEmpEntryResponseDTO'
+  /epa/testdriver/api/v1/update-emp-entry:
+    post:
+      tags:
+        - Emp
+      summary: 'Updates eMP entry.'
+      description: 'Triggers the call to the $update-emp-entry in the underlying medication service.'
+      operationId: updateEmpEntry
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+      requestBody:
+        $ref: "#/components/requestBodies/UpdateEmpEntryRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $update-emp-entry operation as FHIR Parameters resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateEmpEntryResponseDTO'
+  /epa/testdriver/api/v1/medication-plan-logs:
+    get:
+      tags:
+        - Emp
+      summary: 'Get medication plan logs.'
+      description: 'Get medication plan logs of a personal health record.'
+      operationId: getMedicationPlanLogs
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/requestid'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - name: format
+          in: query
+          required: false
+          description: 'Specify in which format the search bundle shall be returned. If not specified, the default format is application/fhir+json.'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+      responses:
+        200:
+          description: Medication plan logs as FHIR search bundle.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationPlanLogsResponseDTO'
 
 components:
   parameters:
@@ -388,12 +599,12 @@ components:
       schema:
         type: string
         example:
-        - 'gt2021-01-01'
-        - 'lt2021-01-01'
-        - 'ge2021-01-01'
-        - 'le2021-01-01'
-        - 'eq2021-01-01'
-        - 'ne2021-01-01'
+          - 'gt2021-01-01'
+          - 'lt2021-01-01'
+          - 'ge2021-01-01'
+          - 'le2021-01-01'
+          - 'eq2021-01-01'
+          - 'ne2021-01-01'
     _identifier:
       name: identifier
       in: query
@@ -446,16 +657,26 @@ components:
       name: _include
       in: query
       required: false
-      description: Including other resources
+      description: Including other resources. Multiple values are comma separated e.g. _include=MedicationRequest:medication,MedicationStatement:medication
       schema:
         type: string
     _revinclude:
       name: _revinclude
       in: query
       required: false
-      description: Reverse include other resources
+      description: Reverse include other resources. Multiple values are comma separated e.g. _revinclude=MedicationRequest:medication,MedicationStatement:medication
       schema:
         type: string
+    format:
+      name: format
+      in: query
+      required: false
+      description: 'Specify in which format the search bundle shall be returned. If not specified, the default format is application/fhir+json.'
+      schema:
+        type: string
+        enum:
+          - application/fhir+json
+          - application/fhir+xml
   schemas:
     UserAgentType:
       description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."
@@ -494,7 +715,7 @@ components:
                 medicationDispenses:
                   description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense|1.0.2'
                   x-examples:
-                      Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense|1.0.2
+                    Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-dispense|1.0.2
                   type: array
                   items:
                     type: string
@@ -527,6 +748,16 @@ components:
               description: 'The eML as PDF as an array of bytes.'
               type: string
               format: byte
+    GetMedicationPlanAsPdfResponseDTO:
+      description: Response including the eMP as PDF.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            emp:
+              description: 'The eMP as PDF as an array of bytes.'
+              type: string
+              format: byte
     GetMedicationListAsXhtmlResponseDTO:
       description: Response including the eML as XHTML.
       allOf:
@@ -546,6 +777,20 @@ components:
               description: 'The eML as FHIR Transaction Bundle as JSON.'
               example: --> https://build.fhir.org/bundle-transaction.json.html
               type: string
+    GetMedicationHistoryResponseDTO:
+      description: Returns a list of all medications using the FHIR representation as string array where the content is as fhir+json or fhir+xml based on the given format query parameter.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medications:
+              description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication'
+              x-examples:
+                Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication
+              type: array
+              items:
+                type: string
+
     GetEmlAsFhirResponseDTO:
       description: Response including the eML as FHIR Search Bundle based on the given search criteria.
       allOf:
@@ -553,7 +798,17 @@ components:
         - type: object
           properties:
             eml:
-              description: 'The eML as FHIR Search Bundle as JSON.'
+              description: 'The eML as FHIR Search Bundle as JSON or as XML.'
+              example: --> http://hl7.org/fhir/search-set-bundle.html
+              type: string
+    GetMedicationPlanLogsResponseDTO:
+      description: Response including the medication plan logs (provenances) as FHIR Search Bundle based on the given search criteria.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medicationPlanLogs:
+              description: 'The eML as FHIR Search Bundle as JSON or as XML.'
               example: --> http://hl7.org/fhir/search-set-bundle.html
               type: string
     SearchSet_Bundle:
@@ -627,3 +882,179 @@ components:
                 description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication'
                 x-examples:
                   Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication
+    AddEmlEntryResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            parameters:
+              description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+    CancelEmlEntryResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            parameters:
+              description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+    AddEmpEntryResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            parameters:
+              description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+    UpdateEmpEntryResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            parameters:
+              description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+    AddEmlEntryInput:
+      type: object
+      required:
+        - medicationStatement
+        - medication
+        - organization
+      properties:
+        medicationStatement:
+          description: 'A FHIR medication statement resource in JSON format.'
+          type: string
+        medication:
+          description: 'An FHIR medication resource in JSON format.'
+          type: string
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
+            - application/fhir+json
+            - application/fhir+xml
+    CancelEmlEntryInput:
+      type: object
+      required:
+        - organization
+      properties:
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
+            - application/fhir+json
+            - application/fhir+xml
+    AddEmpEntryInput:
+      type: object
+      required:
+        - medicationRequest
+        - medication
+        - organization
+      properties:
+        medicationRequest:
+          description: 'A FHIR medication request resource in JSON format.'
+          type: string
+        medication:
+          description: 'An FHIR medication resource in JSON format.'
+          type: string
+        chronologyId:
+          description: 'ID of a chronology provenance resource'
+          type: string
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
+            - application/fhir+json
+            - application/fhir+xml
+    UpdateEmpEntryInput:
+      type: object
+      required:
+        - medicationRequest
+        - medicationPlanId
+        - organization
+      properties:
+        medicationRequest:
+          description: 'A FHIR medication request resource in JSON format.'
+          type: string
+        medicationPlanId:
+          description: 'ID of a medication plan.'
+          type: string
+        chronologyId:
+          description: 'ID of a chronology provenance resource'
+          type: string
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
+            - application/fhir+json
+            - application/fhir+xml
+    LinkEmpInput:
+      type: object
+      required:
+        - medicationPlanId
+        - organization
+      properties:
+        medicationPlanId:
+          description: 'ID of a medication plan.'
+          type: string
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+            description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+            type: string
+            enum:
+            - application/fhir+json
+            - application/fhir+xml
+    LinkEmpResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            parameters:
+              description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+  requestBodies:
+    AddEmlEntryRequestDTO:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AddEmlEntryInput"
+    CancelEmlEntryRequestDTO:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CancelEmlEntryInput"
+    AddEmpEntryRequestDTO:
+      content:
+        application/json:
+          schema:
+           $ref: "#/components/schemas/AddEmpEntryInput"
+    UpdateEmpEntryRequestDTO:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UpdateEmpEntryInput"
+    LinkEmpRequestDTO:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/LinkEmpInput"
+

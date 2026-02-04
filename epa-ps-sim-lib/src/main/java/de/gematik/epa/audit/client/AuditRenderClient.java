@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.audit.client;
@@ -72,6 +73,7 @@ public class AuditRenderClient {
 
   protected WebClient updateWebclient(String insurantId, Boolean signed, String path) {
     return webClient
+        .reset()
         .replacePath(path)
         .replaceQuery(String.valueOf(signed))
         .replaceHeader(X_INSURANT_ID, insurantId)

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,18 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.konnektor.client;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import de.gematik.epa.konnektor.KonnektorUtils;
 import de.gematik.epa.unit.util.KonnektorInterfaceAnswer;
@@ -36,12 +40,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
-import telematik.ws.conn.cardservice.xsd.v8_1.GetPinStatus;
-import telematik.ws.conn.cardservice.xsd.v8_1.GetPinStatusResponse;
-import telematik.ws.conn.cardservice.xsd.v8_1.PinStatusEnum;
+import telematik.ws.conn.cardservice.xsd.v8_1.*;
 import telematik.ws.conn.cardservicecommon.xsd.v2_0.CardTypeType;
 import telematik.ws.conn.cardservicecommon.xsd.v2_0.PinResultEnum;
+import telematik.ws.conn.eventservice.xsd.v6_1.GetCardsResponse;
 
 class CardServiceClientTest extends TestBase {
 
@@ -76,19 +78,19 @@ class CardServiceClientTest extends TestBase {
         new KonnektorInterfaceAnswer<GetPinStatus, GetPinStatusResponse>()
             .setAnswer(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIED));
 
-    Mockito.when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
-    Mockito.when(cardServiceMock.getPinStatus(any())).then(getPinStatusResponse);
+    when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
+    when(cardServiceMock.getPinStatus(any())).then(getPinStatusResponse);
 
     var response =
         assertDoesNotThrow(
             () -> testObj.getPinStatusResponse(cardHandle, CardServiceClient.PIN_SMC));
-    assertNotNull(response);
-    assertEquals(KonnektorUtils.STATUS_OK, response.getStatus().getResult());
-    assertEquals(PinStatusEnum.VERIFIED, response.getPinStatus());
+    assertThat(response).isNotNull();
+    assertThat(response.getStatus().getResult()).isEqualTo(KonnektorUtils.STATUS_OK);
+    assertThat(response.getPinStatus()).isEqualTo(PinStatusEnum.VERIFIED);
 
     var request = getPinStatusResponse.getRequest();
-    assertNotNull(request);
-    assertEquals(CardServiceClient.PIN_SMC, request.getPinTyp());
+    assertThat(request).isNotNull();
+    assertThat(request.getPinTyp()).isEqualTo(CardServiceClient.PIN_SMC);
   }
 
   @ParameterizedTest
@@ -102,9 +104,9 @@ class CardServiceClientTest extends TestBase {
     var verifyPinResponse =
         TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK);
 
-    Mockito.when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
-    Mockito.when(cardServiceMock.getPinStatus(any())).thenReturn(getPinStatusResponse);
-    Mockito.when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
+    when(cardServiceMock.getPinStatus(any())).thenReturn(getPinStatusResponse);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
 
     assertDoesNotThrow(() -> testObj.verifyPin(CardTypeType.SM_B, CardServiceClient.PIN_SMC));
     verify(eventServiceMock).getCards(any());
@@ -116,9 +118,8 @@ class CardServiceClientTest extends TestBase {
   void verifyPinThrowsTest(PinStatusEnum pinStatusEnum) {
     var eventServiceMock = konnektorInterfaceAssembly().eventService();
     var cardServiceMock = konnektorInterfaceAssembly().cardService();
-    Mockito.when(eventServiceMock.getCards(any()))
-        .thenReturn(TestDataFactory.getCardsSmbResponse());
-    Mockito.when(cardServiceMock.getPinStatus(any()))
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(cardServiceMock.getPinStatus(any()))
         .thenReturn(TestDataFactory.getPinStatusResponse(pinStatusEnum));
     assertThrows(
         IllegalStateException.class,
@@ -129,13 +130,12 @@ class CardServiceClientTest extends TestBase {
   void verifyPinReturnsPinResultOk() {
     var eventServiceMock = konnektorInterfaceAssembly().eventService();
     var cardServiceMock = konnektorInterfaceAssembly().cardService();
-    Mockito.when(eventServiceMock.getCards(any()))
-        .thenReturn(TestDataFactory.getCardsSmbResponse());
-    Mockito.when(cardServiceMock.getPinStatus(any()))
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(cardServiceMock.getPinStatus(any()))
         .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
     var verifyPinResponse =
         TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK);
-    Mockito.when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
     assertDoesNotThrow(() -> testObj.verifyPin(CardTypeType.SM_B, CardServiceClient.PIN_SMC));
     verify(eventServiceMock).getCards(any());
     verify(cardServiceMock).getPinStatus(any());
@@ -145,13 +145,12 @@ class CardServiceClientTest extends TestBase {
   void verifyPinReturnsPinResultErrorAndWarning() {
     var eventServiceMock = konnektorInterfaceAssembly().eventService();
     var cardServiceMock = konnektorInterfaceAssembly().cardService();
-    Mockito.when(eventServiceMock.getCards(any()))
-        .thenReturn(TestDataFactory.getCardsSmbResponse());
-    Mockito.when(cardServiceMock.getPinStatus(any()))
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(cardServiceMock.getPinStatus(any()))
         .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
     var verifyPinResponse =
         TestDataFactory.verifyPin(TestDataFactory.getStatusWarning(), PinResultEnum.ERROR);
-    Mockito.when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
     assertThrows(
         IllegalStateException.class,
         () -> testObj.verifyPin(CardTypeType.SM_B, CardServiceClient.PIN_SMC));
@@ -164,12 +163,11 @@ class CardServiceClientTest extends TestBase {
   void verifyPinReturnsPinResultWithStatusOkThrowsTest(PinResultEnum pinResult) {
     var eventServiceMock = konnektorInterfaceAssembly().eventService();
     var cardServiceMock = konnektorInterfaceAssembly().cardService();
-    Mockito.when(eventServiceMock.getCards(any()))
-        .thenReturn(TestDataFactory.getCardsSmbResponse());
-    Mockito.when(cardServiceMock.getPinStatus(any()))
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(cardServiceMock.getPinStatus(any()))
         .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
     var verifyPinResponse = TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), pinResult);
-    Mockito.when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
     assertThrows(
         IllegalStateException.class,
         () -> testObj.verifyPin(CardTypeType.SM_B, CardServiceClient.PIN_SMC));
@@ -181,16 +179,101 @@ class CardServiceClientTest extends TestBase {
   void verifySmbTest() {
     var eventServiceMock = konnektorInterfaceAssembly().eventService();
     var cardServiceMock = konnektorInterfaceAssembly().cardService();
-    Mockito.when(eventServiceMock.getCards(any()))
-        .thenReturn(TestDataFactory.getCardsSmbResponse());
-    Mockito.when(cardServiceMock.getPinStatus(any()))
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(cardServiceMock.getPinStatus(any()))
         .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
     var verifyPinResponse =
         TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK);
-    Mockito.when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
     assertDoesNotThrow(() -> testObj.verifySmb());
     verify(eventServiceMock).getCards(any());
     verify(cardServiceMock).getPinStatus(any());
     verify(cardServiceMock).verifyPin(any());
+  }
+
+  @Test
+  void verifyPinsVerifiesAllCardHandles() {
+    var eventServiceMock = konnektorInterfaceAssembly().eventService();
+    var cardServiceMock = konnektorInterfaceAssembly().cardService();
+
+    final Cards cards =
+        new Cards().withCard(TestDataFactory.cardInfoSmb(), TestDataFactory.cardInfoHba());
+    final var getCardsResponse =
+        new GetCardsResponse().withStatus(TestDataFactory.getStatusOk()).withCards(cards);
+    var cardHandles =
+        getCardsResponse.getCards().getCard().stream().map(CardInfoType::getCardHandle).toList();
+
+    when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
+    when(cardServiceMock.getPinStatus(any()))
+        .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
+    when(cardServiceMock.verifyPin(any()))
+        .thenReturn(TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK));
+
+    assertDoesNotThrow(() -> testObj.verifyPins(CardTypeType.SM_B, CardServiceClient.PIN_SMC));
+    verify(eventServiceMock).getCards(any());
+    verify(cardServiceMock, times(cardHandles.size())).getPinStatus(any());
+    verify(cardServiceMock, times(cardHandles.size())).verifyPin(any());
+  }
+
+  @Test
+  void verifyPinsThrowsIfAnyCardHasBlockedPin() {
+    var eventServiceMock = konnektorInterfaceAssembly().eventService();
+    var cardServiceMock = konnektorInterfaceAssembly().cardService();
+
+    final Cards cards =
+        new Cards().withCard(TestDataFactory.cardInfoSmb(), TestDataFactory.cardInfoHba());
+    final var getCardsResponse =
+        new GetCardsResponse().withStatus(TestDataFactory.getStatusOk()).withCards(cards);
+    when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
+    when(cardServiceMock.getPinStatus(any()))
+        .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
+
+    when(cardServiceMock.getPinStatus(any()))
+        .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.BLOCKED));
+    assertThrows(
+        IllegalStateException.class,
+        () -> testObj.verifyPins(CardTypeType.SM_B, CardServiceClient.PIN_SMC));
+    verify(eventServiceMock).getCards(any());
+    verify(cardServiceMock, atLeastOnce()).getPinStatus(any());
+  }
+
+  @Test
+  void verifyPinSingleCardTest() {
+    var eventServiceMock = konnektorInterfaceAssembly().eventService();
+    var cardServiceMock = konnektorInterfaceAssembly().cardService();
+
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(cardServiceMock.getPinStatus(any()))
+        .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
+    when(cardServiceMock.verifyPin(any()))
+        .thenReturn(TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK));
+
+    assertDoesNotThrow(
+        () -> testObj.verifyPin(CardTypeType.SM_B, CardServiceClient.PIN_SMC, false));
+    verify(eventServiceMock).getCards(any());
+    verify(cardServiceMock).getPinStatus(any());
+    verify(cardServiceMock).verifyPin(any());
+  }
+
+  @Test
+  void verifyPinMultipleCardsTest() {
+    var eventServiceMock = konnektorInterfaceAssembly().eventService();
+    var cardServiceMock = konnektorInterfaceAssembly().cardService();
+
+    final Cards cards =
+        new Cards().withCard(TestDataFactory.cardInfoSmb(), TestDataFactory.cardInfoSmb());
+    final var getCardsResponse =
+        new GetCardsResponse().withStatus(TestDataFactory.getStatusOk()).withCards(cards);
+
+    when(eventServiceMock.getCards(any())).thenReturn(getCardsResponse);
+    when(cardServiceMock.getPinStatus(any()))
+        .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
+    when(cardServiceMock.verifyPin(any()))
+        .thenReturn(TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK));
+
+    assertDoesNotThrow(() -> testObj.verifyPin(CardTypeType.SM_B, CardServiceClient.PIN_SMC, true));
+    verify(eventServiceMock).getCards(any());
+    verify(cardServiceMock, times(2)).getPinStatus(any());
+    verify(cardServiceMock, times(2)).verifyPin(any());
   }
 }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.konnektor;
@@ -52,18 +53,15 @@ import org.springframework.core.io.ResourceLoader;
 @EnableConfigurationProperties(KonnektorConfigurationData.class)
 public class KonnektorClientConfiguration {
 
-  @Getter protected KonnektorConfigurationData konnektorConfiguration;
-
   @Getter protected final ResourceLoader resourceLoader;
-
-  private KonnektorConfigurationProvider konnektorConfigurationProvider;
-
-  private KonnektorInterfacesCxfImpl konnektorInterfaceAssembly;
-
-  private KonnektorContextProvider konnektorContextProvider;
+  @Getter protected KonnektorConfigurationData konnektorConfiguration;
 
   @Value("${konnektor.connection.connectOnStartup:true}")
   protected boolean connectOnStartup;
+
+  private KonnektorConfigurationProvider konnektorConfigurationProvider;
+  private KonnektorInterfacesCxfImpl konnektorInterfaceAssembly;
+  private KonnektorContextProvider konnektorContextProvider;
 
   @Autowired
   public KonnektorClientConfiguration(
@@ -95,7 +93,7 @@ public class KonnektorClientConfiguration {
                 konnektorContextProvider =
                     new KonnektorContextProvider(
                         konnektorConfigurationProvider(), konnektorInterfaceAssembly()));
-    konnektorInterfaceAssembly().unlockSmb(konnektorContextProvider1);
+    konnektorInterfaceAssembly().unlockSmbs(konnektorContextProvider1);
     return konnektorContextProvider1;
   }
 

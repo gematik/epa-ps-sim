@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.konnektor.cxf;
@@ -26,6 +27,7 @@ package de.gematik.epa.konnektor.cxf;
 import static de.gematik.epa.unit.util.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 
 import de.gematik.epa.api.testdriver.config.AddressConfig;
@@ -40,7 +42,6 @@ import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import telematik.ws.conn.SdsApi;
 import telematik.ws.conn.cardservice.wsdl.v8_1.CardServicePortType;
 import telematik.ws.conn.cardservice.xsd.v8_1.PinStatusEnum;
@@ -77,25 +78,45 @@ class KonnektorInterfacesCxfImplTest {
     CardServicePortType cardServiceMock = mock(CardServicePortType.class);
     tstObj.cardService(cardServiceMock);
 
-    Mockito.when(eventServiceMock.getCards(any()))
-        .thenReturn(TestDataFactory.getCardsSmbResponse());
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
 
-    Mockito.when(cardServiceMock.getPinStatus(any()))
+    when(cardServiceMock.getPinStatus(any()))
         .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
     var verifyPinResponse =
         TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK);
-    Mockito.when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
 
     assertDoesNotThrow(() -> tstObj.unlockSmb(konnektorContextProvider));
   }
 
   @Test
+  void shouldUnlockSmbs() {
+    var konnektorContextProvider = TestDataFactory.konnektorContextProvider();
+    var tstObj = new KonnektorInterfacesCxfImplForTest();
+    EventServicePortType eventServiceMock = mock(EventServicePortType.class);
+    tstObj.eventService(eventServiceMock);
+
+    CardServicePortType cardServiceMock = mock(CardServicePortType.class);
+    tstObj.cardService(cardServiceMock);
+
+    when(eventServiceMock.getCards(any())).thenReturn(TestDataFactory.getCardsSmbResponse());
+
+    when(cardServiceMock.getPinStatus(any()))
+        .thenReturn(TestDataFactory.getPinStatusResponse(PinStatusEnum.VERIFIABLE));
+    var verifyPinResponse =
+        TestDataFactory.verifyPin(TestDataFactory.getStatusOk(), PinResultEnum.OK);
+    when(cardServiceMock.verifyPin(any())).thenReturn(verifyPinResponse);
+    assertDoesNotThrow(() -> tstObj.unlockSmbs(konnektorContextProvider));
+  }
+
+  @Test
   void sdsApiTest() {
     var connCfg = TestDataFactory.createKonnektorConnectionConfigurationMutable();
-    var tstObj = new KonnektorInterfacesCxfImpl(new TestFileLoader());
-    tstObj.configuration = connCfg;
+    var konnektorInterface = new KonnektorInterfacesCxfImpl(new TestFileLoader());
 
-    var sdsApi = assertDoesNotThrow(tstObj::sdsApi);
+    konnektorInterface.configuration = connCfg;
+
+    var sdsApi = assertDoesNotThrow(konnektorInterface::sdsApi);
 
     assertNotNull(sdsApi);
 
@@ -108,11 +129,11 @@ class KonnektorInterfacesCxfImplTest {
   void sdsApiHttpTest() {
     var connCfg = TestDataFactory.createKonnektorConnectionConfigurationMutable();
     connCfg.address(new AddressConfig("localhost", 80, "http", "the/path"));
-    var tstObj = new KonnektorInterfacesCxfImpl(new TestFileLoader());
-    tstObj.configuration = connCfg;
-    tstObj.isTlsPreferred = Boolean.FALSE;
+    var konnektorInterface = new KonnektorInterfacesCxfImpl(new TestFileLoader());
+    konnektorInterface.configuration = connCfg;
+    konnektorInterface.isTlsPreferred = Boolean.FALSE;
 
-    var sdsApi = assertDoesNotThrow(tstObj::sdsApi);
+    var sdsApi = assertDoesNotThrow(konnektorInterface::sdsApi);
 
     assertNotNull(sdsApi);
 
@@ -152,7 +173,7 @@ class KonnektorInterfacesCxfImplTest {
     protected SdsApi sdsApi() {
       var thisSdsApi = mock(SdsApi.class);
 
-      Mockito.when(thisSdsApi.getConnectorSds()).thenReturn(ResourceLoader.connectorServices());
+      when(thisSdsApi.getConnectorSds()).thenReturn(ResourceLoader.connectorServices());
 
       return thisSdsApi;
     }

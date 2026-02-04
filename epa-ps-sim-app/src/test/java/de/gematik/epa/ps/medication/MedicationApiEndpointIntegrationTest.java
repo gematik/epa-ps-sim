@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.medication;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import de.gematik.epa.api.testdriver.medication.dto.GetMedicationDispenseListDTO;
+import de.gematik.epa.api.testdriver.medication.dto.GetMedicationHistoryResponseDTO;
 import de.gematik.epa.api.testdriver.medication.dto.GetMedicationListAsFhirResponseDTO;
 import de.gematik.epa.api.testdriver.medication.dto.GetMedicationRequestListDTO;
 import de.gematik.epa.api.testdriver.medication.dto.GetMedicationResponseDTO;
@@ -41,16 +42,19 @@ import de.gematik.epa.utils.FhirUtils;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -65,8 +69,13 @@ import org.testcontainers.utility.DockerImageName;
     })
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@AutoConfigureRestTestClient
+@Slf4j
 class MedicationApiEndpointIntegrationTest {
 
+  private static final String MEDICATION_STATEMENT = "MedicationStatement";
+  private static final String MEDICATION = "Medication";
+  private static final String MEDICATION_REQUEST = "MedicationRequest";
   private static final int PORT = 8080;
   private static final DockerImageName fhirDockerImage =
       DockerImageName.parse("hapiproject/hapi:latest");
@@ -77,9 +86,14 @@ class MedicationApiEndpointIntegrationTest {
               Wait.forHttp("/fhir/metadata")
                   .forStatusCode(200)
                   .withStartupTimeout(Duration.ofMinutes(5L)));
+
+  private final List<String> medicationIds = new ArrayList<>();
+  private final List<String> medicationRequestIds = new ArrayList<>();
+  private final List<String> medicationDispenseIds = new ArrayList<>();
+
   @Autowired MedicationApiEndpoint medicationApiEndpoint;
   @Autowired FhirClient fhirClient;
-  @Autowired TestRestTemplate testRestTemplate;
+  @Autowired RestTestClient restTestClient;
 
   @BeforeAll
   void setUp() {
@@ -88,6 +102,53 @@ class MedicationApiEndpointIntegrationTest {
         "http://" + fhirServer.getHost() + ":" + fhirServer.getMappedPort(PORT) + "/fhir";
     fhirClient.setServerUrl(serverUrl, "PS-SIM");
     FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
+
+    registerCustomSearchParameters();
+  }
+
+  private void registerCustomSearchParameters() {
+    var contextSearchParameter = new SearchParameter();
+    contextSearchParameter.setId("context-sp");
+    contextSearchParameter.setUrl(
+        "https://gematik.de/fhir/epa-medication/SearchParameter/context-sp");
+    contextSearchParameter.setVersion("1.2.0");
+    contextSearchParameter.setName("ContextSP");
+    contextSearchParameter.setStatus(Enumerations.PublicationStatus.ACTIVE);
+    contextSearchParameter.setCode("context");
+    contextSearchParameter.addBase(MEDICATION_STATEMENT);
+    contextSearchParameter.addBase(MEDICATION);
+    contextSearchParameter.addBase(MEDICATION_REQUEST);
+    contextSearchParameter.setType(Enumerations.SearchParamType.TOKEN);
+    contextSearchParameter.setExpression(
+        "Resource.extension('https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension').value");
+    contextSearchParameter.setDescription("Liefert alle Ressourcen mit diesem Context Code");
+    contextSearchParameter.setMultipleOr(false);
+    contextSearchParameter.setMultipleAnd(false);
+
+    fhirClient.getClient().create().resource(contextSearchParameter).execute();
+
+    SearchParameter rxPrescriptionSearchParameter = new SearchParameter();
+    rxPrescriptionSearchParameter.setId("rx-prescription-process-sp");
+    rxPrescriptionSearchParameter.setUrl(
+        "https://gematik.de/fhir/epa-medication/SearchParameter/rx-prescription-process-sp");
+    rxPrescriptionSearchParameter.setVersion("1.2.0");
+    rxPrescriptionSearchParameter.setName("RxPrescriptionProcessParameter");
+    rxPrescriptionSearchParameter.setStatus(Enumerations.PublicationStatus.ACTIVE);
+    rxPrescriptionSearchParameter.setDate(java.sql.Date.valueOf(LocalDate.parse("2025-09-12")));
+    rxPrescriptionSearchParameter.setPublisher("gematik GmbH");
+    rxPrescriptionSearchParameter.setDescription(
+        "Returns Medications, MedicationDispenses or MedicationStatement with the Rx Prescription Process Identifier.");
+    rxPrescriptionSearchParameter.setCode("rx-prescription");
+    rxPrescriptionSearchParameter.addBase(MEDICATION);
+    rxPrescriptionSearchParameter.addBase("MedicationDispense");
+    rxPrescriptionSearchParameter.addBase(MEDICATION_STATEMENT);
+    rxPrescriptionSearchParameter.setType(Enumerations.SearchParamType.TOKEN);
+
+    rxPrescriptionSearchParameter.setExpression(
+        "extension.where(url = 'https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension').value.value");
+    rxPrescriptionSearchParameter.setXpathUsage(SearchParameter.XPathUsageType.NORMAL);
+
+    fhirClient.getClient().create().resource(rxPrescriptionSearchParameter).execute();
   }
 
   @AfterAll
@@ -100,7 +161,7 @@ class MedicationApiEndpointIntegrationTest {
   void contextLoads() {
     assertThat(medicationApiEndpoint).isNotNull();
     assertThat(fhirClient).isNotNull();
-    assertThat(testRestTemplate).isNotNull();
+    assertThat(restTestClient).isNotNull();
   }
 
   @TestFactory
@@ -112,7 +173,7 @@ class MedicationApiEndpointIntegrationTest {
             () ->
                 testMedicationApiHappyPath(
                     List.of("medication-example-1.json"),
-                    "/services/epa/testdriver/api/v1/medication?id=1",
+                    "/services/epa/testdriver/api/v1/medication?id=%s",
                     1)),
         dynamicTest(
             "get medications by code",
@@ -129,7 +190,21 @@ class MedicationApiEndpointIntegrationTest {
                 testMedicationApiHappyPath(
                     List.of(),
                     "/services/epa/testdriver/api/v1/medication?lastUpdated=ge" + LocalDate.now(),
-                    3)));
+                    3)),
+        dynamicTest(
+            "get medications by ingredient code",
+            () ->
+                testMedicationApiHappyPath(
+                    List.of("medication-example-with-context-emp.json"),
+                    "/services/epa/testdriver/api/v1/medication?ingredientCode=24421",
+                    1)),
+        dynamicTest(
+            "get medications by rx-prescription",
+            () ->
+                testMedicationApiHappyPath(
+                    List.of("medication-example-with-prescription.json"),
+                    "/services/epa/testdriver/api/v1/medication?prescription=160.000.000.000.000.00",
+                    1)));
   }
 
   @TestFactory
@@ -159,7 +234,7 @@ class MedicationApiEndpointIntegrationTest {
             () ->
                 testMedicationRequestApiHappyPath(
                     List.of("medication-request-1.json"),
-                    "/services/epa/testdriver/api/v1/medication-request?id=4",
+                    "/services/epa/testdriver/api/v1/medication-request?id=%s",
                     1)),
         dynamicTest(
             "get medication requests by status",
@@ -187,7 +262,7 @@ class MedicationApiEndpointIntegrationTest {
             () ->
                 testMedicationDispenseApiHappyPath(
                     List.of("medication-dispense-1.json"),
-                    "/services/epa/testdriver/api/v1/medication-dispense?id=6",
+                    "/services/epa/testdriver/api/v1/medication-dispense?id=%s",
                     1)),
         dynamicTest(
             "get medication dispense by status",
@@ -210,16 +285,20 @@ class MedicationApiEndpointIntegrationTest {
   void shouldReturnEmlAsFhir() {
     createFhirTransactionResource(List.of("eml-fhir-transaction.json"));
     var response =
-        testRestTemplate.getForEntity(
-            "/services/epa/testdriver/api/v1/medication/eml/fhir?lastUpdated=le" + LocalDate.now(),
-            GetMedicationListAsFhirResponseDTO.class);
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isBlank();
-    assertThat(response.getBody().getEml()).isNotBlank();
+        restTestClient
+            .get()
+            .uri(
+                "/services/epa/testdriver/api/v1/medication/eml/fhir?lastUpdated=le"
+                    + LocalDate.now())
+            .exchange()
+            .returnResult(GetMedicationListAsFhirResponseDTO.class);
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getEml()).isNotBlank();
 
-    var fhirResource = FhirUtils.fromString(response.getBody().getEml());
+    var fhirResource = FhirUtils.fromString(response.getResponseBody().getEml());
     assertThat(fhirResource).isNotNull();
     assertThat(((Bundle) fhirResource).getEntry()).isNotEmpty();
   }
@@ -228,63 +307,158 @@ class MedicationApiEndpointIntegrationTest {
   @Order(10)
   void getMedicationListAsFhirReturnsProperResponseWhenNoMedicationExists() {
     var response =
-        testRestTemplate.getForEntity(
-            "/services/epa/testdriver/api/v1/medication/eml/fhir?status=inactive",
-            GetMedicationListAsFhirResponseDTO.class);
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isNotBlank();
+        restTestClient
+            .get()
+            .uri("/services/epa/testdriver/api/v1/medication/eml/fhir?status=inactive")
+            .exchange()
+            .returnResult(GetMedicationListAsFhirResponseDTO.class);
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  @Order(11)
+  void shouldGetMedicationHistoryList() {
+    // given
+    var medicationId = medicationIds.getLast();
+
+    // when - get medication history
+    var response =
+        restTestClient
+            .get()
+            .uri("/services/epa/testdriver/api/v1/medication/" + medicationId + "/history")
+            .exchange()
+            .returnResult(GetMedicationHistoryResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedications()).isNotEmpty();
+  }
+
+  @Test
+  @Order(12)
+  void shouldGetMedicationHistoryListWithXmlFormat() {
+    // given - use an existing medication ID
+    var medicationId = medicationIds.getFirst();
+
+    // when - get medication history with XML format
+    var response =
+        restTestClient
+            .get()
+            .uri(
+                "/services/epa/testdriver/api/v1/medication/"
+                    + medicationId
+                    + "/history?format=application/fhir+xml")
+            .exchange()
+            .returnResult(GetMedicationHistoryResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getMedications()).isNotEmpty();
+    assertThat(response.getResponseBody().getMedications().getFirst()).contains("<Medication");
+  }
+
+  @Test
+  @Order(13)
+  void shouldReturnProperResponseWhenMedicationHistoryNotFound() {
+    // given - non-existent medication ID
+    var nonExistentId = "non-existent-id-999";
+
+    // when
+    var response =
+        restTestClient
+            .get()
+            .uri("/services/epa/testdriver/api/v1/medication/" + nonExistentId + "/history")
+            .exchange()
+            .returnResult(GetMedicationHistoryResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isNotBlank();
+    assertThat(response.getResponseBody().getStatusMessage())
+        .contains("No medication historyBundle found for ID");
+    assertThat(response.getResponseBody().getMedications()).isEmpty();
   }
 
   private void testMedicationApiFailurePath(String url, String expectedStatusMessage) {
-    var response = testRestTemplate.getForEntity(url, GetMedicationResponseDTO.class);
+    var response =
+        restTestClient.get().uri(url).exchange().returnResult(GetMedicationResponseDTO.class);
 
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isNotBlank();
-    assertThat(response.getBody().getStatusMessage()).contains(expectedStatusMessage);
-    assertThat(response.getBody().getMedications()).isEmpty();
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isNotBlank();
+    assertThat(response.getResponseBody().getStatusMessage()).contains(expectedStatusMessage);
+    assertThat(response.getResponseBody().getMedications()).isEmpty();
   }
 
   private void testMedicationApiHappyPath(List<String> samples, String url, int expectedCount) {
-    createFhirResource(samples);
-    var response = testRestTemplate.getForEntity(url, GetMedicationResponseDTO.class);
+    createFhirResource(samples, medicationIds);
 
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isBlank();
-    assertThat(response.getBody().getMedications()).hasSize(expectedCount);
+    var id = medicationIds.getFirst();
+    var response =
+        restTestClient
+            .get()
+            .uri(url.formatted(id))
+            .exchange()
+            .returnResult(GetMedicationResponseDTO.class);
+
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedications()).hasSize(expectedCount);
   }
 
   private void testMedicationRequestApiHappyPath(
       List<String> samples, String url, int expectedCount) {
-    createFhirResource(samples);
-    var response = testRestTemplate.getForEntity(url, GetMedicationRequestListDTO.class);
+    createFhirResource(samples, medicationRequestIds);
 
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isBlank();
-    assertThat(response.getBody().getMedicationRequests()).hasSize(expectedCount);
+    var id = medicationRequestIds.getFirst();
+    var response =
+        restTestClient
+            .get()
+            .uri(url.formatted(id))
+            .exchange()
+            .returnResult(GetMedicationRequestListDTO.class);
+
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedicationRequests()).hasSize(expectedCount);
   }
 
   private void testMedicationDispenseApiHappyPath(
       List<String> samples, String url, int expectedCount) {
-    createFhirResource(samples);
-    var response = testRestTemplate.getForEntity(url, GetMedicationDispenseListDTO.class);
+    createFhirResource(samples, medicationDispenseIds);
 
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getSuccess()).isTrue();
-    assertThat(response.getBody().getStatusMessage()).isBlank();
-    assertThat(response.getBody().getMedicationDispenses()).hasSize(expectedCount);
+    var id = medicationDispenseIds.getFirst();
+    var response =
+        restTestClient
+            .get()
+            .uri(url.formatted(id))
+            .exchange()
+            .returnResult(GetMedicationDispenseListDTO.class);
+
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedicationDispenses()).hasSize(expectedCount);
   }
 
   @SneakyThrows
-  private void createFhirResource(final List<String> fileNames) {
+  private void createFhirResource(final List<String> fileNames, List<String> ids) {
     fhirClient.customizeSocketTimeout(30000);
     fileNames.forEach(
         fileName -> {
@@ -297,6 +471,8 @@ class MedicationApiEndpointIntegrationTest {
                 fhirClient.getClient().create().resource(medicationAsString).execute();
             assertThat(outcome.getCreated()).isTrue();
             assertThat(outcome.getId()).isNotNull();
+            String resourceId = outcome.getId().getIdPart();
+            ids.add(resourceId);
           } catch (Exception e) {
             fail(e.getMessage());
           }

@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.api.testdriver.impl;
@@ -63,7 +64,8 @@ class MedicationApiImplTest {
     // when
     final GetMedicationResponseDTO expectedResponse =
         medicationApi.getMedicationList(
-            null, null, null, 10, 1, null, "id", null, null, null, null, null, null);
+            null, null, null, 10, 1, null, "id", null, null, null, null, null, null, null, null,
+            null, null);
 
     // then
     assertThat(response.getSuccess()).isTrue();
@@ -83,7 +85,23 @@ class MedicationApiImplTest {
     // when
     final GetMedicationResponseDTO response =
         medicationApi.getMedicationList(
-            "recordId", null, null, null, null, null, null, null, null, null, null, null, null);
+            "recordId",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
 
     // then
     assertThat(response.getSuccess()).isTrue();
@@ -269,15 +287,79 @@ class MedicationApiImplTest {
     // given
     final GetEmlAsFhirResponseDTO expectedResponse = new GetEmlAsFhirResponseDTO().success(true);
     when(medicationService.getEmlAsFhir(
-            any(UUID.class), anyString(), anyString(), anyInt(), anyInt()))
+            any(UUID.class),
+            anyString(),
+            anyString(),
+            anyInt(),
+            anyInt(),
+            eq("application/fhir+json")))
         .thenReturn(expectedResponse);
 
     // when
     final GetEmlAsFhirResponseDTO response =
-        medicationApi.getEmlAsFhir("insurantId", UUID.randomUUID(), "ge2023-01-01", 10, 0);
+        medicationApi.getEmlAsFhir(
+            "insurantId", UUID.randomUUID(), "ge2023-01-01", 10, 0, "application/fhir+json");
 
     // then
     assertThat(response.getSuccess()).isTrue();
     assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationHistoryListSuccessfully() {
+    // given
+    final String medication = "{\n" + "  \"resourceType\": \"Medication\"}";
+    final GetMedicationHistoryResponseDTO expectedResponse =
+        new GetMedicationHistoryResponseDTO().medications(List.of(medication)).success(true);
+    when(medicationService.searchMedicationsHistory(any())).thenReturn(expectedResponse);
+
+    // when
+    final GetMedicationHistoryResponseDTO response =
+        medicationApi.getMedicationHistoryList(
+            "insurantId", UUID.randomUUID(), "123", "useragent", "application/fhir+json");
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationHistoryListWithXmlFormat() {
+    // given
+    final String medicationXml = "<Medication xmlns=\"http://hl7.org/fhir\"/>";
+    final GetMedicationHistoryResponseDTO expectedResponse =
+        new GetMedicationHistoryResponseDTO().medications(List.of(medicationXml)).success(true);
+    when(medicationService.searchMedicationsHistory(any())).thenReturn(expectedResponse);
+
+    // when
+    final GetMedicationHistoryResponseDTO response =
+        medicationApi.getMedicationHistoryList(
+            "insurantId", UUID.randomUUID(), "123", "useragent", "application/fhir+xml");
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldReturnNoSuccessWhenMedicationHistoryNotFound() {
+    // given
+    final GetMedicationHistoryResponseDTO expectedResponse =
+        new GetMedicationHistoryResponseDTO()
+            .success(true)
+            .statusMessage("No medication history found");
+    when(medicationService.searchMedicationsHistory(any())).thenReturn(expectedResponse);
+
+    // when
+    final GetMedicationHistoryResponseDTO response =
+        medicationApi.getMedicationHistoryList(
+            "insurantId", UUID.randomUUID(), "999", "useragent", "application/fhir+json");
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedications()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
   }
 }

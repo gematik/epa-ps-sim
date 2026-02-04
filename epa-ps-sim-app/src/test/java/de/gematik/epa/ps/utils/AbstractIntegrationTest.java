@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-app
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.ps.utils;
@@ -26,9 +27,7 @@ package de.gematik.epa.ps.utils;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static de.gematik.epa.unit.AppTestDataFactory.setupFqdnProvider;
-import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
-import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
-import static de.gematik.epa.unit.util.TestDataFactory.X_USERAGENT;
+import static de.gematik.epa.unit.util.TestDataFactory.*;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import de.gematik.epa.ps.fhir.config.TestFhirClientProvider;
@@ -144,7 +143,7 @@ public class AbstractIntegrationTest {
 
     mockIdpServer.stubFor(
         post(urlEqualTo("/sign_response"))
-            .withHeader("Content-Type", equalTo("application/x-www-form-urlencoded"))
+            .withHeader(CONTENT_TYPE_HEADER, equalTo("application/x-www-form-urlencoded"))
             .withHeader("User-Agent", equalTo("IdP-Client"))
             .withFormParam("signed_challenge", containing(signedChallenge))
             .willReturn(
@@ -154,8 +153,7 @@ public class AbstractIntegrationTest {
                         "http://localhost:8082/authz?" + "code=" + code + "&state=" + state)
                     .withStatus(302)));
 
-    mockVauProxyServer.stubFor(
-        post(urlEqualTo("/restart")).willReturn(aResponse().withStatus(200)));
+    mockVauProxyServer.stubFor(post(urlEqualTo("/reset")).willReturn(aResponse().withStatus(200)));
     mockVauStatusWithNoneAuthentication();
   }
 
@@ -172,7 +170,7 @@ public class AbstractIntegrationTest {
             .withHeader(X_USERAGENT, equalTo(userAgent))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", contentTypeJson)
+                    .withHeader(CONTENT_TYPE_HEADER, contentTypeJson)
                     .withStatus(200)
                     .withBody("{" + "  \"nonce\": \"" + nonce + "\"\n" + "}")));
 
@@ -202,13 +200,13 @@ public class AbstractIntegrationTest {
     mockAuthzServer.stubFor(
         post(urlEqualTo("/epa/authz/v1/send_authcode_sc"))
             .withHeader(X_USERAGENT, equalTo(userAgent))
-            .withHeader("Content-Type", equalTo(contentTypeJson))
+            .withHeader(CONTENT_TYPE_HEADER, equalTo(contentTypeJson))
             .withRequestBody(
                 matchingJsonPath("$.authorizationCode", containing("eyJ"))
                     .and(matchingJsonPath("$.clientAttest", containing("eyJ"))))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", contentTypeJson)
+                    .withHeader(CONTENT_TYPE_HEADER, contentTypeJson)
                     .withStatus(200)
                     .withBody(
                         "{\"vau-np\": \"4aadc671bf058fb6df5f181ad94f4130b3d3e86f3a7ffd53e6ea6a3f01e65608\"}")));
@@ -257,7 +255,7 @@ public class AbstractIntegrationTest {
         get(urlEqualTo("/information/api/v1/ehr"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(statusCode)));
   }
 
@@ -267,7 +265,7 @@ public class AbstractIntegrationTest {
         get(urlEqualTo("/information/api/v1/ehr"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withStatus(statusCode)
                     .withBody(body)));
   }
@@ -278,7 +276,7 @@ public class AbstractIntegrationTest {
         get(urlEqualTo("/information/api/v1/ehr/consentdecisions"))
             .willReturn(
                 aResponse()
-                    .withHeader("Content-Type", ContentType.APPLICATION_JSON.getMimeType())
+                    .withHeader(CONTENT_TYPE_HEADER, ContentType.APPLICATION_JSON.getMimeType())
                     .withBody(body)
                     .withStatus(statusCode)));
   }
@@ -289,7 +287,7 @@ public class AbstractIntegrationTest {
             .willReturn(
                 aResponse()
                     .withStatus(200)
-                    .withHeader("Content-Type", "application/json")
+                    .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withBody(
                         String.format(
                             """

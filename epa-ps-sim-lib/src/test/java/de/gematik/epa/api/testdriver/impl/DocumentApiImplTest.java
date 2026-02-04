@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.api.testdriver.impl;
@@ -43,7 +44,7 @@ import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
 import ihe.iti.xds_b._2007.RetrieveDocumentSetRequestType;
 import ihe.iti.xds_b._2007.RetrieveDocumentSetResponseType;
 import jakarta.xml.ws.WebServiceException;
-import java.net.URL;
+import java.net.URI;
 import java.util.List;
 import lombok.SneakyThrows;
 import oasis.names.tc.ebxml_regrep.xsd.lcm._3.RemoveObjectsRequest;
@@ -101,7 +102,7 @@ class DocumentApiImplTest extends TestBase {
   @SneakyThrows
   @Test
   void findByPatientWhenNotEntitled() {
-    var cause = new HTTPException(403, NOT_ENTITLED, new URL("http://localhost"));
+    var cause = new HTTPException(403, NOT_ENTITLED, URI.create("http://localhost").toURL());
     var exception = new WebServiceException(NOT_ENTITLED, cause);
     Mockito.when(
             documentServiceMock.documentRegistryRegistryStoredQuery(
@@ -290,7 +291,7 @@ class DocumentApiImplTest extends TestBase {
   @SneakyThrows
   @Test
   void getDocumentsWhenNotEntitled() {
-    var cause = new HTTPException(403, NOT_ENTITLED, new URL("http://localhost"));
+    var cause = new HTTPException(403, NOT_ENTITLED, URI.create("http://localhost").toURL());
     var exception = new WebServiceException(NOT_ENTITLED, cause);
     Mockito.when(
             documentServiceMock.documentRepositoryRetrieveDocumentSet(
@@ -392,5 +393,59 @@ class DocumentApiImplTest extends TestBase {
     assertNotNull(actualResponseDTO);
     assertFalse(actualResponseDTO.success());
     assertTrue(actualResponseDTO.statusMessage().contains(exception.getMessage()));
+  }
+
+  @Test
+  void appendDocumentsTest() {
+    Mockito.when(
+            documentServiceMock.documentRepositoryProvideAndRegisterDocumentSetB(
+                Mockito.any(ProvideAndRegisterDocumentSetRequestType.class)))
+        .thenReturn(TestDataFactory.registryResponseSuccess());
+
+    var appendDocumentsRequest = ResourceLoader.appendDocumentsRequest();
+
+    ResponseDTO expectedResponseDTO =
+        new ResponseDTO(true, TestDataFactory.REGISTRY_RESPONSE_STATUS_SUCCESS);
+
+    ResponseDTO actualResponseDTO =
+        assertDoesNotThrow(
+            () -> xdsDocumentApi.appendDocuments(X_INSURANT_ID, appendDocumentsRequest));
+
+    assertNotNull(actualResponseDTO);
+    assertEquals(expectedResponseDTO, actualResponseDTO);
+  }
+
+  @Test
+  void appendDocumentsExceptionTest() {
+    var exception = new RuntimeException("I am the expected exception");
+    Mockito.when(
+            documentServiceMock.documentRepositoryProvideAndRegisterDocumentSetB(
+                Mockito.any(ProvideAndRegisterDocumentSetRequestType.class)))
+        .thenThrow(exception);
+
+    var appendDocumentsRequest = ResourceLoader.appendDocumentsRequest();
+
+    var actualResponseDTO =
+        assertDoesNotThrow(
+            () -> xdsDocumentApi.appendDocuments(X_INSURANT_ID, appendDocumentsRequest));
+
+    assertNotNull(actualResponseDTO);
+    assertFalse(actualResponseDTO.success());
+    assertTrue(actualResponseDTO.statusMessage().contains(exception.getMessage()));
+  }
+
+  @Test
+  void getDocumentsAndAssociationsTest() {
+    Mockito.when(
+            documentServiceMock.documentRegistryRegistryStoredQuery(
+                Mockito.any(AdhocQueryRequest.class)))
+        .thenReturn(TestDataFactory.getSuccessResponse());
+    FindRequestDTO findRequestDTO = ResourceLoader.getDocumentsAndAssociationsRequest();
+    FindObjectsResponseDTO actualResponseDTO = xdsDocumentApi.find(X_INSURANT_ID, findRequestDTO);
+    final RegistryObjectLists registryObjectLists = new RegistryObjectLists(null, null, null, null);
+    FindObjectsResponseDTO expectedResponseDTO =
+        new FindObjectsResponseDTO(
+            true, TestDataFactory.REGISTRY_RESPONSE_STATUS_SUCCESS, registryObjectLists);
+    assertEquals(expectedResponseDTO, actualResponseDTO);
   }
 }

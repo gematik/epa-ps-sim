@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.api.testdriver.impl;
@@ -26,6 +27,7 @@ package de.gematik.epa.api.testdriver.impl;
 import de.gematik.epa.api.testdriver.medication.MedicationApi;
 import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.medication.MedicationService;
+import de.gematik.epa.medication.MedicationsHistorySearch;
 import de.gematik.epa.medication.MedicationsSearch;
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -55,7 +57,11 @@ public class MedicationApiImpl implements MedicationApi {
       String include,
       String revinclude,
       String code,
-      String status) {
+      String status,
+      String format,
+      String ingredientCode,
+      String context,
+      String prescription) {
 
     if (id == null) {
       var searchRequest =
@@ -72,7 +78,11 @@ public class MedicationApiImpl implements MedicationApi {
               .include(include)
               .revinclude(revinclude)
               .insurantId(insurantId)
-              .total(total);
+              .total(total)
+              .format(format)
+              .ingredientCode(ingredientCode)
+              .context(context)
+              .prescription(prescription);
       return medicationService.searchMedications(searchRequest);
     }
     return medicationService.executeGetById(id);
@@ -90,8 +100,13 @@ public class MedicationApiImpl implements MedicationApi {
 
   @Override
   public GetEmlAsFhirResponseDTO getEmlAsFhir(
-      String insurantId, UUID requestId, String date, Integer count, Integer offset) {
-    return medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset);
+      String insurantId,
+      UUID requestId,
+      String date,
+      Integer count,
+      Integer offset,
+      String format) {
+    return medicationService.getEmlAsFhir(requestId, insurantId, date, count, offset, format);
   }
 
   public GetMedicationRequestListDTO getMedicationRequests(
@@ -190,5 +205,25 @@ public class MedicationApiImpl implements MedicationApi {
             .lastUpdated(lastUpdated)
             .total(total);
     return medicationService.searchForEmlAsFhir(searchRequest);
+  }
+
+  @Override
+  public GetMedicationPlanAsPdfResponseDTO getMedicationPlanAsPdf(String xInsurantid) {
+    return medicationService.getEmpAsPdf(xInsurantid);
+  }
+
+  @Override
+  public GetMedicationHistoryResponseDTO getMedicationHistoryList(
+      String insurantId, UUID requestId, String id, String useragent, String format) {
+
+    var searchRequest =
+        new MedicationsHistorySearch()
+            .id(id)
+            .insurantId(insurantId)
+            .requestID(requestId)
+            .useragent(useragent)
+            .format(format);
+
+    return medicationService.searchMedicationsHistory(searchRequest);
   }
 }

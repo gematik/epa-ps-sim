@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.utils;
@@ -35,7 +36,9 @@ import org.hl7.fhir.r4.model.Resource;
 @UtilityClass
 public class FhirUtils {
 
+  private static final String APPLICATION_FHIR_XML = "application/fhir+xml";
   @Setter private IParser jsonParser;
+  @Setter private IParser xmlParser;
 
   public SearchTotalModeEnum calculateTotalMode(final String total) {
     if (total == null) {
@@ -49,15 +52,33 @@ public class FhirUtils {
     }
   }
 
-  public List<String> extractData(Bundle result) {
+  public List<String> extractDataAsJson(Bundle result) {
     return result.getEntry().stream()
         .map(Bundle.BundleEntryComponent::getResource)
         .map(FhirUtils::asJson)
         .toList();
   }
 
+  public List<String> extractDataAsXml(Bundle result) {
+    return result.getEntry().stream()
+        .map(Bundle.BundleEntryComponent::getResource)
+        .map(FhirUtils::asXml)
+        .toList();
+  }
+
+  public List<String> extractData(Bundle result, String format) {
+    if (APPLICATION_FHIR_XML.equals(format)) {
+      return extractDataAsXml(result);
+    }
+    return extractDataAsJson(result);
+  }
+
   public String asJson(Resource resource) {
     return jsonParser.encodeResourceToString(resource);
+  }
+
+  public String asXml(Resource resource) {
+    return xmlParser.encodeResourceToString(resource);
   }
 
   public IBaseResource fromString(String resource) {

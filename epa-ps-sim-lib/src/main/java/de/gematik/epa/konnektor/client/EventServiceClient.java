@@ -2,7 +2,7 @@
  * #%L
  * epa-ps-sim-lib
  * %%
- * Copyright (C) 2025 gematik GmbH
+ * Copyright (C) 2025 - 2026 gematik GmbH
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
  *
  * *******
  *
- * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+ * For additional notes and disclaimer from gematik and in case of changes
+ * by gematik, find details in the "Readme" file.
  * #L%
  */
 package de.gematik.epa.konnektor.client;
@@ -26,6 +27,8 @@ package de.gematik.epa.konnektor.client;
 import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
 import de.gematik.epa.konnektor.KonnektorUtils;
+import de.gematik.epa.utils.CardLogger;
+import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
@@ -42,8 +45,8 @@ import telematik.ws.conn.eventservice.xsd.v6_1.ObjectFactory;
 @Slf4j
 public class EventServiceClient extends KonnektorServiceClient {
 
+  private final CardLogger cardLogger = new CardLogger();
   private EventServicePortType eventService;
-
   private ContextType context;
 
   public EventServiceClient(
@@ -77,14 +80,52 @@ public class EventServiceClient extends KonnektorServiceClient {
         .orElse(null);
   }
 
+  /**
+   * Retrieves all card handles for the specified card type.
+   *
+   * @param cardType the type of card
+   * @return a List of all card handles
+   */
+  public List<String> getCardHandles(final CardTypeType cardType) {
+    return getCardHandles(cardType, false);
+  }
+
+  /**
+   * Retrieves the first card handle for the specified card type.
+   *
+   * @param cardType the type of card
+   * @return the first card handle
+   * @throws NoSuchElementException if no card is found
+   */
   public String getCardHandle(final CardTypeType cardType) {
-    return getCardsInfo(cardType).getCards().getCard().stream()
-        .findFirst()
-        .orElseThrow(
-            () ->
-                new NoSuchElementException(
-                    String.format("No %s card was present in the Konnektor", cardType.value())))
-        .getCardHandle();
+    return getCardHandles(cardType, true).getFirst();
+  }
+
+  /**
+   * Retrieves card handles for the specified card type.
+   *
+   * @param cardType the type of card
+   * @param firstOnly if true, returns only the first card handle; otherwise, returns all handles
+   * @return if firstOnly is true, returns a List with a single card handle or empty if no card
+   *     found; otherwise returns a List of all card handles
+   * @throws NoSuchElementException if firstOnly is true and no card is found
+   */
+  protected List<String> getCardHandles(final CardTypeType cardType, final boolean firstOnly) {
+    var cards = getCardsInfo(cardType).getCards().getCard();
+
+    if (firstOnly) {
+      return cards.stream()
+          .peek(cardLogger)
+          .findFirst()
+          .map(CardInfoType::getCardHandle)
+          .map(List::of)
+          .orElseThrow(
+              () ->
+                  new NoSuchElementException(
+                      String.format("No %s card was present in the Konnektor", cardType.value())));
+    }
+
+    return cards.stream().peek(cardLogger).map(CardInfoType::getCardHandle).toList();
   }
 
   GetCardsResponse getCards(@NonNull final GetCards request) {
@@ -97,12 +138,12 @@ public class EventServiceClient extends KonnektorServiceClient {
     eventService = konnektorInterfaceAssembly.eventService();
   }
 
-  // region private
-
   private GetCardsResponse getCardsInfo(final CardTypeType cardType) {
     final var request = buildGetCards(true, cardType);
     return getCards(request);
   }
+
+  // region private
 
   private GetCards buildGetCards(final boolean mandantWide, final CardTypeType cardType) {
     final var getCardsRequest = new ObjectFactory().createGetCards();
