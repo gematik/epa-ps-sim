@@ -26,15 +26,19 @@ package de.gematik.epa.api.testdriver.dto.request;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 
 class ReadVSDRequestTest {
   private static final String KVNR = "X324832743";
+  private static final String SMB_AUT_TELEMATIK_ID = "1-SMC-B-Testkarte--883110000163969";
 
   @Test
   void constructorTest() {
-    var result = assertDoesNotThrow(() -> new ReadVSDRequest(KVNR));
+    var result = assertDoesNotThrow(() -> new ReadVSDRequest(KVNR, SMB_AUT_TELEMATIK_ID));
+    assertNotNull(result);
     assertEquals(KVNR, result.kvnr());
+    assertEquals(SMB_AUT_TELEMATIK_ID, result.telematikId());
   }
 }

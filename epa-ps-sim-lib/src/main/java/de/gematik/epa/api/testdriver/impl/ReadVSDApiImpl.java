@@ -48,7 +48,7 @@ public class ReadVSDApiImpl implements ReadVSDApi {
   public ReadVSDResponseDTO readVSD(ReadVSDRequest request) {
     log.info("Running operation readVSD");
     try (var vsdServiceClient = new VSDServiceClient(contextProvider, konnektorInterfaceAssembly)) {
-      return vsdServiceClient.readVSDAndConvertToDto(request.kvnr());
+      return vsdServiceClient.readVSDAndConvertToDto(request.kvnr(), request.telematikId());
     } catch (Exception e) {
       log.error("Operation ReadVSD failed with an exception", e);
       return new ReadVSDResponseDTO(KonnektorUtils.fromThrowable(e));

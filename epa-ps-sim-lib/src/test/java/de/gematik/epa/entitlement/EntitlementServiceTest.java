@@ -159,7 +159,8 @@ class EntitlementServiceTest {
     assertThat(result.getStatusMessage()).isNull();
     assertThat(result.getValidTo()).isNotNull();
 
-    verify(vsdServiceClient).createHcv(requestDTO.getKvnr(), requestDTO.getTestCase());
+    verify(vsdServiceClient)
+        .createHcv(requestDTO.getKvnr(), requestDTO.getTestCase(), requestDTO.getTelematikId());
   }
 
   @Test
@@ -257,9 +258,10 @@ class EntitlementServiceTest {
     when(cardAuthenticationService.getCardHandle(requestDTO.getTelematikId()))
         .thenReturn("testCardHandle");
 
-    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr()))
+    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr(), requestDTO.getTelematikId()))
         .thenReturn(pruefungsNachweis.getBytes());
-    when(vsdServiceClient.createHcv(requestDTO.getKvnr(), requestDTO.getTestCase()))
+    when(vsdServiceClient.createHcv(
+            requestDTO.getKvnr(), requestDTO.getTestCase(), requestDTO.getTelematikId()))
         .thenReturn(hcv);
     when(entitlementClientWrapper.getUserAgent()).thenReturn(userAgent);
 
@@ -289,7 +291,7 @@ class EntitlementServiceTest {
     when(cardAuthenticationService.getCardHandle(requestDTO.getTelematikId()))
         .thenReturn("testCardHandle");
 
-    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr()))
+    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr(), requestDTO.getTelematikId()))
         .thenThrow(new RuntimeException("Error while reading VSD"));
 
     // when
@@ -311,7 +313,7 @@ class EntitlementServiceTest {
     when(cardAuthenticationService.getCardHandle(requestDTO.getTelematikId()))
         .thenReturn("testCardHandle");
 
-    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr()))
+    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr(), requestDTO.getTelematikId()))
         .thenThrow(new IOException("ReadVSD operation failed. Result: 3"));
 
     // when
@@ -335,7 +337,7 @@ class EntitlementServiceTest {
     when(cardAuthenticationService.getCardHandle(requestDTO.getTelematikId()))
         .thenReturn("testCardHandle");
 
-    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr()))
+    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr(), requestDTO.getTelematikId()))
         .thenReturn(pruefungsNachweis.getBytes());
     when(entitlementClientWrapper.getUserAgent()).thenReturn(userAgent);
 
@@ -365,7 +367,7 @@ class EntitlementServiceTest {
     when(cardAuthenticationService.getCardHandle(requestDTO.getTelematikId()))
         .thenReturn("testCardHandle");
 
-    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr()))
+    when(vsdServiceClient.getPruefziffer(requestDTO.getKvnr(), requestDTO.getTelematikId()))
         .thenReturn(pruefungsNachweis.getBytes());
     when(entitlementClientWrapper.getUserAgent()).thenReturn(userAgent);
 

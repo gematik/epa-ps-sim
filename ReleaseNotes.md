@@ -2,6 +2,10 @@
 
 # Release notes ePA-PS-Sim
 
+## Release 2.2.1
+
+- ReadVSD API was extended to use the SMC-B telematikId to select the correct card handle
+
 ## Release 2.2.0 (contains ePA 3.0.5 and dgMP parts of upcoming ePA 3.1.3)
 
 ### added
