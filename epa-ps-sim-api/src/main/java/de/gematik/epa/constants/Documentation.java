@@ -38,6 +38,9 @@ public class Documentation {
   public static final String KVNR_DESCRIPTION =
       "Identifikationsnummer (KVNR) des Aktenkonto. Für die Herausgeberidentifikation (Root) wird immer der Wert 1.2.276.0.76.4.8 verwendet";
 
+  public static final String TELEMATIK_ID_DESCRIPTION =
+      "Identifikationsnummer (TELEMATIK_ID) der SMCB.";
+
   public static final String AS_UPDATE_DESCRIPTION =
       "Schalter, ob die übergebenen Daten die bereits vorhandenen aktualisieren (true) oder überschreiben (false) sollen. "
           + "Der Unterschied besteht darin, dass Felder, die nicht übergeben werden (null), beim Aktualisieren ignoriert werden, sprich bereits gesetzte Werte bleiben erhalten, beim Überschreiben den bisherigen Wert überschreiben, sprich bereits gesetzte Werte werden durch null überschrieben. "

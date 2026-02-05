@@ -98,13 +98,14 @@ public class EntitlementService {
 
       // read VSD
       final byte[] pruefziffer =
-          getVsdServiceClient().getPruefziffer(postEntitlementRequest.getKvnr());
+          getVsdServiceClient().getPruefziffer(postEntitlementRequest.getKvnr(), telematikId);
 
       String testCase =
           postEntitlementRequest.getTestCase() != null
               ? postEntitlementRequest.getTestCase()
               : PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV.value();
-      String hcv = getVsdServiceClient().createHcv(postEntitlementRequest.getKvnr(), testCase);
+      String hcv =
+          getVsdServiceClient().createHcv(postEntitlementRequest.getKvnr(), testCase, telematikId);
 
       // external authenticate
       final UnaryOperator<byte[]> contentSigner =

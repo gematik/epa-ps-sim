@@ -7,7 +7,7 @@
     <groupId>de.gematik.epa</groupId>
     <artifactId>epa-ps-sim</artifactId>
     <packaging>pom</packaging>
-    <version>2.2.0</version>
+    <version>2.2.1</version>
     <name>epa-ps-sim</name>
     <description>Simplified REST interface and implementation to run ePA operations of the
         Konnektor

@@ -25,6 +25,7 @@
 package de.gematik.epa.api.testdriver.impl;
 
 import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
+import static de.gematik.epa.unit.util.TestDataFactory.SMB_AUT_TELEMATIK_ID;
 import static de.gematik.epa.unit.util.TestDataFactory.getCardsEgkResponse;
 import static de.gematik.epa.unit.util.TestDataFactory.setupMocksForSmbInformationProvider;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -75,7 +76,7 @@ class ReadVSDApiImplTest extends TestBase {
   void readVSDExceptionTest() {
     var exception = new RuntimeException("I am the expected exception");
     Mockito.when(vsdServiceMock.readVSD(Mockito.any())).thenThrow(exception);
-    ReadVSDRequest request = new ReadVSDRequest(KVNR);
+    ReadVSDRequest request = new ReadVSDRequest(KVNR, SMB_AUT_TELEMATIK_ID);
 
     var actualResponseDTO = assertDoesNotThrow(() -> tstObj.readVSD(request));
     assertNotNull(actualResponseDTO);

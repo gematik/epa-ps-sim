@@ -25,10 +25,13 @@
 package de.gematik.epa.api.testdriver.dto.request;
 
 import static de.gematik.epa.constants.Documentation.KVNR_DESCRIPTION;
+import static de.gematik.epa.constants.Documentation.TELEMATIK_ID_DESCRIPTION;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Request für das Lesen VSD von eGK")
 public record ReadVSDRequest(
-    @JsonProperty(required = true) @Schema(description = KVNR_DESCRIPTION) String kvnr) {}
+    @JsonProperty(required = true) @Schema(description = KVNR_DESCRIPTION) String kvnr,
+    @JsonProperty(required = true) @Schema(description = TELEMATIK_ID_DESCRIPTION)
+        String telematikId) {}

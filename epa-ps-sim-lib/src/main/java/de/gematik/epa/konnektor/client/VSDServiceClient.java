@@ -28,8 +28,10 @@ import static de.gematik.epa.utils.StringUtils.toISO885915;
 
 import de.gematik.epa.api.testdriver.dto.response.ReadVSDResponseDTO;
 import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementRequestDTO;
+import de.gematik.epa.konnektor.CardAuthenticationService;
 import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
+import de.gematik.epa.konnektor.SmbInformationProvider;
 import de.gematik.epa.konnektor.conversion.VSDServiceUtils;
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -41,7 +43,6 @@ import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import telematik.ws.conn.cardservice.xsd.v8_1.CardInfoType;
-import telematik.ws.conn.cardservicecommon.xsd.v2_0.CardTypeType;
 import telematik.ws.conn.connectorcontext.xsd.v2_0.ContextType;
 import telematik.ws.conn.vsds.vsdservice.wsdl.v5_2.VSDServicePortType;
 import telematik.ws.conn.vsds.vsdservice.xsd.v5_2.ReadVSD;
@@ -59,6 +60,7 @@ public class VSDServiceClient extends KonnektorServiceClient {
   private VSDServicePortType vsdService;
   private ContextType context;
   private EventServiceClient eventService;
+  private CardAuthenticationService cardAuthenticationService;
 
   public VSDServiceClient(
       KonnektorContextProvider konnektorContextProvider,
@@ -72,14 +74,21 @@ public class VSDServiceClient extends KonnektorServiceClient {
     context = konnektorContextProvider.getContext();
     vsdService = konnektorInterfaceAssembly.vsdService();
     eventService = new EventServiceClient(konnektorContextProvider, konnektorInterfaceAssembly);
+
+    cardAuthenticationService =
+        new CardAuthenticationService(
+            new SmbInformationProvider(konnektorContextProvider, konnektorInterfaceAssembly),
+            new AuthSignatureServiceClient(konnektorContextProvider, konnektorInterfaceAssembly));
   }
 
-  public ReadVSDResponseDTO readVSDAndConvertToDto(@NonNull String kvnr) {
-    return transformResponse(readVSD(kvnr));
+  public ReadVSDResponseDTO readVSDAndConvertToDto(
+      @NonNull String kvnr, @NonNull String telematikId) {
+    return transformResponse(readVSD(kvnr, telematikId));
   }
 
-  public byte[] getPruefziffer(@NonNull String kvnr) throws IOException {
-    ReadVSDResponse response = readVSD(kvnr);
+  public byte[] getPruefziffer(@NonNull String kvnr, @NonNull String telematikId)
+      throws IOException {
+    ReadVSDResponse response = readVSD(kvnr, telematikId);
     PN pn = VSDServiceUtils.getPn(response);
     int result = VSDServiceUtils.getResultOfOnlineCheckEGK(pn);
     boolean isSuccess = VSDServiceUtils.isResultSuccessful(result);
@@ -89,12 +98,12 @@ public class VSDServiceClient extends KonnektorServiceClient {
     return VSDServiceUtils.getPruefziffer(pn);
   }
 
-  public String createHcv(String kvnr, String testCase) {
+  public String createHcv(String kvnr, String testCase, @NonNull String telematikId) {
     if (testCase != null) {
       switch (PostEntitlementRequestDTO.TestCaseEnum.fromValue(testCase)) {
         case VALID_HCV -> {
           return VSDServiceUtils.calculateHcv(
-              getVersicherungsbeginn(kvnr), getStrassenAdresse(kvnr));
+              getVersicherungsbeginn(kvnr, telematikId), getStrassenAdresse(kvnr, telematikId));
         }
         case INVALID_HCV_STRUCTURE -> {
           return "7cc49e7af4"; // hexdump
@@ -112,16 +121,16 @@ public class VSDServiceClient extends KonnektorServiceClient {
     }
   }
 
-  byte[] getVersicherungsbeginn(@NonNull String kvnr) {
-    ReadVSDResponse response = readVSD(kvnr);
+  byte[] getVersicherungsbeginn(@NonNull String kvnr, @NonNull String telematikId) {
+    ReadVSDResponse response = readVSD(kvnr, telematikId);
     UCAllgemeineVersicherungsdatenXML allgemeineVersicherungsdatenXML =
         VSDServiceUtils.getAllgemeineVersicherungsdatenXml(response);
     return toISO885915(
         allgemeineVersicherungsdatenXML.getVersicherter().getVersicherungsschutz().getBeginn());
   }
 
-  byte[] getStrassenAdresse(@NonNull String kvnr) {
-    ReadVSDResponse response = readVSD(kvnr);
+  byte[] getStrassenAdresse(@NonNull String kvnr, @NonNull String telematikId) {
+    ReadVSDResponse response = readVSD(kvnr, telematikId);
     UCPersoenlicheVersichertendatenXML persoenlicheVersichertendatenXML =
         VSDServiceUtils.getPersoenlicheVersichertendatenXml(response);
 
@@ -134,15 +143,15 @@ public class VSDServiceClient extends KonnektorServiceClient {
     return toISO885915(strassenAdresse == null ? "" : strassenAdresse);
   }
 
-  public ReadVSDResponse readVSD(String kvnr) {
-    return vsdService.readVSD(transformRequest(kvnr));
+  public ReadVSDResponse readVSD(String kvnr, String telematikId) {
+    return vsdService.readVSD(transformRequest(kvnr, telematikId));
   }
 
-  protected ReadVSD transformRequest(String kvnr) {
+  protected ReadVSD transformRequest(String kvnr, String telematikId) {
     return new ReadVSD()
         .withContext(context)
         .withEhcHandle(getEhcHandle(kvnr))
-        .withHpcHandle(getHcpHandle())
+        .withHpcHandle(getHcpHandle(telematikId))
         .withReadOnlineReceipt(true)
         .withPerformOnlineCheck(true);
   }
@@ -157,8 +166,8 @@ public class VSDServiceClient extends KonnektorServiceClient {
   }
 
   // region private
-  private String getHcpHandle() {
-    return eventService.getCardHandle(CardTypeType.SMC_B);
+  String getHcpHandle(String telematikId) {
+    return cardAuthenticationService.getCardHandle(telematikId);
   }
 
   private String getEhcHandle(String kvnr) {

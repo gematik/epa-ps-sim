@@ -44,11 +44,12 @@ import org.mockito.Mockito;
 class VSDServiceClientTest extends TestBase {
 
   public static final String BASE64_PATTERN = "^[A-Za-z0-9+/]*={0,2}$";
-  private VSDServiceClient tstObj;
+  private final VSDServiceClient tstObj =
+      new VSDServiceClient(konnektorContextProvider(), konnektorInterfaceAssembly());
 
   @BeforeEach
   void beforeEach() {
-    tstObj = new VSDServiceClient(konnektorContextProvider(), konnektorInterfaceAssembly());
+    setupMocksForSmbInformationProvider(konnektorInterfaceAssembly());
   }
 
   @Test
@@ -57,7 +58,8 @@ class VSDServiceClientTest extends TestBase {
         .thenReturn(getCardsEgkResponse(KVNR));
     var readVSDRequest = ResourceLoader.readVSDRequest();
     var konReadVSDRequest =
-        assertDoesNotThrow(() -> tstObj.transformRequest(readVSDRequest.kvnr()));
+        assertDoesNotThrow(
+            () -> tstObj.transformRequest(readVSDRequest.kvnr(), readVSDRequest.telematikId()));
     System.out.println(konReadVSDRequest);
     assertNotNull(konReadVSDRequest);
     assertTrue(konReadVSDRequest.isPerformOnlineCheck());
@@ -73,7 +75,8 @@ class VSDServiceClientTest extends TestBase {
         .thenThrow(IllegalArgumentException.class);
     var readVSDRequest = ResourceLoader.readVSDRequest();
     assertThrows(
-        NoSuchElementException.class, () -> tstObj.transformRequest(readVSDRequest.kvnr()));
+        NoSuchElementException.class,
+        () -> tstObj.transformRequest(readVSDRequest.kvnr(), readVSDRequest.telematikId()));
   }
 
   @Test
@@ -92,7 +95,7 @@ class VSDServiceClientTest extends TestBase {
         .thenReturn(TestDataFactory.createReadVSDResponse());
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
-    assertDoesNotThrow(() -> tstObj.getPruefziffer(KVNR));
+    assertDoesNotThrow(() -> tstObj.getPruefziffer(KVNR, SMB_AUT_TELEMATIK_ID));
   }
 
   @SneakyThrows
@@ -103,7 +106,7 @@ class VSDServiceClientTest extends TestBase {
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
 
-    assertThrows(IOException.class, () -> tstObj.getPruefziffer(KVNR));
+    assertThrows(IOException.class, () -> tstObj.getPruefziffer(KVNR, SMB_AUT_TELEMATIK_ID));
   }
 
   @SneakyThrows
@@ -114,7 +117,8 @@ class VSDServiceClientTest extends TestBase {
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
     String actualHcv =
-        tstObj.createHcv(KVNR, PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV.value());
+        tstObj.createHcv(
+            KVNR, PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV.value(), SMB_AUT_TELEMATIK_ID);
     String expectedHcv = "Yu+dhTA=";
     assertEquals(expectedHcv, actualHcv);
   }
@@ -126,7 +130,10 @@ class VSDServiceClientTest extends TestBase {
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
     String actualHcv =
-        tstObj.createHcv(KVNR, PostEntitlementRequestDTO.TestCaseEnum.INVALID_HCV_HASH.value());
+        tstObj.createHcv(
+            KVNR,
+            PostEntitlementRequestDTO.TestCaseEnum.INVALID_HCV_HASH.value(),
+            SMB_AUT_TELEMATIK_ID);
     String notExpectedHcv = "YDpu+dhTA=";
 
     assertNotEquals(notExpectedHcv, actualHcv);
@@ -142,7 +149,9 @@ class VSDServiceClientTest extends TestBase {
         .thenReturn(getCardsEgkResponse(KVNR));
     String actualHcv =
         tstObj.createHcv(
-            KVNR, PostEntitlementRequestDTO.TestCaseEnum.INVALID_HCV_STRUCTURE.value());
+            KVNR,
+            PostEntitlementRequestDTO.TestCaseEnum.INVALID_HCV_STRUCTURE.value(),
+            SMB_AUT_TELEMATIK_ID);
 
     assertTrue(!isBase64String(actualHcv) || actualHcv.length() != 8);
   }
@@ -154,7 +163,8 @@ class VSDServiceClientTest extends TestBase {
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
     String actualHcv =
-        tstObj.createHcv(KVNR, PostEntitlementRequestDTO.TestCaseEnum.NO_HCV.value());
+        tstObj.createHcv(
+            KVNR, PostEntitlementRequestDTO.TestCaseEnum.NO_HCV.value(), SMB_AUT_TELEMATIK_ID);
 
     assertNull(actualHcv);
   }
@@ -170,7 +180,11 @@ class VSDServiceClientTest extends TestBase {
     Exception e =
         assertThrows(
             IOException.class,
-            () -> tstObj.createHcv(KVNR, PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV.value()));
+            () ->
+                tstObj.createHcv(
+                    KVNR,
+                    PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV.value(),
+                    SMB_AUT_TELEMATIK_ID));
     assertEquals("Not in GZIP format", e.getMessage());
   }
 
@@ -181,7 +195,7 @@ class VSDServiceClientTest extends TestBase {
         .thenReturn(TestDataFactory.createReadVSDResponse());
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
-    byte[] actualVB = tstObj.getVersicherungsbeginn(KVNR);
+    byte[] actualVB = tstObj.getVersicherungsbeginn(KVNR, SMB_AUT_TELEMATIK_ID);
     assertArrayEquals(toISO885915("20200123"), actualVB);
   }
 
@@ -193,7 +207,9 @@ class VSDServiceClientTest extends TestBase {
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
 
-    Exception e = assertThrows(IOException.class, () -> tstObj.getVersicherungsbeginn(KVNR));
+    Exception e =
+        assertThrows(
+            IOException.class, () -> tstObj.getVersicherungsbeginn(KVNR, SMB_AUT_TELEMATIK_ID));
     assertEquals("Not in GZIP format", e.getMessage());
   }
 
@@ -204,7 +220,7 @@ class VSDServiceClientTest extends TestBase {
         .thenReturn(TestDataFactory.createReadVSDResponse());
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
-    byte[] actualSAS = tstObj.getStrassenAdresse(KVNR);
+    byte[] actualSAS = tstObj.getStrassenAdresse(KVNR, SMB_AUT_TELEMATIK_ID);
     assertArrayEquals(toISO885915("Ruhsal"), actualSAS);
   }
 
@@ -215,7 +231,7 @@ class VSDServiceClientTest extends TestBase {
         .thenReturn(readVSDResponseStrasseEmpty());
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
-    byte[] actualSAS = tstObj.getStrassenAdresse(KVNR);
+    byte[] actualSAS = tstObj.getStrassenAdresse(KVNR, SMB_AUT_TELEMATIK_ID);
     assertArrayEquals(toISO885915(""), actualSAS);
   }
 
@@ -227,7 +243,9 @@ class VSDServiceClientTest extends TestBase {
     when(konnektorInterfaceAssembly().eventService().getCards(Mockito.any()))
         .thenReturn(getCardsEgkResponse(KVNR));
 
-    Exception e = assertThrows(IOException.class, () -> tstObj.getStrassenAdresse(KVNR));
+    Exception e =
+        assertThrows(
+            IOException.class, () -> tstObj.getStrassenAdresse(KVNR, SMB_AUT_TELEMATIK_ID));
     assertEquals("Not in GZIP format", e.getMessage());
   }
 
