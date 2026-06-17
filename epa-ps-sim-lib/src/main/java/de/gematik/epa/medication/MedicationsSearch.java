@@ -24,6 +24,7 @@
  */
 package de.gematik.epa.medication;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.Data;
@@ -55,4 +56,7 @@ public class MedicationsSearch {
   private String ingredientCode;
   private String context;
   private String format;
+  private String medicationReference;
+  private String activity;
+  private LocalDate effectiveDosePeriod;
 }

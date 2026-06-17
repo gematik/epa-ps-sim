@@ -77,6 +77,9 @@ import oasis.names.tc.dss._1_0.core.schema.Base64Data;
 import oasis.names.tc.dss._1_0.core.schema.Base64Signature;
 import oasis.names.tc.dss._1_0.core.schema.SignatureObject;
 import oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryResponse;
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotListType;
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 import oasis.names.tc.ebxml_regrep.xsd.rs._3.RegistryResponseType;
 import org.apache.cxf.binding.soap.Soap12;
 import org.apache.cxf.binding.soap.SoapMessage;
@@ -138,6 +141,7 @@ public class TestDataFactory {
   public static final String ACCEPT_FHIR_JSON = "application/fhir+json";
   public static final String X_REQUESTING_ORGANIZATION = "X-Requesting-Organization";
   public static final String ACCEPT_HEADER = "Accept";
+  public static final String X_REQUEST_ID = "X-Request-ID";
   public static final String CONTENT_TYPE_HEADER = "Content-Type";
 
   private static final String ALLGEMEINE_VERSICHERUNGSDATEN =
@@ -607,5 +611,23 @@ public class TestDataFactory {
 
     private KonnektorConnectionConfigurationMutable connection;
     private Context context;
+  }
+
+  public static RegistryResponseType registryResponseWithReusedDocumentMappings() {
+    var response = new RegistryResponseType();
+    response.setStatus(REGISTRY_RESPONSE_STATUS_SUCCESS);
+
+    var slotListType = new SlotListType();
+
+    var slot1 = new SlotType1();
+    slot1.setName("urn:gematik:iti:xds:ReusedDocumentMapping");
+    var valueList1 = new ValueListType();
+    valueList1.getValue().add("newUniqueId1|oldUniqueId1");
+    slot1.setValueList(valueList1);
+
+    slotListType.getSlot().add(slot1);
+
+    response.setResponseSlotList(slotListType);
+    return response;
   }
 }

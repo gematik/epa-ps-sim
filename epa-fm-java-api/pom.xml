@@ -6,20 +6,16 @@
     <parent>
         <groupId>de.gematik.epa</groupId>
         <artifactId>epa-ps-sim</artifactId>
-        <version>2.2.1</version>
+        <version>2.3.0</version>
     </parent>
 
     <artifactId>epa-fm-java-api</artifactId>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <cxf-xjc.version>4.1.2</cxf-xjc.version>
-        <xml.bind.jaxb.version>2.3.1</xml.bind.jaxb.version>
-        <jaxb.fluent.api.version>3.0</jaxb.fluent.api.version>
         <generated.sources.path>${project.build.directory}/generated-sources</generated.sources.path>
         <schema.root.path>${project.basedir}/src/main/resources/schemas</schema.root.path>
         <binding.path>${project.basedir}/src/main/binding</binding.path>
-        <!-- Konnnektor basic functionality -->
+        <!-- Konnektor basic functionality -->
         <wsdl.github.url>https://github.com/gematik/api-telematik/blob/5.0.6/</wsdl.github.url>
     </properties>
 
@@ -31,7 +27,6 @@
         <dependency>
             <groupId>org.apache.cxf.xjc-utils</groupId>
             <artifactId>cxf-xjc-runtime</artifactId>
-            <version>${cxf-xjc.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.epa</groupId>
@@ -41,13 +36,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -57,7 +50,6 @@
             <plugin>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-codegen-plugin</artifactId>
-                <version>${apache.cxf.version}</version>
                 <executions>
                     <execution>
                         <id>wsdl2java-plus</id>
@@ -223,7 +215,7 @@
                     <dependency>
                         <groupId>org.jvnet.jaxb2_commons</groupId>
                         <artifactId>jaxb2-fluent-api</artifactId>
-                        <version>${jaxb.fluent.api.version}</version>
+                        <version>${jaxb-fluent-api.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>org.slf4j</groupId>
@@ -235,12 +227,11 @@
             <plugin>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-xjc-plugin</artifactId>
-                <version>${cxf-xjc.version}</version>
                 <configuration>
                     <additionalJvmArgs>-Djavax.xml.accessExternalDTD=file</additionalJvmArgs>
                     <extensions>
                         <extension>org.apache.cxf.xjcplugins:cxf-xjc-ts:${cxf-xjc.version}</extension>
-                        <extension>org.jvnet.jaxb2_commons:jaxb2-fluent-api:${jaxb.fluent.api.version}</extension>
+                        <extension>org.jvnet.jaxb2_commons:jaxb2-fluent-api:${jaxb-fluent-api.version}</extension>
                     </extensions>
                 </configuration>
                 <executions>
@@ -294,7 +285,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <id>add-source</id>

@@ -1,0 +1,382 @@
+openapi: 3.0.3
+info:
+  title: Capability Statement für Clients des ePA Audit Event Service
+  version: 1.3.0
+  description: Dieses Capability Statement legt die Anforderungen an ePA Clients fest,
+    die den Audit Event Service der verwenden. Es definiert die unterstützten Interaktionen,
+    erforderliche HTTP Header sowie erwartete Statuscodes.
+paths:
+  /epa/audit/api/v1/fhir/metadata:
+    get:
+      summary: Get CapabilityStatement
+      tags:
+      - metadata
+      parameters:
+      - name: X-Request-ID
+        in: header
+        required: false
+        description: UUID of the request message
+        schema:
+          type: string
+          format: uuid
+      - name: x-insurantid
+        in: header
+        required: true
+        description: Health Record Identifier
+        schema:
+          type: string
+          pattern: ^[A-Z]{1}\d{9}$
+      - name: x-useragent
+        in: header
+        required: true
+        description: user agent information
+        schema:
+          type: string
+          pattern: ^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$
+      - name: Accept
+        in: header
+        required: false
+        description: The Accept header indicates the format in which the client wishes
+          to receive the FHIR response.
+        schema:
+          type: string
+          enum:
+          - application/fhir+json
+          - application/fhir+xml
+      - name: _format
+        in: query
+        required: false
+        description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable access Accept: header)'
+        schema:
+          type: string
+          enum:
+          - application/fhir+json
+          - application/fhir+xml
+      responses:
+        '200':
+          description: OK
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+            application/fhir+xml:
+              schema:
+                type: object
+        '403':
+          description: Device registration does not exist (if requestor role is oid_versicherter
+            only)
+        '404':
+          description: Health record is in state UNKNOWN or INITIALIZED
+        '409':
+          description: Request conflicts with the current state of the health record
+        '500':
+          description: Any other error
+  /epa/audit/api/v1/fhir/AuditEvent:
+    get:
+      summary: Search for AuditEvent
+      tags:
+      - AuditEvent
+      parameters:
+      - name: X-Request-ID
+        in: header
+        required: false
+        description: UUID of the request message
+        schema:
+          type: string
+          format: uuid
+      - name: x-insurantid
+        in: header
+        required: true
+        description: Health Record Identifier
+        schema:
+          type: string
+          pattern: ^[A-Z]{1}\d{9}$
+      - name: x-useragent
+        in: header
+        required: true
+        description: user agent information
+        schema:
+          type: string
+          pattern: ^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$
+      - name: Accept
+        in: header
+        required: false
+        description: The Accept header indicates the format in which the client wishes
+          to receive the FHIR response.
+        schema:
+          type: string
+          enum:
+          - application/fhir+json
+          - application/fhir+xml
+      - name: _format
+        in: query
+        required: false
+        description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable access Accept: header)'
+        schema:
+          type: string
+          enum:
+          - application/fhir+json
+          - application/fhir+xml
+      - name: _count
+        in: query
+        required: false
+        description: With _count, the client can specify the maximum number of elements
+          to be included on one page of the response. This means the FHIR Data Service
+          limits the result set to this maximum specified number. If no value for
+          _count is provided, the default value set is 25.
+        schema:
+          type: string
+      - name: _offset
+        in: query
+        required: false
+        description: This URL parameter indicates the (zero-based) offset of the first
+          returned element in the collection. If no value for _offset is provided,
+          the default value set is 0.
+        schema:
+          type: integer
+      - name: _total
+        in: query
+        required: false
+        description: This parameter controls whether and how the FHIR Data Service
+          returns the total number of search results.
+        schema:
+          type: string
+      - name: _id
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Resource.id
+      - name: _lastUpdated
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: Resource.meta.lastUpdated
+      - name: action
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AuditEvent.action
+      - name: altid
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AuditEvent.agent.altId
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: AuditEvent.recorded
+      - name: outcome
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AuditEvent.outcome
+      - name: entity-name
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AuditEvent.entity.name
+      - name: agent-name
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AuditEvent.agent.name
+      - name: type
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AuditEvent.type
+      responses:
+        '200':
+          description: Search successful
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+            application/fhir+xml:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+        '404':
+          description: Health record is in state UNKNOWN or INITIALIZED
+        '403':
+          description: Device registration does not exist (if requestor role is oid_versicherter
+            only)
+        '409':
+          description: Request conflicts with the current state of the health record
+        '500':
+          description: Any other error
+  /epa/audit/api/v1/fhir/AuditEvent/{id}:
+    get:
+      summary: Read a specific AuditEvent
+      tags:
+      - AuditEvent
+      parameters:
+      - name: X-Request-ID
+        in: header
+        required: false
+        description: UUID of the request message
+        schema:
+          type: string
+          format: uuid
+      - name: x-insurantid
+        in: header
+        required: true
+        description: Health Record Identifier
+        schema:
+          type: string
+          pattern: ^[A-Z]{1}\d{9}$
+      - name: x-useragent
+        in: header
+        required: true
+        description: user agent information
+        schema:
+          type: string
+          pattern: ^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Resource ID
+      - name: Accept
+        in: header
+        required: false
+        description: The Accept header indicates the format in which the client wishes
+          to receive the FHIR response.
+        schema:
+          type: string
+          enum:
+          - application/fhir+json
+          - application/fhir+xml
+      - name: _format
+        in: query
+        required: false
+        description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable access Accept: header)'
+        schema:
+          type: string
+          enum:
+          - application/fhir+json
+          - application/fhir+xml
+      responses:
+        '200':
+          description: AuditEvent successfully read
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+            application/fhir+xml:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+        '404':
+          description: Health record is in state UNKNOWN or INITIALIZED
+        '403':
+          description: Device registration does not exist (if requestor role is oid_versicherter
+            only)
+        '409':
+          description: Request conflicts with the current state of the health record
+        '500':
+          description: Any other error
+  /epa/audit/render/v1/pdf:
+    get:
+      tags:
+      - Render API
+      operationId: renderAuditEventsToPDF_AuditEventSvc
+      description: This interface returns a audit list rendered in PDF/A.
+      parameters:
+      - name: X-Request-ID
+        in: header
+        required: false
+        description: UUID of the request message
+        schema:
+          type: string
+          format: uuid
+      - name: x-insurantid
+        in: header
+        required: true
+        description: Health Record Identifier
+        schema:
+          type: string
+          pattern: ^[A-Z]{1}\d{9}$
+      - name: x-useragent
+        in: header
+        required: true
+        description: user agent information
+        schema:
+          type: string
+          pattern: ^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$
+      - name: Accept
+        in: header
+        required: false
+        description: The Accept header indicates the format in which the client wishes
+          to receive the FHIR response.
+        schema:
+          type: string
+          enum:
+          - application/pdf
+      - name: signed
+        in: query
+        description: Request signed PDF/A (true) or unsigned PDF/A (false)
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: lowerDateTime
+        in: query
+        description: Request signed PDF/A (true) or unsigned PDF/A (false)
+        required: false
+        schema:
+          type: string
+          format: datetime
+      - name: upperDateTime
+        in: query
+        description: Request signed PDF/A (true) or unsigned PDF/A (false)
+        required: false
+        schema:
+          type: string
+          format: datetime
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Request (parameters) are malformed
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Health record is in state UNKNOWN or INITIALIZED
+        '403':
+          description: Device registration does not exist (if requestor role is oid_versicherter
+            only)
+        '409':
+          description: Request conflicts with the current state of the health record
+        '500':
+          description: Any other error
+components:
+  responses: {}
+  headers: {}
+servers:
+- url: http://epa4all

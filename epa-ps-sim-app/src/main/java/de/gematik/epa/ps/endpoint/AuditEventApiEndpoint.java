@@ -24,14 +24,16 @@
  */
 package de.gematik.epa.ps.endpoint;
 
+import de.gematik.epa.api.audit_event.client.RenderApiApi;
 import de.gematik.epa.api.testdriver.impl.AuditEventApiImpl;
-import de.gematik.epa.audit.client.AuditRenderClient;
+import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.fhir.client.FhirClient;
 import org.springframework.stereotype.Service;
 
 @Service
 public final class AuditEventApiEndpoint extends AuditEventApiImpl {
-  public AuditEventApiEndpoint(FhirClient auditFhirClient, AuditRenderClient auditRenderClient) {
-    super(auditFhirClient, auditRenderClient);
+  public AuditEventApiEndpoint(
+      FhirClient auditFhirClient, JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper) {
+    super(auditFhirClient, auditRenderClientWrapper);
   }
 }

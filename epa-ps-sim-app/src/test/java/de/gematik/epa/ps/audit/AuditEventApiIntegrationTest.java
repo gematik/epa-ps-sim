@@ -26,13 +26,9 @@ package de.gematik.epa.ps.audit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventListAsPdfAResponseDTO;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventResponseDTO;
-import de.gematik.epa.audit.client.AuditRenderClient;
-import de.gematik.epa.audit.client.RenderResponse;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.ps.endpoint.AuditEventApiEndpoint;
 import de.gematik.epa.unit.TestDocumentClientConfiguration;
@@ -46,7 +42,6 @@ import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +49,6 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTe
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -66,7 +60,6 @@ import org.testcontainers.utility.DockerImageName;
     classes = {TestKonnektorClientConfiguration.class, TestDocumentClientConfiguration.class})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureRestTestClient
-@Disabled
 class AuditEventApiIntegrationTest {
 
   private static final int PORT = 8080;
@@ -83,8 +76,6 @@ class AuditEventApiIntegrationTest {
   @Autowired AuditEventApiEndpoint auditEventApiEndpoint;
   @Autowired FhirClient fhirClient;
   @Autowired RestTestClient restTestClient;
-
-  @MockitoBean AuditRenderClient auditRenderClient;
 
   @BeforeAll
   void setUp() {
@@ -146,43 +137,5 @@ class AuditEventApiIntegrationTest {
             fail(e.getMessage());
           }
         });
-  }
-
-  @Test
-  void getAuditEventsAsPdfAShouldReturnAuditEvents() {
-    String insurantId = "X12345678";
-    Boolean signed = true;
-    byte[] pdfContent = "dummy pdf content".getBytes();
-
-    RenderResponse renderResponse = new RenderResponse();
-    renderResponse.pdf(pdfContent).httpStatusCode(200);
-
-    when(auditRenderClient.getAuditEventAsPdfA(insurantId, signed)).thenReturn(renderResponse);
-
-    GetAuditEventListAsPdfAResponseDTO response =
-        auditEventApiEndpoint.getAuditEventListAsPdfA(insurantId, signed);
-    assertThat(response).isNotNull();
-    assertThat(response.getSuccess()).isTrue();
-    assertThat(response.getAuditEventAsPdfA()).isEqualTo(pdfContent);
-    assertThat(response.getStatusMessage()).isNull();
-  }
-
-  @Test
-  void getAuditEventsAsPdfAShouldReturnError() {
-    String insurantId = "X12345678";
-    Boolean signed = true;
-    byte[] pdfContent = "dummy pdf content".getBytes();
-
-    RenderResponse renderResponse = new RenderResponse();
-    renderResponse.pdf(pdfContent).httpStatusCode(500).errorMessage("error");
-
-    when(auditRenderClient.getAuditEventAsPdfA(insurantId, signed)).thenReturn(renderResponse);
-
-    GetAuditEventListAsPdfAResponseDTO response =
-        auditEventApiEndpoint.getAuditEventListAsPdfA(insurantId, signed);
-    assertThat(response).isNotNull();
-    assertThat(response.getSuccess()).isFalse();
-    assertThat(response.getAuditEventAsPdfA()).isEqualTo(pdfContent);
-    assertThat(response.getStatusMessage()).isEqualTo("error");
   }
 }

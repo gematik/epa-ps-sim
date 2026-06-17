@@ -59,6 +59,8 @@ public class ResourceLoader {
   public static final String RESPONSE_PATH = TEST_RESOURCES_PATH + "response/";
   public static final String PUT_DOCUMENTS_WITH_FOLDER_METADATA_REQUEST =
       REQUEST_PATH + "putDocumentsWithFolderMetadata.json";
+  public static final String PUT_DOCUMENTS_WITH_REUSE_DOCUMENTS =
+      REQUEST_PATH + "putDocumentsReuse.json";
   public static final String RETRIEVE_DOCUMENTS_REQUEST =
       REQUEST_PATH + "retrieveDocumentsRequest.json";
 
@@ -93,6 +95,10 @@ public class ResourceLoader {
   @Getter(lazy = true)
   private static final PutDocumentsRequestDTO putDocumentWithFolderMetadataRequest =
       loadDtoFromJsonFile(PutDocumentsRequestDTO.class, PUT_DOCUMENTS_WITH_FOLDER_METADATA_REQUEST);
+
+  @Getter(lazy = true)
+  private static final PutDocumentsRequestDTO putDocumentWithReuseRequest =
+      loadDtoFromJsonFile(PutDocumentsRequestDTO.class, PUT_DOCUMENTS_WITH_REUSE_DOCUMENTS);
 
   @Getter(lazy = true)
   private static final UpdateDocumentsRequestDTO updateDocumentsRequest =

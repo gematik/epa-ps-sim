@@ -24,12 +24,13 @@
  */
 package de.gematik.epa.api.testdriver.impl;
 
+import de.gematik.epa.api.audit_event.client.RenderApiApi;
 import de.gematik.epa.api.testdriver.audit.AuditEventApi;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventListAsPdfAResponseDTO;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventResponseDTO;
 import de.gematik.epa.audit.AuditEventSearch;
 import de.gematik.epa.audit.AuditEventService;
-import de.gematik.epa.audit.client.AuditRenderClient;
+import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.fhir.client.FhirClient;
 import java.time.OffsetDateTime;
 import lombok.Setter;
@@ -39,8 +40,10 @@ public class AuditEventApiImpl implements AuditEventApi {
 
   private AuditEventService auditEventService;
 
-  public AuditEventApiImpl(final FhirClient fhirClient, final AuditRenderClient auditRenderClient) {
-    this.auditEventService = new AuditEventService(fhirClient, auditRenderClient);
+  public AuditEventApiImpl(
+      final FhirClient fhirClient,
+      final JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper) {
+    this.auditEventService = new AuditEventService(fhirClient, auditRenderClientWrapper);
   }
 
   @Override
@@ -79,7 +82,8 @@ public class AuditEventApiImpl implements AuditEventApi {
 
   @Override
   public GetAuditEventListAsPdfAResponseDTO getAuditEventListAsPdfA(
-      String xInsurantid, Boolean signed) {
-    return auditEventService.getAuditEventsAsPdfA(xInsurantid, signed);
+      String xInsurantid, Boolean signed, String lowerDateTime, String upperDateTime) {
+    return auditEventService.getAuditEventsAsPdfA(
+        xInsurantid, signed, lowerDateTime, upperDateTime);
   }
 }

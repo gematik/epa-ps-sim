@@ -42,7 +42,7 @@ import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementRequestDTO;
 import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementResponseDTO;
 import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.entitlement.EntitlementService;
-import de.gematik.epa.ps.endpoint.EntitlementApiEndpoint;
+import de.gematik.epa.ps.endpoint.EntitlementApiEndpointV1;
 import de.gematik.epa.unit.TestDocumentClientConfiguration;
 import de.gematik.epa.unit.TestKonnektorClientConfiguration;
 import de.gematik.epa.utils.HealthRecordProvider;
@@ -76,6 +76,7 @@ class IntegrationPZTest {
   private static final DockerImageName entitlementDockerImage =
       DockerImageName.parse(
           "europe-west3-docker.pkg.dev/gematik-all-infra-prod/epa/entitlement:latest");
+  private static final String ENTITLEMENTS_PATH = "/services/epa/testdriver/api/v1/entitlements";
   private final GenericContainer<?> entitlementServer =
       new GenericContainer<>(entitlementDockerImage)
           .withExposedPorts(PORT)
@@ -87,7 +88,7 @@ class IntegrationPZTest {
                   .withStartupTimeout(Duration.ofMinutes(5L)));
 
   @Autowired RestTestClient restTestClient;
-  @Autowired EntitlementApiEndpoint entitlementApiEndpoint;
+  @Autowired EntitlementApiEndpointV1 entitlementApiEndpointV1;
   @Autowired EntitlementService entitlementService;
   @Autowired private TestKonnektorClientConfiguration testKonnektorClientConfiguration;
 
@@ -97,11 +98,13 @@ class IntegrationPZTest {
   void setupEach() {
     testKonnektorClientConfiguration.configureVsdServiceResponse(getReadVSDResponsePZ2());
     setupFqdnProvider(KVNR);
+    InsurantIdHolder.setInsurantId(KVNR);
   }
 
   @AfterEach
   void tearDownEach() {
     clearFqdnProvider(KVNR);
+    InsurantIdHolder.clear();
   }
 
   @BeforeAll
@@ -125,7 +128,7 @@ class IntegrationPZTest {
 
   @Test
   void contextLoads() {
-    assertThat(entitlementApiEndpoint).isNotNull();
+    assertThat(entitlementApiEndpointV1).isNotNull();
     assertThat(jaxRsClientWrapper).isNotNull();
     assertThat(restTestClient).isNotNull();
   }
@@ -142,7 +145,7 @@ class IntegrationPZTest {
           var response =
               restTestClient
                   .post()
-                  .uri("/services/epa/testdriver/api/v1/entitlements")
+                  .uri(ENTITLEMENTS_PATH)
                   .header(X_INSURANTID, KVNR)
                   .body(request)
                   .exchange()
@@ -170,7 +173,7 @@ class IntegrationPZTest {
     var response =
         restTestClient
             .post()
-            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .uri(ENTITLEMENTS_PATH)
             .header(X_INSURANTID, KVNR)
             .body(request)
             .exchange()
@@ -198,7 +201,7 @@ class IntegrationPZTest {
     var response =
         restTestClient
             .post()
-            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .uri(ENTITLEMENTS_PATH)
             .header(X_INSURANTID, KVNR)
             .body(request)
             .exchange()
@@ -229,7 +232,7 @@ class IntegrationPZTest {
     var response =
         restTestClient
             .post()
-            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .uri(ENTITLEMENTS_PATH)
             .header(X_INSURANTID, KVNR)
             .body(request)
             .exchange()
@@ -259,7 +262,7 @@ class IntegrationPZTest {
     var response =
         restTestClient
             .post()
-            .uri("/services/epa/testdriver/api/v1/entitlements")
+            .uri(ENTITLEMENTS_PATH)
             .header(X_INSURANTID, KVNR)
             .body(request)
             .exchange()
@@ -283,32 +286,34 @@ class IntegrationPZTest {
     InsurantIdHolder.setInsurantId(wrongInsurantId);
     HealthRecordProvider.addHealthRecord(wrongInsurantId, "http://localhost:8080");
 
-    var request =
-        new PostEntitlementRequestDTO()
-            .kvnr(KVNR)
-            .telematikId(SMB_AUT_TELEMATIK_ID)
-            .testCase(PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV);
-    var response =
-        restTestClient
-            .post()
-            .uri("/services/epa/testdriver/api/v1/entitlements")
-            .header(X_INSURANTID, wrongInsurantId)
-            .body(request)
-            .exchange()
-            .expectStatus()
-            .isOk()
-            .returnResult(PostEntitlementResponseDTO.class);
-    assertThat(response.getResponseBody())
-        .satisfies(
-            body -> {
-              assertNotNull(body);
-              assertThat(body.getSuccess()).isFalse();
-              assertThat(body.getStatusMessage())
-                  .contains("400", "malformedRequest", "Prüfziffer for wrong KVNR (Attack?)");
-              assertThat(body.getValidTo()).isNull();
-            });
-
-    clearFqdnProvider(wrongInsurantId);
-    InsurantIdHolder.clear();
+    try {
+      var request =
+          new PostEntitlementRequestDTO()
+              .kvnr(KVNR)
+              .telematikId(SMB_AUT_TELEMATIK_ID)
+              .testCase(PostEntitlementRequestDTO.TestCaseEnum.VALID_HCV);
+      var response =
+          restTestClient
+              .post()
+              .uri(ENTITLEMENTS_PATH)
+              .header(X_INSURANTID, wrongInsurantId)
+              .body(request)
+              .exchange()
+              .expectStatus()
+              .isOk()
+              .returnResult(PostEntitlementResponseDTO.class);
+      assertThat(response.getResponseBody())
+          .satisfies(
+              body -> {
+                assertNotNull(body);
+                assertThat(body.getSuccess()).isFalse();
+                assertThat(body.getStatusMessage())
+                    .contains("400", "malformedRequest", "Prüfziffer for wrong KVNR (Attack?)");
+                assertThat(body.getValidTo()).isNull();
+              });
+    } finally {
+      clearFqdnProvider(wrongInsurantId);
+      InsurantIdHolder.clear();
+    }
   }
 }

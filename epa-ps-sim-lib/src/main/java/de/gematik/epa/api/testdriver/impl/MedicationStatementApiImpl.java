@@ -26,7 +26,10 @@ package de.gematik.epa.api.testdriver.impl;
 
 import de.gematik.epa.api.testdriver.medication.MedicationStatementApi;
 import de.gematik.epa.api.testdriver.medication.dto.*;
+import de.gematik.epa.medication.MedicationStatementSearch;
 import de.gematik.epa.medication.MedicationStatementService;
+import java.time.LocalDate;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,25 +37,106 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class MedicationStatementApiImpl implements MedicationStatementApi {
-
+  private static final int DEFAULT_COUNT = 10;
+  private static final int DEFAULT_OFFSET = 0;
   private final MedicationStatementService medicationStatementService;
 
   @Override
   public AddEmlEntryResponseDTO addEmlEntry(
-      String xInsurantid, UUID xRequestID, String xUseragent, AddEmlEntryInput addEmlEntryInput) {
+      String insurantId, UUID requestId, String useragent, AddEmlEntryInput addEmlEntryInput) {
     return medicationStatementService.addEmlEntry(
-        xInsurantid, xRequestID, xUseragent, addEmlEntryInput);
+        insurantId, requestId, useragent, addEmlEntryInput);
   }
 
   @Override
   public CancelEmlEntryResponseDTO cancelEmlEntry(
-      String xInsurantid,
-      UUID xRequestID,
+      String insurantId,
+      UUID requestId,
       String medicationStatementId,
-      String xUseragent,
+      String useragent,
       CancelEmlEntryInput cancelEmlEntryInput) {
     return medicationStatementService.cancelEmlEntry(
-        xInsurantid, xRequestID, medicationStatementId, xUseragent, cancelEmlEntryInput);
+        insurantId, requestId, medicationStatementId, useragent, cancelEmlEntryInput);
+  }
+
+  @Override
+  public GetMedicationStatementHistoryByIdAndVersionResponseDTO
+      getMedicationStatementHistoryByIdAndVersion(
+          String insurantId,
+          UUID requestId,
+          String id,
+          String versionId,
+          String useragent,
+          String format) {
+
+    var searchRequest =
+        new MedicationStatementSearch()
+            .id(id)
+            .insurantId(insurantId)
+            .requestId(requestId)
+            .useragent(useragent)
+            .versionId(versionId)
+            .format(format);
+    return medicationStatementService.getMedicationStatementHistoryById(searchRequest);
+  }
+
+  @Override
+  public GetMedicationStatementHistoryResponseDTO getMedicationStatementHistoryList(
+      String insurantId, UUID requestId, String id, String useragent, String format) {
+    var searchRequest =
+        new MedicationStatementSearch()
+            .id(id)
+            .insurantId(insurantId)
+            .requestId(requestId)
+            .useragent(useragent)
+            .format(format);
+    return medicationStatementService.searchMedicationStatementHistory(searchRequest);
+  }
+
+  @Override
+  public GetMedicationStatementListDTO getMedicationStatements(
+      String insurantId,
+      UUID requestId,
+      String useragent,
+      Integer count,
+      Integer offset,
+      String total,
+      String id,
+      String lastUpdated,
+      String include,
+      String revinclude,
+      String format,
+      String medication,
+      String status,
+      LocalDate effective,
+      String prescription,
+      String derivedFrom,
+      String context,
+      String basedOnEmp) {
+
+    if (id == null) {
+      var searchRequest =
+          new MedicationStatementSearch()
+              .insurantId(insurantId)
+              .requestId(requestId)
+              .useragent(useragent)
+              .count(Optional.ofNullable(count).orElse(DEFAULT_COUNT))
+              .offset(Optional.ofNullable(offset).orElse(DEFAULT_OFFSET))
+              .total(total)
+              .lastUpdated(lastUpdated)
+              .include(include)
+              .revinclude(revinclude)
+              .format(format)
+              .medicationReference(medication)
+              .status(status)
+              .effective(effective)
+              .prescription(prescription)
+              .derivedFrom(derivedFrom)
+              .context(context)
+              .basedOnEmp(basedOnEmp);
+      return medicationStatementService.searchMedicationStatements(searchRequest);
+    }
+    return medicationStatementService.executeGetById(id);
   }
 
   @Override
@@ -64,5 +148,17 @@ public class MedicationStatementApiImpl implements MedicationStatementApi {
       LinkEmpInput linkEmpInput) {
     return medicationStatementService.linkEmp(
         insurantId, requestId, medicationStatementId, useragent, linkEmpInput);
+  }
+
+  @Override
+  public UnlinkEmpResponseDTO unlinkEmp(
+      String insurantId,
+      UUID requestId,
+      String medicationStatementId,
+      String useragent,
+      UnlinkEmpInput unlinkEmpInput) {
+
+    return medicationStatementService.unlinkEmp(
+        insurantId, requestId, medicationStatementId, useragent, unlinkEmpInput);
   }
 }

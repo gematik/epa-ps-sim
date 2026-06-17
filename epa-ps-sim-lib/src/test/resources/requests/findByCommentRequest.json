@@ -1,6 +1,6 @@
 {
   "queryData" : {
-    "XDSDocumentEntryComment" : [ "Comment%" ],
+    "XDSDocumentEntryComments" : [ "Comment%" ],
     "XDSDocumentEntryStatus": ["urn:oasis:names:tc:ebxml-regrep:StatusType:Approved"]
   },
   "query" : "FindDocumentsByComment",

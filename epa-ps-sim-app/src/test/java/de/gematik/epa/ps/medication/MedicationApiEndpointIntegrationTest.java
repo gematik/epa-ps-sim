@@ -28,11 +28,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 import ca.uhn.fhir.rest.api.MethodOutcome;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationDispenseListDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationHistoryResponseDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationListAsFhirResponseDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationRequestListDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationResponseDTO;
+import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.ps.endpoint.MedicationApiEndpoint;
 import de.gematik.epa.ps.fhir.config.TestFhirClientProvider;
@@ -95,38 +91,7 @@ class MedicationApiEndpointIntegrationTest {
   @Autowired FhirClient fhirClient;
   @Autowired RestTestClient restTestClient;
 
-  @BeforeAll
-  void setUp() {
-    fhirServer.start();
-    var serverUrl =
-        "http://" + fhirServer.getHost() + ":" + fhirServer.getMappedPort(PORT) + "/fhir";
-    fhirClient.setServerUrl(serverUrl, "PS-SIM");
-    FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
-
-    registerCustomSearchParameters();
-  }
-
-  private void registerCustomSearchParameters() {
-    var contextSearchParameter = new SearchParameter();
-    contextSearchParameter.setId("context-sp");
-    contextSearchParameter.setUrl(
-        "https://gematik.de/fhir/epa-medication/SearchParameter/context-sp");
-    contextSearchParameter.setVersion("1.2.0");
-    contextSearchParameter.setName("ContextSP");
-    contextSearchParameter.setStatus(Enumerations.PublicationStatus.ACTIVE);
-    contextSearchParameter.setCode("context");
-    contextSearchParameter.addBase(MEDICATION_STATEMENT);
-    contextSearchParameter.addBase(MEDICATION);
-    contextSearchParameter.addBase(MEDICATION_REQUEST);
-    contextSearchParameter.setType(Enumerations.SearchParamType.TOKEN);
-    contextSearchParameter.setExpression(
-        "Resource.extension('https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension').value");
-    contextSearchParameter.setDescription("Liefert alle Ressourcen mit diesem Context Code");
-    contextSearchParameter.setMultipleOr(false);
-    contextSearchParameter.setMultipleAnd(false);
-
-    fhirClient.getClient().create().resource(contextSearchParameter).execute();
-
+  private static SearchParameter getRxPrescriptionSearchParameter() {
     SearchParameter rxPrescriptionSearchParameter = new SearchParameter();
     rxPrescriptionSearchParameter.setId("rx-prescription-process-sp");
     rxPrescriptionSearchParameter.setUrl(
@@ -147,7 +112,47 @@ class MedicationApiEndpointIntegrationTest {
     rxPrescriptionSearchParameter.setExpression(
         "extension.where(url = 'https://gematik.de/fhir/epa-medication/StructureDefinition/rx-prescription-process-identifier-extension').value.value");
     rxPrescriptionSearchParameter.setXpathUsage(SearchParameter.XPathUsageType.NORMAL);
+    return rxPrescriptionSearchParameter;
+  }
 
+  private static SearchParameter getContextSearchParameter() {
+    var contextSearchParameter = new SearchParameter();
+    contextSearchParameter.setUrl(
+        "https://gematik.de/fhir/epa-medication/SearchParameter/context-sp");
+    contextSearchParameter.setVersion("1.2.0");
+    contextSearchParameter.setName("ContextSP");
+    contextSearchParameter.setStatus(Enumerations.PublicationStatus.ACTIVE);
+    contextSearchParameter.setDescription("Liefert alle Ressourcen mit diesem Context Code");
+    contextSearchParameter.setCode("context");
+    contextSearchParameter.addBase(MEDICATION_STATEMENT);
+    contextSearchParameter.addBase(MEDICATION);
+    contextSearchParameter.addBase(MEDICATION_REQUEST);
+    contextSearchParameter.setType(Enumerations.SearchParamType.TOKEN);
+    contextSearchParameter.setExpression(
+        "Medication.extension.where(url='https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension').value"
+            + " | MedicationRequest.extension.where(url='https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension').value"
+            + " | MedicationStatement.extension.where(url='https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension').value");
+    contextSearchParameter.setMultipleOr(false);
+    contextSearchParameter.setMultipleAnd(false);
+    return contextSearchParameter;
+  }
+
+  @BeforeAll
+  void setUp() {
+    fhirServer.start();
+    var serverUrl =
+        "http://" + fhirServer.getHost() + ":" + fhirServer.getMappedPort(PORT) + "/fhir";
+    fhirClient.setServerUrl(serverUrl, "PS-SIM");
+    FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
+
+    registerCustomSearchParameters();
+  }
+
+  private void registerCustomSearchParameters() {
+    var contextSearchParameter = getContextSearchParameter();
+    fhirClient.getClient().create().resource(contextSearchParameter).execute();
+
+    var rxPrescriptionSearchParameter = getRxPrescriptionSearchParameter();
     fhirClient.getClient().create().resource(rxPrescriptionSearchParameter).execute();
   }
 
@@ -387,6 +392,102 @@ class MedicationApiEndpointIntegrationTest {
     assertThat(response.getResponseBody().getStatusMessage())
         .contains("No medication historyBundle found for ID");
     assertThat(response.getResponseBody().getMedications()).isEmpty();
+  }
+
+  @Test
+  @Order(14)
+  void shouldGetMedicationHistoryById() {
+    // given
+    var medicationId = medicationIds.getLast();
+
+    // when - get medication history
+    var response =
+        restTestClient
+            .get()
+            .uri("/services/epa/testdriver/api/v1/medication/" + medicationId + "/history/1")
+            .exchange()
+            .returnResult(GetMedicationHistoryByIdAndVersionResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedication()).isNotEmpty();
+  }
+
+  @Test
+  @Order(11)
+  void shouldGetMedicationRequestHistoryList() {
+    // given
+    var medicationRequestId = medicationRequestIds.getLast();
+
+    // when
+    var response =
+        restTestClient
+            .get()
+            .uri(
+                "/services/epa/testdriver/api/v1/medication-request/"
+                    + medicationRequestId
+                    + "/history")
+            .exchange()
+            .returnResult(GetMedicationRequestHistoryResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedicationRequests()).isNotEmpty();
+  }
+
+  @Test
+  @Order(14)
+  void shouldGetMedicationRequestHistoryById() {
+    // given
+    var medicationRequestId = medicationRequestIds.getLast();
+
+    // when
+    var response =
+        restTestClient
+            .get()
+            .uri(
+                "/services/epa/testdriver/api/v1/medication-request/"
+                    + medicationRequestId
+                    + "/history/1")
+            .exchange()
+            .returnResult(GetMedicationRequestHistoryByIdAndVersionResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isBlank();
+    assertThat(response.getResponseBody().getMedicationRequest()).isNotEmpty();
+  }
+
+  @Test
+  @Order(15)
+  void shouldReturnProperResponseWhenMedicationRequestHistoryNotFound() {
+    // given
+    var nonExistentId = "non-existent-id-999";
+
+    // when
+    var response =
+        restTestClient
+            .get()
+            .uri("/services/epa/testdriver/api/v1/medication-request/" + nonExistentId + "/history")
+            .exchange()
+            .returnResult(GetMedicationRequestHistoryResponseDTO.class);
+
+    // then
+    assertThat(response.getStatus().value()).isEqualTo(200);
+    assertThat(response.getResponseBody()).isNotNull();
+    assertThat(response.getResponseBody().getSuccess()).isTrue();
+    assertThat(response.getResponseBody().getStatusMessage()).isNotBlank();
+    assertThat(response.getResponseBody().getStatusMessage())
+        .contains("No medication request historyBundle found for ID");
+    assertThat(response.getResponseBody().getMedicationRequests()).isEmpty();
   }
 
   private void testMedicationApiFailurePath(String url, String expectedStatusMessage) {

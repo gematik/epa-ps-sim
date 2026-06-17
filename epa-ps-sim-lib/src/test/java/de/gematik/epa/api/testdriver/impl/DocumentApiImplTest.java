@@ -180,6 +180,28 @@ class DocumentApiImplTest extends TestBase {
   }
 
   @Test
+  void putDocumentsWithReusedDocumentMappingsTest() {
+    var registryResponse = TestDataFactory.registryResponseWithReusedDocumentMappings();
+    Mockito.when(
+            documentServiceMock.documentRepositoryProvideAndRegisterDocumentSetB(
+                Mockito.any(ProvideAndRegisterDocumentSetRequestType.class)))
+        .thenReturn(registryResponse);
+
+    PutDocumentsRequestDTO request = ResourceLoader.putDocumentWithReuseRequest();
+
+    ResponseDTO actualResponseDTO =
+        assertDoesNotThrow(() -> xdsDocumentApi.putDocuments(X_INSURANT_ID, request));
+
+    assertNotNull(actualResponseDTO);
+    assertTrue(actualResponseDTO.success());
+    assertEquals(
+        TestDataFactory.REGISTRY_RESPONSE_STATUS_SUCCESS, actualResponseDTO.statusMessage());
+    assertNotNull(actualResponseDTO.reusedDocumentMappings());
+    assertEquals(1, actualResponseDTO.reusedDocumentMappings().size());
+    assertTrue(actualResponseDTO.reusedDocumentMappings().contains("newUniqueId1|oldUniqueId1"));
+  }
+
+  @Test
   void putDocumentsExceptionTest() {
     var exception = new RuntimeException("I am an expected exception");
     Mockito.when(

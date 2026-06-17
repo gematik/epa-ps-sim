@@ -11,14 +11,15 @@ info:
     name: Apache 2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0'
 tags:
-  - name: Entitlement
+  - name: EntitlementV1
+  - name: EntitlementV2
 paths:
   /epa/testdriver/api/v1/entitlements:
     post:
       tags:
-        - Entitlement
+        - EntitlementV1
       summary: 'Add a new or update an existing entitlement for an institution identified by displayname, telematikId or insurantId'
-      description: 'This operation executes the use case "Add a new entitlement" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId.'
+      description: 'This operation executes the use case "Add a new entitlement" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
       operationId: postEntitlement
       parameters:
         - name: x-insurantid
@@ -40,10 +41,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/PostEntitlementResponseDTO'
 
+  /epa/testdriver/api/v2/entitlements:
+    post:
+      tags:
+        - EntitlementV2
+      summary: (setEntitlementPsV2) Set a single entitlement using PoPP-token.
+      description: 'Set entitlement via PoPP-token.'
+      operationId: postEntitlementPopp
+      parameters:
+        - name: x-insurantid
+          in: header
+          schema:
+            $ref: 'shared.yaml#/components/schemas/KvnrType'
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostEntitlementRequestDTOV2'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostEntitlementResponseDTO'
+
   /epa/testdriver/api/v1/blockedUsers:
     get:
       tags:
-        - Entitlement
+        - EntitlementV1
       summary: 'Get a list of all blocked users and institutions, their related user and validity period'
       description: 'This operation executes the use case "List all blocked users" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
       operationId: getBlockedUserList
@@ -63,9 +91,9 @@ paths:
 
     post:
       tags:
-        - Entitlement
+        - EntitlementV1
       summary: Add a new or update an existing blocked user identified by telematikId
-      description: 'This operation executes the use case "Add a new blocked user" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId.'
+      description: 'This operation executes the use case "Add a new blocked user" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
       operationId: postBlockedUser
       parameters:
         - name: x-insurantid
@@ -87,12 +115,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResponseDTO'
 
-  /epa/testdriver/api/v1/blockedusers/{telematikid}:
+  /epa/testdriver/api/v1/blockedUsers/{telematikId}:
     delete:
       tags:
-        - Entitlement
+        - EntitlementV1
       summary: Delete a single specific blocked user
-      description: 'This operation executes the use case "Delete an existing entry for a blocked user" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId.'
+      description: 'This operation executes the use case "Delete an existing entry for a blocked user" in an existing user session. By default, the health record of the user is addressed, otherwise the health record is identified by "recordId".'
       operationId: deleteBlockedUser
       parameters:
         - in: header
@@ -101,7 +129,7 @@ paths:
             $ref: 'shared.yaml#/components/schemas/KvnrType'
           required: true
         - in: path
-          name: telematikid
+          name: telematikId
           schema:
             $ref: 'shared.yaml#/components/schemas/TelematikIdType'
           required: true
@@ -137,6 +165,13 @@ components:
           type: string
           enum: [ validHcv, noHcv, invalidHcvStructure, invalidHcvHash ]
           description: 'Specifies the test case to trigger different behaviors'
+    PostEntitlementRequestDTOV2:
+      type: object
+      required:
+        - popp
+      properties:
+        popp:
+          type: string
     PostEntitlementResponseDTO:
       allOf:
         - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
@@ -176,8 +211,7 @@ components:
                     properties:
                       at:
                         description: Creation timestamp
-                        allOf:
-                          - $ref: '#/components/schemas/DateTimeType'
+                        $ref: '#/components/schemas/DateTimeType'
 
     SetBlockedUserRequestDTO:
       type: object

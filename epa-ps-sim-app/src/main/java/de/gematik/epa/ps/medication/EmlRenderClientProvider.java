@@ -43,18 +43,22 @@ public class EmlRenderClientProvider {
   @Bean
   public EmlRenderClient emlRenderClient() {
     return new EmlRenderClient(
-        getServerUrl(),
-        emlRenderClientConfiguration.getPdfPath(),
-        emlRenderClientConfiguration.getXhtmlPath(),
-        emlRenderClientConfiguration.getUserAgent(),
-        emlRenderClientConfiguration.getMedicationListPath(),
-        emlRenderClientConfiguration.getAddEmlEntryPath(),
-        emlRenderClientConfiguration.getCancelEmlEntryPath(),
-        emlRenderClientConfiguration.getAddEmpEntryPath(),
-        emlRenderClientConfiguration.getUpdateEmpEntryPath(),
-        emlRenderClientConfiguration.getEmpPdfPath(),
-        emlRenderClientConfiguration.getMedicationPlanLogPath(),
-        emlRenderClientConfiguration.getLinkEmpPath());
+        new EmlRenderClient.EmlRenderClientConfig(
+            getServerUrl(),
+            emlRenderClientConfiguration.getPdfPath(),
+            emlRenderClientConfiguration.getXhtmlPath(),
+            emlRenderClientConfiguration.getUserAgent(),
+            emlRenderClientConfiguration.getMedicationListPath(),
+            emlRenderClientConfiguration.getAddEmlEntryPath(),
+            emlRenderClientConfiguration.getCancelEmlEntryPath(),
+            emlRenderClientConfiguration.getAddEmpEntryPath(),
+            emlRenderClientConfiguration.getUpdateEmpEntryPath(),
+            emlRenderClientConfiguration.getEmpPdfPath(),
+            emlRenderClientConfiguration.getMedicationPlanLogPath(),
+            emlRenderClientConfiguration.getMedicationPlanPath(),
+            emlRenderClientConfiguration.getLinkEmpPath(),
+            emlRenderClientConfiguration.getUnlinkEmpPath(),
+            emlRenderClientConfiguration.getBatchEmpPath()));
   }
 
   private String getServerUrl() {

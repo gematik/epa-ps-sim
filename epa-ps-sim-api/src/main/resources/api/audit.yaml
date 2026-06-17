@@ -118,6 +118,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/insurantid'
         - $ref: '#/components/parameters/signed'
+        - $ref: '#/components/parameters/lowerDateTime'
+        - $ref: '#/components/parameters/upperDateTime'
       responses:
         default:
           description: eML as PDF
@@ -150,6 +152,20 @@ components:
       schema:
         type: boolean
         default: false
+    lowerDateTime:
+      name: lowerDateTime
+      in: query
+      description: Earliest time at which audit events can be taken into account e.g. 2025-07-15T00:00:00
+      required: false
+      schema:
+        type: string
+    upperDateTime:
+      name: upperDateTime
+      in: query
+      description: Latest date for taking audit events into account e.g. 2025-07-15T00:00:00
+      required: false
+      schema:
+        type: string
   schemas:
     UserAgentType:
       description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."

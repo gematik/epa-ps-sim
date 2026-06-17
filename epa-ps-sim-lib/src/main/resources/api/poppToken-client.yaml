@@ -6,9 +6,9 @@ info:
 paths:
   /popp/test/api/v1/token-generator:
     post:
-      summary: Generates POPP tokens
+      summary: Requests POPP tokens
       tags:
-        - PoppTokenClientReference
+        - PoppTokenGenerator
       operationId: generateToken
       requestBody:
         required: true
@@ -46,29 +46,103 @@ paths:
                 properties:
                   error:
                     type: string
+  /token:
+    post:
+      tags:
+        - PoppTokenClient
+      summary: Generate a PoPP token
+      description: |
+        Starts the communication process using the selected card connection type
+        and generates a PoPP token.
+        
+        - Contact and contactless communication may require a card reader.
+        - Connector communication may use a clientSessionId.
+        
+        Returns a structured PoPP token on success.
+      operationId: createToken
+      requestBody:
+        description: Input parameters required for PoPP token generation.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoppClientRequest'
+            examples:
+              ContactStandard:
+                summary: Contact Standard
+                value:
+                  communicationType: contact-standard
+              ContactlessStandard:
+                summary: Contactless Standard
+                value:
+                  communicationType: contactless-standard
+              ContactVirtual:
+                summary: Contact Virtual
+                value:
+                  communicationType: contact-virtual
+              ContactlessVirtual:
+                summary: Contactless Virtual
+                value:
+                  communicationType: contactless-virtual
+              ContactConnector:
+                summary: Contact Connector
+                value:
+                  communicationType: contact-connector
+                  clientSessionId: "123456"
+      responses:
+        '200':
+          description: Token successfully generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoppClientResponse'
+        '400':
+          description: Unsupported or invalid communication type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoppClientResponse'
+        '500':
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoppClientResponse'
+        '504':
+          description: The token generation timed out.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoppClientResponse'
 components:
   schemas:
     TokenGenerationParams:
-      type: object
       description: Parameters for token generation
+      type: object
       properties:
         tokenParamsList:
           type: array
           description: List of token parameters
           items:
             $ref: '#/components/schemas/TokenParams'
+        securityParams:
+          description: Security parameters for token generation
+          allOf:
+            - $ref: '#/components/schemas/SecurityParams'
     TokenParams:
       type: object
       description: Parameters for a single token
       properties:
         proofMethod:
-          type: string
           description: Method of proof
+          type: string
         patientProofTime:
-          type: number
+          type: integer
+          format: int64
         iat:
-          type: number
           description: Issued at time, epoch
+          type: integer
+          format: int64
         patientId:
           type: string
         insurerId:
@@ -76,10 +150,64 @@ components:
         actorId:
           type: string
         actorProfessionOid:
+          example: 1.2.276.0.76.4.32
           type: string
-          description: 1.2.276.0.76.4.32
       required:
         - patientId
         - insurerId
         - actorId
         - actorProfessionOid
+    SecurityParams:
+      type: object
+      description: Security parameters for keystore access
+      properties:
+        storeContent:
+          description: Keystore encoded in Base64
+          type: string
+        storePass:
+          description: Password for the keystore
+          type: string
+        keyAlias:
+          description: Alias for the keystore
+          type: string
+        keyPass:
+          description: Password for the key
+          type: string
+    PoppClientRequest:
+      type: object
+      required:
+        - communicationType
+      properties:
+        communicationType:
+          type: string
+          description: The card connection type to use for token generation.
+          enum:
+            - contact-standard
+            - contactless-standard
+            - contact-virtual
+            - contactless-virtual
+            - contact-connector
+            - contactless-connector
+            - contact-connector-via-standard-terminal
+        clientSessionId:
+          type: string
+          description: Optional session ID, applicable for connector communication types.
+          example: "123456"
+    PoppClientResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - OK
+            - ERROR
+          description: Indicates whether the request was successful (`OK`) or failed (`ERROR`).
+          example: OK
+        token:
+          type: string
+          description: The generated PoPP token. Present on success.
+          example: "eyJhbGciOiJFUzI1NiJ9..."
+        error:
+          type: string
+          description: Error message. Present on failure.
+          example: "Unsupported type: G3"

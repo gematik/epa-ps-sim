@@ -1,0 +1,176 @@
+openapi: 3.0.1
+info:
+  title: ePA SIM Oragnization API
+  description: Organization related REST API for the ePA Sim based on open API
+  version: 1.0.0
+  contact:
+    name: gematik GmbH
+    email: software-development@gematik.de
+    url: 'https://www.gematik.de'
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0'
+servers:
+  - url: '{protocol}://{host}:{port}/services'
+    variables:
+      protocol:
+        enum:
+          - http
+          - https
+        default: http
+      host:
+        default: 'localhost'
+      port:
+        default: '8080'
+
+tags:
+  - name: Organization
+
+
+paths:
+  /epa/testdriver/api/v1/organizations:
+    get:
+      tags:
+        - Organization
+      summary: 'Get list of organizations as FHIR objects matching the given query parameters.'
+      description: 'List of organization entries.'
+      operationId: getOrganizations
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - $ref: '#/components/parameters/_total'
+        - $ref: '#/components/parameters/_id'
+        - $ref: '#/components/parameters/format'
+        - $ref: '#/components/parameters/_lastUpdated'
+        - name: _identifier
+          in: query
+          required: false
+          description: Returns resources by Organization.identifier
+          schema:
+            type: string
+        - name: name
+          in: query
+          required: false
+          description: Returns resources by Organization.name | Organization.alias
+          schema:
+            type: string
+        - name: _has
+          in: query
+          required: false
+          description: Return resources linked to by the given target
+          schema:
+            type: string
+      responses:
+        200:
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetOrganizationResponseDTO'
+
+
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: 'shared.yaml#/components/schemas/KvnrType'
+    _count:
+      name: count
+      in: query
+      description: |
+        With "_count", the client can specify the maximum number of elements to be included on 
+        one "page" of the response. This means the Service limits the result set to 
+        this maximum specified number. If no value for "_count" is provided, the default value 
+        set is "25".
+      schema:
+        type: integer
+    _offset:
+      name: offset
+      in: query
+      description: |
+        This URL parameter indicates the (zero-based) offset of the first returned element in the collection. 
+        If no value for "_offset" is provided, the default value set is "0".
+      schema:
+        type: integer
+    _total:
+      name: total
+      in: query
+      description: This parameter controls whether and how the Service returns the total number of search results.
+      schema:
+        type: string
+    _id:
+      name: id
+      in: query
+      required: false
+      description: Refers to the logical id of the resource
+      schema:
+        type: string
+    useragent:
+      name: x-useragent
+      in: header
+      description: user agent information
+      required: false
+      schema:
+        $ref: '#/components/schemas/UserAgentType'
+    requestid:
+      name: X-Request-ID
+      in: header
+      description: UUID of the request message
+      required: true
+      schema:
+        $ref: '#/components/schemas/RequestIDType'
+    format:
+      name: format
+      in: query
+      required: false
+      description: 'Specify in which format the search bundle shall be returned. If not specified, the default format is application/fhir+json.'
+      schema:
+        type: string
+        enum:
+          - application/fhir+json
+          - application/fhir+xml
+    _lastUpdated:
+      name: lastUpdated
+      in: query
+      required: false
+      description: Can be used to select resources based on the last time they were changed.
+      schema:
+        type: string
+        example:
+          - 'gt2021-01-01'
+          - 'lt2021-01-01'
+          - 'ge2021-01-01'
+          - 'le2021-01-01'
+          - 'eq2021-01-01'
+          - 'ne2021-01-01'
+  schemas:
+    UserAgentType:
+      description: "Information about client software with: ClientId(20 characters) + / + VersionNumber (1 to 15 characters)."
+      type: string
+      pattern: '^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$'
+      example: CLIENTID1234567890AB/2.1.12-45
+    RequestIDType:
+      description: "Unique ID given by the ePA-Client to identify the request message. The server must return this ID in the response message."
+      type: string
+      format: uuid
+      example: c3ab12eb-f78d-450b-a56f-a65369cec4cb
+    GetOrganizationResponseDTO:
+      description: Returns a list of organization using the FHIR representation as string array where the content is JSON
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          oneOf:
+            - type: object
+              properties:
+                organizations:
+                  description: 'List of organization FHIR resources'
+                  type: array
+                  items:
+                    type: string

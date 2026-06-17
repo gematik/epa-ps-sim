@@ -24,16 +24,29 @@
  */
 package de.gematik.epa.medication;
 
+import static de.gematik.epa.utils.EmpUtil.createParameterForChronologyId;
+import static de.gematik.epa.utils.StringUtils.appendCauses;
 import static java.util.Base64.*;
 
 import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.gclient.IQuery;
+import ca.uhn.fhir.rest.gclient.IUntypedQuery;
+import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.medication.client.EmlRenderClient;
 import de.gematik.epa.medication.client.RenderResponse;
+import de.gematik.epa.utils.FhirUtils;
+import de.gematik.epa.utils.MiscUtils;
+import java.util.List;
 import java.util.UUID;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.*;
 
+@Slf4j
 public class MedicationStatementService {
 
   private static final String ADD_EML_INPUT_PROFILE =
@@ -48,6 +61,27 @@ public class MedicationStatementService {
   public MedicationStatementService(FhirClient fhirClient, EmlRenderClient emlRenderClient) {
     this.fhirClient = fhirClient;
     this.emlRenderClient = emlRenderClient;
+
+    FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
+    FhirUtils.setXmlParser(fhirClient.getContext().newXmlParser());
+  }
+
+  private static GetMedicationStatementListDTO fromThrowableToResponse(
+      @NonNull Throwable throwable) {
+    var statusMsgBuilder = new StringBuilder().append(throwable);
+
+    return new GetMedicationStatementListDTO()
+        .success(false)
+        .statusMessage(appendCauses(throwable, statusMsgBuilder).toString());
+  }
+
+  private static GetMedicationStatementHistoryResponseDTO notFoundResponse(
+      MedicationStatementSearch searchRequest) {
+    final GetMedicationStatementHistoryResponseDTO response =
+        new GetMedicationStatementHistoryResponseDTO();
+    var statusMessage = "No medication statement historyBundle found for ID: " + searchRequest.id();
+    log.warn(statusMessage);
+    return response.success(Boolean.TRUE).statusMessage(statusMessage);
   }
 
   public AddEmlEntryResponseDTO addEmlEntry(
@@ -151,6 +185,12 @@ public class MedicationStatementService {
     medicationPlanIdentifierParam.setValue(identifier);
     parameters.addParameter(medicationPlanIdentifierParam);
 
+    if (linkEmpInput.getChronologyId() != null) {
+      final Parameters.ParametersParameterComponent parameterComponentChronology =
+          createParameterForChronologyId(linkEmpInput.getChronologyId());
+      parameters.addParameter(parameterComponentChronology);
+    }
+
     return linkEmpInput.getFormat() != null
             && linkEmpInput.getFormat().equals(EmlRenderClient.APPLICATION_FHIR_JSON)
         ? jsonParser.setPrettyPrint(true).encodeResourceToString(parameters)
@@ -196,5 +236,195 @@ public class MedicationStatementService {
 
   private String encodeToBase64(final String input) {
     return getEncoder().encodeToString(input.getBytes());
+  }
+
+  public UnlinkEmpResponseDTO unlinkEmp(
+      String insurantId,
+      UUID requestId,
+      String medicationStatementId,
+      String useragent,
+      UnlinkEmpInput unlinkEmpInput) {
+
+    var encodedOrganization = encodeToBase64(unlinkEmpInput.getOrganization());
+    var parametersAsJsonOrXml =
+        createUnlinkEmpParameters(unlinkEmpInput, fhirClient.getContext().newJsonParser());
+
+    final RenderResponse renderResponse =
+        emlRenderClient.unlinkEmp(
+            insurantId,
+            requestId != null ? requestId.toString() : UUID.randomUUID().toString(),
+            parametersAsJsonOrXml,
+            encodedOrganization,
+            medicationStatementId,
+            useragent,
+            unlinkEmpInput.getFormat());
+    final UnlinkEmpResponseDTO responseDTO = new UnlinkEmpResponseDTO();
+    responseDTO
+        .success(renderResponse.httpStatusCode() == 200)
+        .statusMessage(renderResponse.errorMessage())
+        .parameters(renderResponse.empResponse());
+    return responseDTO;
+  }
+
+  private String createUnlinkEmpParameters(
+      UnlinkEmpInput unlinkEmpInput, final IParser jsonParser) {
+
+    final Parameters parameters = new Parameters();
+    parameters.setId(UUID.randomUUID().toString());
+    parameters.setMeta(new Meta().addProfile(LINK_EMP_PROFILE));
+
+    final Parameters.ParametersParameterComponent medicationPlanIdentifierParam =
+        new Parameters.ParametersParameterComponent();
+    medicationPlanIdentifierParam.setName("medicationPlanIdentifier");
+
+    final Identifier identifier = new Identifier();
+    identifier.setSystem(EMP_IDENTIFIER);
+    identifier.setValue(unlinkEmpInput.getMedicationPlanId());
+
+    medicationPlanIdentifierParam.setValue(identifier);
+    parameters.addParameter(medicationPlanIdentifierParam);
+
+    if (unlinkEmpInput.getChronologyId() != null) {
+      final Parameters.ParametersParameterComponent parameterComponentChronology =
+          createParameterForChronologyId(unlinkEmpInput.getChronologyId());
+      parameters.addParameter(parameterComponentChronology);
+    }
+
+    return unlinkEmpInput.getFormat() != null
+            && unlinkEmpInput.getFormat().equals(EmlRenderClient.APPLICATION_FHIR_JSON)
+        ? jsonParser.setPrettyPrint(true).encodeResourceToString(parameters)
+        : fhirClient
+            .getContext()
+            .newXmlParser()
+            .setPrettyPrint(true)
+            .encodeResourceToString(parameters);
+  }
+
+  public GetMedicationStatementListDTO searchMedicationStatements(
+      final MedicationStatementSearch searchRequest) {
+    try {
+      final IGenericClient client = fhirClient.getClient();
+      final IUntypedQuery<IBaseBundle> search = client.search();
+
+      IQuery<IBaseBundle> baseQuery =
+          search
+              .forResource(MedicationStatement.class)
+              .where(MedicationStatement.STATUS.exactly().identifier(searchRequest.status()))
+              .count(searchRequest.count())
+              .offset(searchRequest.offset())
+              .totalMode(FhirUtils.calculateTotalMode(searchRequest.total()));
+      baseQuery = SearchUtils.addRevInclude(searchRequest.revinclude(), baseQuery);
+      baseQuery = SearchUtils.addInclude(searchRequest.include(), baseQuery);
+      baseQuery = SearchUtils.addContext(searchRequest.context(), baseQuery);
+      baseQuery =
+          SearchUtils.addMedicationStatementMedicationReference(
+              searchRequest.medicationReference(), baseQuery);
+
+      final Bundle result = baseQuery.returnBundle(Bundle.class).execute();
+
+      var response = new GetMedicationStatementListDTO();
+      if (result.getEntry().isEmpty()) {
+        var statusMessage = "No medication statement found for search params: " + searchRequest;
+        log.warn(statusMessage);
+        return response.success(Boolean.TRUE).statusMessage(statusMessage);
+      }
+
+      var expectedFormat = MiscUtils.expectedFormat(searchRequest.format());
+      return response
+          .success(Boolean.TRUE)
+          .medicationStatements(FhirUtils.extractData(result, expectedFormat));
+    } catch (Exception e) {
+      log.error("Error occurred during search for medication statement", e);
+      return fromThrowableToResponse(e);
+    }
+  }
+
+  public GetMedicationStatementListDTO executeGetById(final String id) {
+    final MedicationStatement medicationStatement;
+    try {
+      medicationStatement =
+          fhirClient.getClient().read().resource(MedicationStatement.class).withId(id).execute();
+      var medicationStatementAsJson = FhirUtils.asJson(medicationStatement);
+      return new GetMedicationStatementListDTO()
+          .medicationStatements(List.of(medicationStatementAsJson))
+          .success(Boolean.TRUE);
+    } catch (ResourceNotFoundException e) {
+      var statusMessage = "No medicationStatement found for ID: " + id;
+      log.warn(statusMessage);
+      return new GetMedicationStatementListDTO().success(Boolean.TRUE).statusMessage(statusMessage);
+    } catch (Exception e) {
+      log.error("Error occurred during get medicationStatement by id", e);
+      return fromThrowableToResponse(e);
+    }
+  }
+
+  public GetMedicationStatementHistoryResponseDTO searchMedicationStatementHistory(
+      MedicationStatementSearch searchRequest) {
+    try {
+      var expectedFormat = MiscUtils.expectedFormat(searchRequest.format());
+      final GetMedicationStatementHistoryResponseDTO response =
+          new GetMedicationStatementHistoryResponseDTO();
+      var client = fhirClient.getClient();
+
+      var historyBundle =
+          client
+              .history()
+              .onInstance(new IdType("MedicationStatement", searchRequest.id()))
+              .returnBundle(Bundle.class)
+              .execute();
+
+      if (historyBundle.getEntry().isEmpty()) {
+        return notFoundResponse(searchRequest);
+      }
+
+      return response
+          .success(Boolean.TRUE)
+          .medicationStatements(FhirUtils.extractData(historyBundle, expectedFormat));
+    } catch (ResourceNotFoundException e) {
+      return notFoundResponse(searchRequest);
+    } catch (Exception e) {
+      var statusMsgBuilder = new StringBuilder().append(e);
+
+      return new GetMedicationStatementHistoryResponseDTO()
+          .success(false)
+          .statusMessage(appendCauses(e, statusMsgBuilder).toString());
+    }
+  }
+
+  public GetMedicationStatementHistoryByIdAndVersionResponseDTO getMedicationStatementHistoryById(
+      MedicationStatementSearch searchRequest) {
+    try {
+      var expectedFormat = MiscUtils.expectedFormat(searchRequest.format());
+      final GetMedicationStatementHistoryByIdAndVersionResponseDTO response =
+          new GetMedicationStatementHistoryByIdAndVersionResponseDTO();
+      var client = fhirClient.getClient();
+
+      var medicationStatement =
+          client
+              .read()
+              .resource(MedicationStatement.class)
+              .withIdAndVersion(searchRequest.id(), searchRequest.versionId())
+              .execute();
+
+      return response
+          .success(Boolean.TRUE)
+          .medicationStatement(FhirUtils.resourceAsString(medicationStatement, expectedFormat));
+    } catch (ResourceNotFoundException e) {
+      final GetMedicationStatementHistoryByIdAndVersionResponseDTO response =
+          new GetMedicationStatementHistoryByIdAndVersionResponseDTO();
+      var statusMessage =
+          "No medication statement history found for ID: "
+              + searchRequest.id()
+              + " and version: "
+              + searchRequest.versionId();
+      log.warn(statusMessage);
+      return response.success(Boolean.TRUE).statusMessage(statusMessage);
+    } catch (Exception e) {
+      var statusMsgBuilder = new StringBuilder().append(e);
+
+      return new GetMedicationStatementHistoryByIdAndVersionResponseDTO()
+          .success(false)
+          .statusMessage(appendCauses(e, statusMsgBuilder).toString());
+    }
   }
 }

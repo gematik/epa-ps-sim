@@ -4,48 +4,74 @@ info:
   version: 1.0.0
   description: API for generating POPP tokens
 paths:
-  /epa/testdriver/api/v1/popp/token:
+  /epa/testdriver/api/v1/popp/token/generator:
     post:
-      summary: Generates POPP tokens
-      operationId: generateToken
+      summary: Get a POPP token from the PoPP Token Generator
+      operationId: tokenFromGenerator
       tags:
-        - PoppTokenReference
+        - PoppTokenGenerator
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenGenerationParams'
+              $ref: '#/components/schemas/TokenRequest'
       responses:
         '200':
-          description: Successfully generated POPP tokens
+          description: Successfully generated POPP token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetPoppTokenResponseDto'
+                $ref: '#/components/schemas/PoppTokenResponseDto'
+  /epa/testdriver/api/v1/popp/token/client:
+    post:
+      summary: Get a POPP token from the PoPP Token Client
+      operationId: tokenFromClient
+      tags:
+        - PoppTokenClient
+      requestBody:
+        description: Input parameters required for PoPP token generation.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoppClientRequestDto'
+      responses:
+        '200':
+          description: Successfully retrieved a real POPP token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoppTokenResponseDto'
 components:
   schemas:
-    TokenGenerationParams:
+    TokenRequest:
+      description: Parameters for token generation (mirrors poppToken-client.yaml TokenGenerationParams)
       type: object
-      description: Parameters for token generation
       properties:
         tokenParamsList:
           type: array
           description: List of token parameters
           items:
             $ref: '#/components/schemas/TokenParams'
+        securityParams:
+          description: Security parameters for token generation
+          allOf:
+            - $ref: '#/components/schemas/SecurityParams'
     TokenParams:
       type: object
       description: Parameters for a single token
       properties:
         proofMethod:
-          type: string
           description: Method of proof
+          type: string
         patientProofTime:
-          type: number
+          type: integer
+          format: int64
         iat:
-          type: number
           description: Issued at time, epoch
+          type: integer
+          format: int64
         patientId:
           type: string
         insurerId:
@@ -53,14 +79,30 @@ components:
         actorId:
           type: string
         actorProfessionOid:
+          example: 1.2.276.0.76.4.32
           type: string
-          description: 1.2.276.0.76.4.32
       required:
         - patientId
         - insurerId
         - actorId
         - actorProfessionOid
-    GetPoppTokenResponseDto:
+    SecurityParams:
+      type: object
+      description: Security parameters for keystore access
+      properties:
+        storeContent:
+          description: Keystore encoded in Base64
+          type: string
+        storePass:
+          description: Password for the keystore
+          type: string
+        keyAlias:
+          description: Alias for the keystore
+          type: string
+        keyPass:
+          description: Password for the key
+          type: string
+    PoppTokenResponseDto:
       allOf:
         - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
         - type: object
@@ -69,3 +111,23 @@ components:
               type: array
               items:
                 type: string
+    PoppClientRequestDto:
+      type: object
+      required:
+        - communicationType
+      properties:
+        communicationType:
+          type: string
+          description: The card connection type to use for token generation.
+          enum:
+            - contact-standard
+            - contactless-standard
+            - contact-virtual
+            - contactless-virtual
+            - contact-connector
+            - contactless-connector
+            - contact-connector-via-standard-terminal
+        clientSessionId:
+          type: string
+          description: Optional session ID, applicable for connector communication types.
+          example: "123456"

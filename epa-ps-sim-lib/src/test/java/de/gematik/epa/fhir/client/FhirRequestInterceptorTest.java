@@ -24,6 +24,7 @@
  */
 package de.gematik.epa.fhir.client;
 
+import static de.gematik.epa.unit.util.TestDataFactory.CONTENT_TYPE_HEADER;
 import static de.gematik.epa.utils.MiscUtils.X_ACTOR_ID;
 import static de.gematik.epa.utils.MiscUtils.X_INSURANT_ID;
 import static de.gematik.epa.utils.MiscUtils.X_TARGET_FQDN;
@@ -35,6 +36,8 @@ import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.utils.HealthRecordProvider;
 import de.gematik.epa.utils.InsurantIdHolder;
 import de.gematik.epa.utils.TelematikIdHolder;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -85,5 +88,19 @@ class FhirRequestInterceptorTest {
     verify(request, times(0)).addHeader(X_INSURANT_ID, InsurantIdHolder.getInsurantId());
     verify(request, times(0)).addHeader(X_ACTOR_ID, TelematikIdHolder.getTelematikId());
     verify(request, times(0)).addHeader(eq(X_TARGET_FQDN), any());
+  }
+
+  @Test
+  void shouldLowerCaseContentTypeHeaderValues() {
+    when(request.getUri()).thenReturn("someEndpoint");
+    Map<String, List<String>> headers =
+        Map.of("Content-Type", List.of("application/fhir+json;charset=UTF-8"));
+    when(request.getAllHeaders()).thenReturn(headers);
+
+    InsurantIdHolder.setInsurantId(null);
+    interceptor.interceptRequest(request);
+
+    verify(request).removeHeaders(CONTENT_TYPE_HEADER);
+    verify(request).addHeader(eq(CONTENT_TYPE_HEADER), eq("application/fhir+json;charset=utf-8"));
   }
 }

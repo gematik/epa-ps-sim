@@ -25,6 +25,7 @@
 package de.gematik.epa.entitlement;
 
 import static de.gematik.epa.entitlement.EntitlementService.ERROR_WHILE_SETTING_ENTITLEMENT;
+import static de.gematik.epa.entitlement.EntitlementService.INTERNAL_ERROR;
 import static de.gematik.epa.unit.util.TestDataFactory.simulateInbound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.jose4j.jws.AlgorithmIdentifiers.RSA_PSS_USING_SHA256;
@@ -40,12 +41,14 @@ import de.gematik.epa.api.entitlement.client.UserBlockingApi;
 import de.gematik.epa.api.entitlement.client.dto.BlockedUserPolicyAssignmentResponseType;
 import de.gematik.epa.api.entitlement.client.dto.BlockedUserPolicyAssignmentType;
 import de.gematik.epa.api.entitlement.client.dto.EntitlementRequestType;
+import de.gematik.epa.api.entitlement.client.dto.EntitlementRequestTypeV2;
 import de.gematik.epa.api.entitlement.client.dto.ErrorType;
 import de.gematik.epa.api.entitlement.client.dto.GetBlockedUserPolicyAssignments200Response;
 import de.gematik.epa.api.entitlement.client.dto.ValidToResponseType;
 import de.gematik.epa.api.testdriver.entitlement.dto.GetBlockedUserListResponseDTO;
 import de.gematik.epa.api.testdriver.entitlement.dto.GetBlockedUserListResponseDTOAllOfAssignments;
 import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementRequestDTO;
+import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementRequestDTOV2;
 import de.gematik.epa.api.testdriver.entitlement.dto.PostEntitlementResponseDTO;
 import de.gematik.epa.api.testdriver.entitlement.dto.ResponseDTO;
 import de.gematik.epa.api.testdriver.entitlement.dto.SetBlockedUserRequestDTO;
@@ -63,6 +66,7 @@ import java.security.cert.X509Certificate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
@@ -84,8 +88,8 @@ class EntitlementServiceTest {
       mock(JaxRsClientWrapper.class);
   private final JaxRsClientWrapper<UserBlockingApi> blockingClientWrapper =
       mock(JaxRsClientWrapper.class);
-  private final EntitlementsApi EntitlementsApi = mock(EntitlementsApi.class);
-  private final UserBlockingApi UserBlockingApi = mock(UserBlockingApi.class);
+  private final EntitlementsApi entitlementsApi = mock(EntitlementsApi.class);
+  private final UserBlockingApi userBlockingApi = mock(UserBlockingApi.class);
   private final SmbInformationProvider smbInformationProvider = mock(SmbInformationProvider.class);
   private final String pruefungsNachweis =
       "H4sIAAAAAAAAAB2NQU+DMABG/wrp1YzSAhFN22URlB1oZdRNvRgCdTaWslgCyK+XefkOX/LeI9u5M96ofpzuLQXID4CnbNO32p4p2FdikyTx3QYBzw21bWvTW0XBr3Jgy8gz9x7S4uOYHaq94P/0lV+N1lHwNQyXewgn559VVw/6228V/Kzh6NoOXuwEx2uNEVkxHOAoiDFGYRihWwLXi2QME5itkXd2SrO5SMuFy91SyCws5Nsi0jLisj2e0rwJkIkfd0+hmA9xLkb8optI9zdmyl9VYkpK4CpZh7M/MsH+z+8AAAA=";
@@ -132,23 +136,22 @@ class EntitlementServiceTest {
                 smbInformationProvider,
                 vsdServiceClient));
     entitlementService.setCardAuthenticationService(cardAuthenticationService);
-    when(entitlementClientWrapper.getServiceApi()).thenReturn(EntitlementsApi);
-    when(blockingClientWrapper.getServiceApi()).thenReturn(UserBlockingApi);
+    when(entitlementClientWrapper.getServiceApi()).thenReturn(entitlementsApi);
+    when(blockingClientWrapper.getServiceApi()).thenReturn(userBlockingApi);
   }
 
   @Test
   void shouldSetEntitlement() throws IOException {
     // given
     final PostEntitlementRequestDTO requestDTO = getPostEntitlementRequestDTO();
-    //    final var cardHandle = "123";
-    final var signedJwt = "testSignedJwt";
     final Response response =
         simulateInbound(
             Response.status(201)
                 .entity(new ValidToResponseType().validTo(OffsetDateTime.now()))
                 .build());
-    final EntitlementRequestType request = new EntitlementRequestType().jwt(signedJwt);
-    when(EntitlementsApi.setEntitlementPs(xInsurantId, userAgent, request)).thenReturn(response);
+    when(entitlementsApi.setEntitlementPs(
+            anyString(), anyString(), any(EntitlementRequestType.class), any(UUID.class)))
+        .thenReturn(response);
 
     // when
     final PostEntitlementResponseDTO result =
@@ -164,10 +167,55 @@ class EntitlementServiceTest {
   }
 
   @Test
+  void shouldSetEntitlementV2() {
+    // given
+    var requestDtoV2 = new PostEntitlementRequestDTOV2();
+    requestDtoV2.setPopp("aValidPoppToken");
+    Response simulatedResponse =
+        simulateInbound(
+            Response.status(201)
+                .entity(new ValidToResponseType().validTo(OffsetDateTime.now()))
+                .build());
+    // and
+    when(entitlementClientWrapper.getUserAgent()).thenReturn(userAgent);
+    when(entitlementsApi.setEntitlementPsV2(
+            anyString(), anyString(), any(EntitlementRequestTypeV2.class), any(UUID.class)))
+        .thenReturn(simulatedResponse);
+    // when
+    var result = entitlementService.setEntitlementV2(xInsurantId, requestDtoV2);
+    // then
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getStatusMessage()).isNull();
+    assertThat(result.getValidTo()).isNotNull();
+  }
+
+  @Test
+  void setEntitlementV2PoppTokenNull() {
+    // given
+    var requestDtoV2 = new PostEntitlementRequestDTOV2();
+    requestDtoV2.setPopp(null);
+    Response simulatedResponse =
+        simulateInbound(
+            Response.status(201)
+                .entity(new ValidToResponseType().validTo(OffsetDateTime.now()))
+                .build());
+    // and
+    when(entitlementClientWrapper.getUserAgent()).thenReturn(userAgent);
+    when(entitlementsApi.setEntitlementPsV2(
+            anyString(), anyString(), any(EntitlementRequestTypeV2.class), any(UUID.class)))
+        .thenReturn(simulatedResponse);
+    // when
+    var result = entitlementService.setEntitlementV2(xInsurantId, requestDtoV2);
+    // then
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage()).isNotNull();
+    assertThat(result.getValidTo()).isNull();
+  }
+
+  @Test
   void shouldSetEntitlementGetTelematikIdFromSmb() throws IOException {
     // given
     PostEntitlementRequestDTO requestDTO = getPostEntitlementRequestDTO();
-    final var signedJwt = "testSignedJwt";
     when(smbInformationProvider.getCardsInformations())
         .thenReturn(List.of(TestDataFactory.createSmbInformation()));
 
@@ -176,8 +224,9 @@ class EntitlementServiceTest {
             Response.status(201)
                 .entity(new ValidToResponseType().validTo(OffsetDateTime.now()))
                 .build());
-    final EntitlementRequestType request = new EntitlementRequestType().jwt(signedJwt);
-    when(EntitlementsApi.setEntitlementPs(xInsurantId, userAgent, request)).thenReturn(response);
+    when(entitlementsApi.setEntitlementPs(
+            anyString(), anyString(), any(EntitlementRequestType.class), any(UUID.class)))
+        .thenReturn(response);
 
     // when
     final PostEntitlementResponseDTO result =
@@ -235,7 +284,8 @@ class EntitlementServiceTest {
             Response.status(statusCode).entity(new ErrorType().errorCode(errorCode)).build());
     when(entitlementClientWrapper
             .getServiceApi()
-            .setEntitlementPs(anyString(), anyString(), any(EntitlementRequestType.class)))
+            .setEntitlementPs(
+                anyString(), anyString(), any(EntitlementRequestType.class), any(UUID.class)))
         .thenReturn(response);
     when(entitlementClientWrapper.getUserAgent()).thenReturn("ps-sim");
 
@@ -430,7 +480,7 @@ class EntitlementServiceTest {
 
     when(blockingClientWrapper
             .getServiceApi()
-            .getBlockedUserPolicyAssignments(anyString(), anyString()))
+            .getBlockedUserPolicyAssignments(anyString(), anyString(), any(UUID.class)))
         .thenReturn(response);
     when(blockingClientWrapper.getUserAgent()).thenReturn("ps-sim");
 
@@ -455,7 +505,7 @@ class EntitlementServiceTest {
 
     when(blockingClientWrapper
             .getServiceApi()
-            .getBlockedUserPolicyAssignments(anyString(), anyString()))
+            .getBlockedUserPolicyAssignments(anyString(), anyString(), any(UUID.class)))
         .thenReturn(response);
     when(blockingClientWrapper.getUserAgent()).thenReturn("ps-sim");
 
@@ -471,7 +521,7 @@ class EntitlementServiceTest {
   void getBlockedUsersShouldReturnUnknownErrorForException() {
     when(blockingClientWrapper
             .getServiceApi()
-            .getBlockedUserPolicyAssignments(anyString(), anyString()))
+            .getBlockedUserPolicyAssignments(anyString(), anyString(), any(UUID.class)))
         .thenThrow(new RuntimeException("Test exception"));
     final GetBlockedUserListResponseDTO result =
         entitlementService.getBlockedUserList("insurantId");
@@ -493,7 +543,7 @@ class EntitlementServiceTest {
 
     when(blockingClientWrapper
             .getServiceApi()
-            .getBlockedUserPolicyAssignments(anyString(), anyString()))
+            .getBlockedUserPolicyAssignments(anyString(), anyString(), any(UUID.class)))
         .thenReturn(response);
     when(blockingClientWrapper.getUserAgent()).thenReturn("ps-sim");
 
@@ -519,7 +569,10 @@ class EntitlementServiceTest {
     when(blockingClientWrapper
             .getServiceApi()
             .setBlockedUserPolicyAssignment(
-                anyString(), anyString(), any(BlockedUserPolicyAssignmentType.class)))
+                anyString(),
+                anyString(),
+                any(BlockedUserPolicyAssignmentType.class),
+                any(UUID.class)))
         .thenReturn(response);
 
     when(blockingClientWrapper.getUserAgent()).thenReturn(userAgent);
@@ -537,7 +590,11 @@ class EntitlementServiceTest {
       assertThat(result.getStatusMessage()).isEqualTo("Created");
       //noinspection resource
       verify(blockingClientWrapper.getServiceApi())
-          .setBlockedUserPolicyAssignment(xInsurantId, userAgent, assignment);
+          .setBlockedUserPolicyAssignment(
+              anyString(),
+              anyString(),
+              any(BlockedUserPolicyAssignmentType.class),
+              any(UUID.class));
     } else {
       assertThat(result.getSuccess()).isFalse();
       assertThat(result.getStatusMessage()).isNotEmpty();
@@ -547,19 +604,16 @@ class EntitlementServiceTest {
   @ParameterizedTest
   @ValueSource(ints = {204, 400, 403, 404, 409, 500, 999})
   void deleteBlockedUser(final int responseCode) {
-    // mock response
-    final Response response = mock(Response.class);
+    var response = mock(Response.class);
     when(response.getStatus()).thenReturn(responseCode);
     when(blockingClientWrapper
             .getServiceApi()
-            .deleteBlockedUserPolicyAssignment(anyString(), anyString(), anyString()))
+            .deleteBlockedUserPolicyAssignment(
+                anyString(), anyString(), anyString(), any(UUID.class)))
         .thenReturn(response);
-
     when(blockingClientWrapper.getUserAgent()).thenReturn(userAgent);
-
     // when
-    final ResponseDTO result = entitlementService.deleteBlockedUser(xInsurantId, telematikId);
-
+    var result = entitlementService.deleteBlockedUser(xInsurantId, telematikId);
     // then
     if (responseCode == 204) {
       assertThat(result.getSuccess()).isTrue();
@@ -567,10 +621,11 @@ class EntitlementServiceTest {
       //noinspection resource
       verify(blockingClientWrapper.getServiceApi())
           .deleteBlockedUserPolicyAssignment(
-              xInsurantId, telematikId, blockingClientWrapper.getUserAgent());
+              anyString(), anyString(), anyString(), any(UUID.class));
     } else {
       assertThat(result.getSuccess()).isFalse();
       assertThat(result.getStatusMessage()).isNotEmpty();
+      assertThat(result.getStatusMessage()).isNotEqualTo(INTERNAL_ERROR);
     }
   }
 }

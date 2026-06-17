@@ -28,25 +28,30 @@ import static de.gematik.epa.utils.StringUtils.appendCauses;
 
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.IUntypedQuery;
+import de.gematik.epa.api.audit_event.client.RenderApiApi;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventListAsPdfAResponseDTO;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventResponseDTO;
-import de.gematik.epa.audit.client.AuditRenderClient;
+import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.utils.FhirUtils;
+import jakarta.ws.rs.core.Response.Status;
+import java.util.UUID;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.AuditEvent;
 import org.hl7.fhir.r4.model.Bundle;
+import org.springframework.http.MediaType;
 
 @Slf4j
 public class AuditEventService {
   private final FhirClient fhirClient;
-  private final AuditRenderClient auditRenderClient;
+  private final JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper;
 
-  public AuditEventService(final FhirClient fhirClient, AuditRenderClient auditRenderClient) {
+  public AuditEventService(
+      final FhirClient fhirClient, JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper) {
     this.fhirClient = fhirClient;
-    this.auditRenderClient = auditRenderClient;
+    this.auditRenderClientWrapper = auditRenderClientWrapper;
     FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
   }
 
@@ -95,13 +100,44 @@ public class AuditEventService {
   }
 
   public GetAuditEventListAsPdfAResponseDTO getAuditEventsAsPdfA(
-      String xInsurantid, Boolean signed) {
-    var response = new GetAuditEventListAsPdfAResponseDTO();
-    var renderResponse = auditRenderClient.getAuditEventAsPdfA(xInsurantid, signed);
-    response
-        .success(renderResponse.httpStatusCode() != 500)
-        .auditEventAsPdfA(renderResponse.pdf())
-        .statusMessage(renderResponse.errorMessage());
-    return response;
+      String xInsurantid, Boolean signed, String lowerDateTime, String upperDateTime) {
+
+    var auditEvent =
+        auditRenderClientWrapper
+            .getServiceApi()
+            .renderAuditEventsToPDFAuditEventSvc(
+                xInsurantid,
+                auditRenderClientWrapper.getUserAgent(),
+                UUID.randomUUID(),
+                MediaType.APPLICATION_PDF_VALUE,
+                signed,
+                lowerDateTime,
+                upperDateTime);
+
+    GetAuditEventListAsPdfAResponseDTO dto;
+
+    if (auditEvent == null || !auditEvent.hasEntity()) {
+      dto =
+          new GetAuditEventListAsPdfAResponseDTO()
+              .success(false)
+              .statusMessage(
+                  (auditEvent != null)
+                      ? "{ \"httpCode\": \"%d\" }".formatted(auditEvent.getStatus())
+                      : "Received 'null' response");
+    } else if (auditEvent.getStatus() != Status.OK.getStatusCode()) {
+      dto =
+          new GetAuditEventListAsPdfAResponseDTO()
+              .success(false)
+              .statusMessage(
+                  "{ \"httpCode\": \"%d\", \"details\": %s }"
+                      .formatted(auditEvent.getStatus(), auditEvent.readEntity(String.class)));
+    } else {
+      dto =
+          new GetAuditEventListAsPdfAResponseDTO()
+              .success(true)
+              .auditEventAsPdfA(auditEvent.readEntity(byte[].class));
+    }
+
+    return dto;
   }
 }

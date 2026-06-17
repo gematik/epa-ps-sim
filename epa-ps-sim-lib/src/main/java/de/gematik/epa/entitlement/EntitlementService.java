@@ -41,6 +41,7 @@ import jakarta.ws.rs.core.Response;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import lombok.Getter;
 import lombok.Setter;
@@ -51,6 +52,7 @@ import telematik.ws.conn.cardservice.xsd.v8_1.CardInfoType;
 @Slf4j
 public class EntitlementService {
 
+  static final String INTERNAL_ERROR = "Response was null.";
   static final String ERROR_WHILE_SETTING_ENTITLEMENT = "Error while setting entitlement: ";
   private static final String UNKNOWN_ERROR = "Unknown error";
   private static final String AUDIT_EVIDENCE = "auditEvidence";
@@ -79,7 +81,7 @@ public class EntitlementService {
   }
 
   public PostEntitlementResponseDTO setEntitlement(
-      String xInsurantid, final PostEntitlementRequestDTO postEntitlementRequest) {
+      String xInsurantId, final PostEntitlementRequestDTO postEntitlementRequest) {
 
     try {
       final String telematikId =
@@ -97,7 +99,7 @@ public class EntitlementService {
               new CardInfoType().withCardHandle(cardHandle));
 
       // read VSD
-      final byte[] pruefziffer =
+      final byte[] auditEvidenceBytes =
           getVsdServiceClient().getPruefziffer(postEntitlementRequest.getKvnr(), telematikId);
 
       String testCase =
@@ -107,7 +109,7 @@ public class EntitlementService {
       String hcv =
           getVsdServiceClient().createHcv(postEntitlementRequest.getKvnr(), testCase, telematikId);
 
-      // external authenticate
+      // external authentication
       final UnaryOperator<byte[]> contentSigner =
           cardAuthenticationService.getContentSigner(cardHandle);
 
@@ -116,7 +118,7 @@ public class EntitlementService {
       final ZonedDateTime now = ZonedDateTime.now();
       claims.setClaim(ClaimName.ISSUED_AT.getJoseName(), now.toEpochSecond());
       claims.setClaim(ClaimName.EXPIRES_AT.getJoseName(), now.plusMinutes(20).toEpochSecond());
-      claims.setClaim(AUDIT_EVIDENCE, Base64.getEncoder().encodeToString(pruefziffer));
+      claims.setClaim(AUDIT_EVIDENCE, Base64.getEncoder().encodeToString(auditEvidenceBytes));
       if (hcv != null) claims.setClaim(HCV, hcv);
 
       final String signedJwt =
@@ -129,9 +131,10 @@ public class EntitlementService {
           entitlementClientWrapper
               .getServiceApi()
               .setEntitlementPs(
-                  xInsurantid,
+                  xInsurantId,
                   this.entitlementClientWrapper.getUserAgent(),
-                  new EntitlementRequestType().jwt(signedJwt));
+                  new EntitlementRequestType().jwt(signedJwt),
+                  UUID.randomUUID());
 
       return createResponseDTO(response);
     } catch (final Exception e) {
@@ -142,7 +145,32 @@ public class EntitlementService {
     }
   }
 
-  public GetBlockedUserListResponseDTO getBlockedUserList(final String xInsurantid) {
+  public PostEntitlementResponseDTO setEntitlementV2(
+      String xInsurantId, PostEntitlementRequestDTOV2 requestV2) {
+    try {
+      if (requestV2.getPopp() == null) {
+        return new PostEntitlementResponseDTO()
+            .success(false)
+            .statusMessage("Popp token must not be null!");
+      }
+      var response =
+          entitlementClientWrapper
+              .getServiceApi()
+              .setEntitlementPsV2(
+                  xInsurantId,
+                  entitlementClientWrapper.getUserAgent(),
+                  new EntitlementRequestTypeV2().popp(requestV2.getPopp()),
+                  UUID.randomUUID());
+      return createResponseDTO(response);
+    } catch (Exception e) {
+      log.error(ERROR_WHILE_SETTING_ENTITLEMENT, e);
+      return new PostEntitlementResponseDTO()
+          .success(false)
+          .statusMessage(ERROR_WHILE_SETTING_ENTITLEMENT + e.getMessage());
+    }
+  }
+
+  public GetBlockedUserListResponseDTO getBlockedUserList(final String xInsurantId) {
     final var responseDTO =
         new GetBlockedUserListResponseDTO()
             .success(true)
@@ -150,7 +178,8 @@ public class EntitlementService {
     try (final Response response =
         blockingClientWrapper
             .getServiceApi()
-            .getBlockedUserPolicyAssignments(xInsurantid, blockingClientWrapper.getUserAgent())) {
+            .getBlockedUserPolicyAssignments(
+                xInsurantId, blockingClientWrapper.getUserAgent(), UUID.randomUUID())) {
       switch (response.getStatus()) {
         case 200 -> {
           final GetBlockedUserPolicyAssignments200Response wrappedResponse =
@@ -195,7 +224,10 @@ public class EntitlementService {
         blockingClientWrapper
             .getServiceApi()
             .setBlockedUserPolicyAssignment(
-                xInsurantId, blockingClientWrapper.getUserAgent(), assignmentType)) {
+                xInsurantId,
+                blockingClientWrapper.getUserAgent(),
+                assignmentType,
+                UUID.randomUUID())) {
       responseDTO = createResponseDTO(response, "Created");
 
     } catch (final Exception e) {
@@ -211,7 +243,10 @@ public class EntitlementService {
         blockingClientWrapper
             .getServiceApi()
             .deleteBlockedUserPolicyAssignment(
-                xInsurantId, telematikId, blockingClientWrapper.getUserAgent())) {
+                xInsurantId,
+                telematikId,
+                blockingClientWrapper.getUserAgent(),
+                UUID.randomUUID())) {
       responseDTO = createResponseDTO(response, "OK. Assignment deleted");
     } catch (final Exception e) {
       log.error("Error occurred while deleting blocked user: {}", e.getMessage());
@@ -221,6 +256,8 @@ public class EntitlementService {
   }
 
   private PostEntitlementResponseDTO createResponseDTO(final Response response) {
+    if (response == null)
+      return new PostEntitlementResponseDTO().success(false).statusMessage(INTERNAL_ERROR);
     switch (response.getStatus()) {
       case 201 -> {
         return new PostEntitlementResponseDTO()
@@ -235,12 +272,8 @@ public class EntitlementService {
         return new PostEntitlementResponseDTO()
             .success(false)
             .statusMessage(
-                "Status Code: "
-                    + response.getStatus()
-                    + ", Error: "
-                    + errorCode
-                    + ", Detail: "
-                    + errorDetail);
+                "Status Code: %d, Error: %s, Detail: %s"
+                    .formatted(response.getStatus(), errorCode, errorDetail));
       }
       default -> {
         return new PostEntitlementResponseDTO().success(false).statusMessage(UNKNOWN_ERROR);
@@ -249,6 +282,7 @@ public class EntitlementService {
   }
 
   public ResponseDTO createResponseDTO(final Response response, final String successMessage) {
+    if (response == null) return new ResponseDTO().success(false).statusMessage(INTERNAL_ERROR);
     return switch (response.getStatus()) {
       case 201, 204 -> new ResponseDTO().success(true).statusMessage(successMessage);
       case 400, 403, 404, 409, 500 -> {

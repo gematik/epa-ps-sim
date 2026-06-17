@@ -42,4 +42,7 @@ public record PutDocumentsRequestDTO(
                 "Liste der einzustellenden Dokumente inklusive Metadaten und Folderinformationen."
                     + "Folderinformationen müssen nur übergeben werden, wenn ein Dokument in einen neuen oder bestehenden Folder eingestellt werden soll."
                     + "Dabei gilt: Ist die entryUUID des Folders gesetzt, ist das Dokument in einen bestehenden Folder einzustellen, enthält die codeList mindestens einen Wert ist ein neuer Folder anzulegen, trifft keines von beiden zu, sind die Folder Metadaten ungültig.")
-        List<Document> documentSets) {}
+        List<Document> documentSets,
+    @JsonProperty
+        @Schema(description = "Flag, das angibt, ob Document Reuse aktiviert werden soll.")
+        Boolean enableDocumentReuse) {}

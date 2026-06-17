@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Patient API
+  version: 1.0.0
+  description: API for patient-related operations in the ePA system.
+
+tags:
+  - name: Patient
+
+paths:
+  /epa/testdriver/api/v1/patient/fhir/Patient/:
+    put:
+      summary: 'Conditional update: Create or Update a Patient depending on searchcriteria'
+      tags:
+        - Patient
+      operationId: createOrUpdatePatientInformation
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientInformationDTO'
+      responses:
+        200:
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/PatientInformationResponseDTO'
+components:
+  parameters:
+    insurantid:
+      name: x-insurantid
+      in: header
+      description: Health Record Identifier.
+      required: true
+      schema:
+        $ref: 'shared.yaml#/components/schemas/KvnrType'
+    format:
+      name: format
+      in: query
+      required: false
+      description: 'Specify in which format the search bundle shall be returned. If not specified, the default format is application/fhir+json.'
+      schema:
+        type: string
+        enum:
+          - application/fhir+json
+          - application/fhir+xml
+  schemas:
+    PatientInformationDTO:
+      description: DTO containing patient information
+      type: object
+      properties:
+        patient:
+          description: 'https://gematik.de/fhir/epa/StructureDefinition/epa-patient'
+          x-examples:
+            Example 1: --> https://gematik.de/fhir/epa/StructureDefinition/epa-patient
+          type: string
+      required:
+        - patient
+    PatientInformationResponseDTO:
+      description: Response DTO containing patient information
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - $ref: '#/components/schemas/PatientInformationDTO'

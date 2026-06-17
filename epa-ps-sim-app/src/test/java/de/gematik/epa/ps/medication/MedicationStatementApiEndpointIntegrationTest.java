@@ -28,28 +28,62 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ca.uhn.fhir.rest.api.MethodOutcome;
 import de.gematik.epa.api.testdriver.medication.dto.AddEmlEntryInput;
 import de.gematik.epa.api.testdriver.medication.dto.CancelEmlEntryInput;
 import de.gematik.epa.api.testdriver.medication.dto.CancelEmlEntryInput.FormatEnum;
 import de.gematik.epa.api.testdriver.medication.dto.LinkEmpInput;
+import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.ps.endpoint.MedicationStatementApiEndpoint;
 import de.gematik.epa.ps.utils.AbstractIntegrationTest;
+import de.gematik.epa.utils.FhirUtils;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 
 class MedicationStatementApiEndpointIntegrationTest extends AbstractIntegrationTest {
 
+  private static final int PORT = 8080;
+  private static final DockerImageName fhirDockerImage =
+      DockerImageName.parse("hapiproject/hapi:latest");
   private final String encodedOrganization = "eyJyZXNvdXJjZVR5cGUiOiJPcmdhbml6YXRpb24ifQ==";
+  private final GenericContainer<?> fhirServer =
+      new GenericContainer<>(fhirDockerImage)
+          .withExposedPorts(PORT)
+          .waitingFor(
+              Wait.forHttp("/fhir/metadata")
+                  .forStatusCode(200)
+                  .withStartupTimeout(Duration.ofMinutes(5L)));
+  @Autowired FhirClient fhirClient;
   @Autowired private MedicationStatementApiEndpoint medicationStatementApiEndpoint;
 
   @Test
   void contextLoads() {
     assertThat(medicationStatementApiEndpoint).isNotNull();
+  }
+
+  @BeforeAll
+  void setupOnce() {
+    fhirServer.start();
+    var serverUrl =
+        "http://" + fhirServer.getHost() + ":" + fhirServer.getMappedPort(PORT) + "/fhir";
+    fhirClient.setServerUrl(serverUrl, "PS-SIM");
+    FhirUtils.setJsonParser(fhirClient.getContext().newJsonParser());
+  }
+
+  @AfterAll
+  void tearDown() {
+    fhirServer.stop();
   }
 
   @BeforeEach
@@ -253,5 +287,60 @@ class MedicationStatementApiEndpointIntegrationTest extends AbstractIntegrationT
     assertThat(response).isNotNull();
     assertThat(response.getSuccess()).isTrue();
     assertThat(response.getParameters()).isNotEmpty();
+  }
+
+  @SneakyThrows
+  @Test
+  void shouldSearchMedicationStatements() {
+    fhirClient.customizeSocketTimeout(30000);
+
+    var medicationAsString =
+        FileUtils.readFileToString(
+            FileUtils.getFile("src/test/resources/medication/medication-statement.json"),
+            StandardCharsets.UTF_8);
+    fhirClient.getClient().create().resource(medicationAsString).execute();
+    MethodOutcome outcome = fhirClient.getClient().create().resource(medicationAsString).execute();
+    assertThat(outcome.getCreated()).isTrue();
+    assertThat(outcome.getId()).isNotNull();
+    String resourceId = outcome.getId().getIdPart();
+
+    var response =
+        medicationStatementApiEndpoint.getMedicationStatements(
+            KVNR,
+            UUID.randomUUID(),
+            USER_AGENT,
+            10,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationStatements()).isNotEmpty();
+
+    var histories =
+        medicationStatementApiEndpoint.getMedicationStatementHistoryList(
+            KVNR, UUID.randomUUID(), resourceId, USER_AGENT, null);
+    assertThat(histories).isNotNull();
+    assertThat(histories.getSuccess()).isTrue();
+    assertThat(histories.getMedicationStatements()).isNotEmpty();
+
+    var historyById =
+        medicationStatementApiEndpoint.getMedicationStatementHistoryByIdAndVersion(
+            KVNR, UUID.randomUUID(), resourceId, "1", USER_AGENT, null);
+    assertThat(historyById).isNotNull();
+    assertThat(historyById.getSuccess()).isTrue();
+    assertThat(historyById.getMedicationStatement()).isNotNull();
   }
 }
