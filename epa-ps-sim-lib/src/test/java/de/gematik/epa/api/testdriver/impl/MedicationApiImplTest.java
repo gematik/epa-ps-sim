@@ -181,7 +181,8 @@ class MedicationApiImplTest {
     // when
     final GetMedicationRequestListDTO response =
         medicationApi.getMedicationRequests(
-            null, null, null, 1, null, null, "123", null, null, null, null, null, null, null);
+            null, null, null, 1, null, null, "123", null, null, null, null, null, null, null, null,
+            null, null, null);
 
     // then
     assertThat(response.getSuccess()).isTrue();
@@ -201,7 +202,8 @@ class MedicationApiImplTest {
     // when
     final GetMedicationRequestListDTO response =
         medicationApi.getMedicationRequests(
-            null, null, null, 1, 1, null, null, null, null, null, null, null, "active", null);
+            null, null, null, 1, 1, null, null, null, null, null, null, null, "active", null, null,
+            null, null, null);
 
     // then
     assertThat(response.getSuccess()).isTrue();
@@ -360,6 +362,130 @@ class MedicationApiImplTest {
     // then
     assertThat(response.getSuccess()).isTrue();
     assertThat(response.getMedications()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  void shouldGetMedicationHistoryByIdAndVersionSuccessfully() {
+    // given
+    final String medication = "{\n" + "  \"resourceType\": \"Medication\"}";
+    final GetMedicationHistoryByIdAndVersionResponseDTO expectedResponse =
+        new GetMedicationHistoryByIdAndVersionResponseDTO().medication(medication).success(true);
+    when(medicationService.getMedicationHistoryById(any())).thenReturn(expectedResponse);
+
+    // when
+    final GetMedicationHistoryByIdAndVersionResponseDTO response =
+        medicationApi.getMedicationHistoryByIdAndVersion(
+            "insurantId", UUID.randomUUID(), "123", "1", "useragent", "application/fhir+json");
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedication()).isNotBlank();
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationRequestHistoryListSuccessfully() {
+    final String medicationRequest = "{\n" + "  \"resourceType\": \"MedicationRequest\"}";
+    final GetMedicationRequestHistoryResponseDTO expectedResponse =
+        new GetMedicationRequestHistoryResponseDTO()
+            .medicationRequests(List.of(medicationRequest))
+            .success(true);
+    when(medicationService.searchMedicationRequestHistory(any())).thenReturn(expectedResponse);
+
+    final GetMedicationRequestHistoryResponseDTO response =
+        medicationApi.getMedicationRequestHistoryList(
+            "insurantId", UUID.randomUUID(), "123", "useragent", "application/fhir+json");
+
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationRequestHistoryListWithXmlFormat() {
+    final String medicationRequestXml = "<MedicationRequest xmlns=\"http://hl7.org/fhir\"/>";
+    final GetMedicationRequestHistoryResponseDTO expectedResponse =
+        new GetMedicationRequestHistoryResponseDTO()
+            .medicationRequests(List.of(medicationRequestXml))
+            .success(true);
+    when(medicationService.searchMedicationRequestHistory(any())).thenReturn(expectedResponse);
+
+    final GetMedicationRequestHistoryResponseDTO response =
+        medicationApi.getMedicationRequestHistoryList(
+            "insurantId", UUID.randomUUID(), "123", "useragent", "application/fhir+xml");
+
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).hasSize(1);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldReturnNoSuccessWhenMedicationRequestHistoryNotFound() {
+    final GetMedicationRequestHistoryResponseDTO expectedResponse =
+        new GetMedicationRequestHistoryResponseDTO()
+            .success(true)
+            .statusMessage("No medication request history found");
+    when(medicationService.searchMedicationRequestHistory(any())).thenReturn(expectedResponse);
+
+    final GetMedicationRequestHistoryResponseDTO response =
+        medicationApi.getMedicationRequestHistoryList(
+            "insurantId", UUID.randomUUID(), "999", "useragent", "application/fhir+json");
+
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  void shouldGetMedicationRequestHistoryByIdAndVersionSuccessfully() {
+    final String medicationRequest = "{\n" + "  \"resourceType\": \"MedicationRequest\"}";
+    final GetMedicationRequestHistoryByIdAndVersionResponseDTO expectedResponse =
+        new GetMedicationRequestHistoryByIdAndVersionResponseDTO()
+            .medicationRequest(medicationRequest)
+            .success(true);
+    when(medicationService.getMedicationRequestHistoryById(any())).thenReturn(expectedResponse);
+
+    final GetMedicationRequestHistoryByIdAndVersionResponseDTO response =
+        medicationApi.getMedicationRequestHistoryByIdAndVersion(
+            "insurantId", UUID.randomUUID(), "123", "1", "useragent", "application/fhir+json");
+
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequest()).isNotBlank();
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationRequestHistoryByIdAndVersionWithXmlFormat() {
+    final String medicationRequestXml = "<MedicationRequest xmlns=\"http://hl7.org/fhir\"/>";
+    final GetMedicationRequestHistoryByIdAndVersionResponseDTO expectedResponse =
+        new GetMedicationRequestHistoryByIdAndVersionResponseDTO()
+            .medicationRequest(medicationRequestXml)
+            .success(true);
+    when(medicationService.getMedicationRequestHistoryById(any())).thenReturn(expectedResponse);
+
+    final GetMedicationRequestHistoryByIdAndVersionResponseDTO response =
+        medicationApi.getMedicationRequestHistoryByIdAndVersion(
+            "insurantId", UUID.randomUUID(), "123", "1", "useragent", "application/fhir+xml");
+
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequest()).isNotBlank();
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldReturnNoSuccessWhenMedicationRequestHistoryByIdAndVersionNotFound() {
+    final GetMedicationRequestHistoryByIdAndVersionResponseDTO expectedResponse =
+        new GetMedicationRequestHistoryByIdAndVersionResponseDTO()
+            .success(false)
+            .statusMessage("No medication request history found for id and version");
+    when(medicationService.getMedicationRequestHistoryById(any())).thenReturn(expectedResponse);
+
+    final GetMedicationRequestHistoryByIdAndVersionResponseDTO response =
+        medicationApi.getMedicationRequestHistoryByIdAndVersion(
+            "insurantId", UUID.randomUUID(), "999", "999", "useragent", "application/fhir+json");
+
+    assertThat(response.getSuccess()).isFalse();
     assertThat(response.getStatusMessage()).isNotBlank();
   }
 }

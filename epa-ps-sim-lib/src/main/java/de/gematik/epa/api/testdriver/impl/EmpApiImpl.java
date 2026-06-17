@@ -44,6 +44,18 @@ public class EmpApiImpl implements EmpApi {
   }
 
   @Override
+  public BatchEmpResponseDTO batchEmp(
+      String insurantId, UUID requestId, String useragent, BatchEmpInput batchEmpInput) {
+    return empService.batchEmp(insurantId, requestId, useragent, batchEmpInput);
+  }
+
+  @Override
+  public GetMedicationPlanResponseDTO getMedicationPlan(
+      String xInsurantid, UUID xRequestID, String format, String provenanceId) {
+    return empService.getEmp(format, xInsurantid, xRequestID, provenanceId);
+  }
+
+  @Override
   public UpdateEmpEntryResponseDTO updateEmpEntry(
       String insurantId,
       UUID requestId,

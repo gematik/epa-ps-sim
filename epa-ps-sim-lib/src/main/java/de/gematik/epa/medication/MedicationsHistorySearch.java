@@ -38,4 +38,5 @@ public class MedicationsHistorySearch {
   private UUID requestID;
   private String useragent;
   private String format;
+  private String versionId;
 }

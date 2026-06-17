@@ -92,6 +92,9 @@ public class DocumentApiImpl implements DocumentsApi {
           documentServiceClient.documentRepositoryProvideAndRegisterDocumentSetB(
               provideAndRegisterRequest);
 
+      if (hasReuseDocuments(request)) {
+        return toResponseDTOWithReusedMappings(provideAndRegisterResponse);
+      }
       return toResponseDTO(provideAndRegisterResponse);
     } catch (Exception e) {
       log.error("Operation putDocuments failed with an exception", e);
@@ -269,7 +272,8 @@ public class DocumentApiImpl implements DocumentsApi {
     return new DocumentSubmissionRequest(
         insurantIdBuilder.buildInsurantId(request.kvnr()),
         request.documentSets(),
-        getSubmissionSetMetadata(request.documentSets(), documentServiceClient));
+        getSubmissionSetMetadata(request.documentSets(), documentServiceClient),
+        request.enableDocumentReuse());
   }
 
   private SubmissionSetMetadata getSubmissionSetMetadata(
@@ -288,11 +292,27 @@ public class DocumentApiImpl implements DocumentsApi {
   }
 
   private ResponseDTO toResponseDTO(ProxyResponse proxyResponse) {
-    return new ResponseDTO(proxyResponse.success(), proxyResponse.statusMessage());
+    List<String> mappings = null;
+    if (proxyResponse.reusedDocumentMappings() != null) {
+      mappings =
+          proxyResponse.reusedDocumentMappings().stream()
+              .map(id -> id.newUniqueId() + "|" + id.oldUniqueId())
+              .toList();
+    }
+    return new ResponseDTO(proxyResponse.success(), proxyResponse.statusMessage(), mappings);
+  }
+
+  private boolean hasReuseDocuments(PutDocumentsRequestDTO request) {
+    return request.enableDocumentReuse() != null;
   }
 
   private ResponseDTO toResponseDTO(RegistryResponseType iheResponse) {
     var proxyResponse = ResponseUtils.toProxyResponse(iheResponse);
+    return toResponseDTO(proxyResponse);
+  }
+
+  private ResponseDTO toResponseDTOWithReusedMappings(RegistryResponseType iheResponse) {
+    var proxyResponse = ResponseUtils.toProxyResponseWithReusedMappings(iheResponse);
     return toResponseDTO(proxyResponse);
   }
 

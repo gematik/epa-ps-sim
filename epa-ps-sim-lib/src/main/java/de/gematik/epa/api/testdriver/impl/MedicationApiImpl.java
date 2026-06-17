@@ -29,6 +29,8 @@ import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.medication.MedicationService;
 import de.gematik.epa.medication.MedicationsHistorySearch;
 import de.gematik.epa.medication.MedicationsSearch;
+import de.gematik.epa.utils.MiscUtils;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,8 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class MedicationApiImpl implements MedicationApi {
-  private static final int DEFAULT_COUNT = 10;
-  private static final int DEFAULT_OFFSET = 0;
 
   private final MedicationService medicationService;
 
@@ -68,8 +68,8 @@ public class MedicationApiImpl implements MedicationApi {
           new MedicationsSearch()
               .code(code)
               .useragent(useragent)
-              .count(Optional.ofNullable(count).orElse(DEFAULT_COUNT))
-              .offset(Optional.ofNullable(offset).orElse(DEFAULT_OFFSET))
+              .count(Optional.ofNullable(count).orElse(MiscUtils.DEFAULT_COUNT))
+              .offset(Optional.ofNullable(offset).orElse(MiscUtils.DEFAULT_OFFSET))
               .lastUpdated(lastUpdated)
               .status(status)
               .identifier(identifier)
@@ -123,15 +123,19 @@ public class MedicationApiImpl implements MedicationApi {
       String revinclude,
       OffsetDateTime authoredon,
       String status,
-      String requester) {
+      String requester,
+      String context,
+      String medication,
+      String activity,
+      LocalDate effectiveDosePeriod) {
     if (id == null) {
       var medicationRequestsSearch =
           new MedicationsSearch()
               .insurantId(insurantId)
               .requestID(requestID)
               .useragent(useragent)
-              .count(Optional.ofNullable(count).orElse(DEFAULT_COUNT))
-              .offset(Optional.ofNullable(offset).orElse(DEFAULT_OFFSET))
+              .count(Optional.ofNullable(count).orElse(MiscUtils.DEFAULT_COUNT))
+              .offset(Optional.ofNullable(offset).orElse(MiscUtils.DEFAULT_OFFSET))
               .total(total)
               .lastUpdated(lastUpdated)
               .identifier(identifier)
@@ -139,7 +143,11 @@ public class MedicationApiImpl implements MedicationApi {
               .revinclude(revinclude)
               .authoredon(authoredon)
               .status(status)
-              .requester(requester);
+              .requester(requester)
+              .medicationReference(medication)
+              .activity(activity)
+              .context(context)
+              .effectiveDosePeriod(effectiveDosePeriod);
       return medicationService.searchMedicationRequests(medicationRequestsSearch);
     }
     return medicationService.getMedicationRequestById(id);
@@ -168,8 +176,8 @@ public class MedicationApiImpl implements MedicationApi {
               .insurantId(insurantId)
               .requestID(requestID)
               .useragent(useragent)
-              .count(Optional.ofNullable(count).orElse(DEFAULT_COUNT))
-              .offset(Optional.ofNullable(offset).orElse(DEFAULT_OFFSET))
+              .count(Optional.ofNullable(count).orElse(MiscUtils.DEFAULT_COUNT))
+              .offset(Optional.ofNullable(offset).orElse(MiscUtils.DEFAULT_OFFSET))
               .total(total)
               .lastUpdated(lastUpdated)
               .identifier(identifier)
@@ -198,8 +206,8 @@ public class MedicationApiImpl implements MedicationApi {
     var searchRequest =
         new MedicationsSearch()
             .useragent(useragent)
-            .count(Optional.ofNullable(count).orElse(DEFAULT_COUNT))
-            .offset(Optional.ofNullable(offset).orElse(DEFAULT_OFFSET))
+            .count(Optional.ofNullable(count).orElse(MiscUtils.DEFAULT_COUNT))
+            .offset(Optional.ofNullable(offset).orElse(MiscUtils.DEFAULT_OFFSET))
             .status(status)
             .insurantId(insurantId)
             .lastUpdated(lastUpdated)
@@ -225,5 +233,61 @@ public class MedicationApiImpl implements MedicationApi {
             .format(format);
 
     return medicationService.searchMedicationsHistory(searchRequest);
+  }
+
+  @Override
+  public GetMedicationHistoryByIdAndVersionResponseDTO getMedicationHistoryByIdAndVersion(
+      String insurantId,
+      UUID requestId,
+      String id,
+      String versionId,
+      String useragent,
+      String format) {
+
+    var searchRequest =
+        new MedicationsHistorySearch()
+            .id(id)
+            .versionId(versionId)
+            .insurantId(insurantId)
+            .requestID(requestId)
+            .useragent(useragent)
+            .format(format);
+    return medicationService.getMedicationHistoryById(searchRequest);
+  }
+
+  @Override
+  public GetMedicationRequestHistoryResponseDTO getMedicationRequestHistoryList(
+      String insurantId, UUID requestId, String id, String useragent, String format) {
+
+    var searchRequest =
+        new MedicationsHistorySearch()
+            .id(id)
+            .insurantId(insurantId)
+            .requestID(requestId)
+            .useragent(useragent)
+            .format(format);
+    return medicationService.searchMedicationRequestHistory(searchRequest);
+  }
+
+  @Override
+  public GetMedicationRequestHistoryByIdAndVersionResponseDTO
+      getMedicationRequestHistoryByIdAndVersion(
+          String insurantId,
+          UUID requestId,
+          String id,
+          String versionId,
+          String useragent,
+          String format) {
+
+    var searchRequest =
+        new MedicationsHistorySearch()
+            .id(id)
+            .insurantId(insurantId)
+            .requestID(requestId)
+            .versionId(versionId)
+            .useragent(useragent)
+            .format(format);
+
+    return medicationService.getMedicationRequestHistoryById(searchRequest);
   }
 }

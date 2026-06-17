@@ -35,10 +35,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.epa.api.testdriver.medication.dto.AddEmpEntryInput;
 import de.gematik.epa.api.testdriver.medication.dto.UpdateEmpEntryInput;
 import de.gematik.epa.ps.utils.AbstractIntegrationTest;
+import de.gematik.epa.utils.FhirUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.hl7.fhir.r4.model.Bundle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -276,4 +278,70 @@ class EmpApiEndpointIntegrationTest extends AbstractIntegrationTest {
     assertThat(response.getSuccess()).isFalse();
     assertThat(response.getStatusMessage()).isNotEmpty().contains("ivalidQueryParam");
   }
+
+  @SneakyThrows
+  @Test
+  void shouldGetMedicationPlanSuccessfully() {
+    var insurantId = KVNR;
+    var requestId = UUID.randomUUID();
+
+    var bodyAsJson =
+        FileUtils.readFileToString(
+            FileUtils.getFile("src/test/resources/medication/medication-plan.json"),
+            StandardCharsets.UTF_8);
+    mockEmlRender.stubFor(
+        get(urlEqualTo(
+                "/epa/medication/api/v1/fhir/$medication-plan?_format=application/fhir%2Bjson"))
+            .withHeader(X_INSURANTID, equalTo(insurantId))
+            .withHeader(X_USERAGENT, equalTo(USER_AGENT))
+            .withHeader(ACCEPT_HEADER, equalTo(ACCEPT_FHIR_JSON))
+            .withHeader(X_REQUEST_ID, equalTo(requestId.toString()))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(CONTENT_TYPE_HEADER, ACCEPT_FHIR_JSON)
+                    .withHeader(ACCEPT_HEADER, ACCEPT_FHIR_JSON)
+                    .withBody(bodyAsJson)));
+
+    var response = empApiEndpoint.getMedicationPlan(insurantId, requestId, ACCEPT_FHIR_JSON, null);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isTrue();
+    String medicationPlan = response.getMedicationPlan();
+    assertThat(medicationPlan).isNotEmpty().contains("Bundle");
+
+    final Bundle bundle = (Bundle) FhirUtils.fromString(medicationPlan);
+    assertThat(bundle).isNotNull();
+    assertThat(bundle.getEntry()).isNotEmpty();
+  }
+
+  @Test
+  void getMedicationPlanHandles400Response() {
+    var insurantId = KVNR;
+    var requestId = UUID.randomUUID();
+
+    String errorOutcome =
+        """
+        {"errorCode" : "ivalidQueryParam", "errorDetail" : "Invalid query param!" }
+        """;
+    mockEmlRender.stubFor(
+        get(urlEqualTo(
+                "/epa/medication/api/v1/fhir/$medication-plan?_format=application/fhir%2Bjson"))
+            .withHeader(X_INSURANTID, equalTo(insurantId))
+            .withHeader(X_USERAGENT, equalTo(USER_AGENT))
+            .withHeader(ACCEPT_HEADER, equalTo(ACCEPT_FHIR_JSON))
+            .willReturn(
+                aResponse()
+                    .withStatus(400)
+                    .withHeader(CONTENT_TYPE_HEADER, ACCEPT_FHIR_JSON)
+                    .withHeader(ACCEPT_HEADER, ACCEPT_FHIR_JSON)
+                    .withBody(errorOutcome)));
+
+    var response = empApiEndpoint.getMedicationPlan(insurantId, requestId, ACCEPT_FHIR_JSON, null);
+    assertThat(response).isNotNull();
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getStatusMessage()).isNotEmpty().contains("ivalidQueryParam");
+  }
+
+  // TODO: 404 provenance not known; eMP not exist
 }

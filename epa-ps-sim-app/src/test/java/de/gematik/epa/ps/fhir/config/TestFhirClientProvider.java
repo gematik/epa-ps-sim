@@ -24,7 +24,10 @@
  */
 package de.gematik.epa.ps.fhir.config;
 
+import de.gematik.epa.config.AppConfig;
 import de.gematik.epa.fhir.client.FhirClient;
+import de.gematik.epa.ps.config.ServerConfiguration;
+import lombok.AllArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -38,27 +41,19 @@ import org.springframework.context.annotation.Profile;
 @Accessors(fluent = true)
 @Profile("test")
 @ComponentScan("de.gematik.epa.fhir")
-@EnableConfigurationProperties(FhirServerConfiguration.class)
+@EnableConfigurationProperties({AppConfig.class})
+@AllArgsConstructor
 public class TestFhirClientProvider {
 
-  private final FhirServerConfiguration fhirServerConfiguration;
+  private final AppConfig appConfiguration;
 
-  public TestFhirClientProvider(FhirServerConfiguration fhirServerConfiguration) {
-    this.fhirServerConfiguration = fhirServerConfiguration;
-  }
-
-  private String getServerUrl() {
-    return fhirServerConfiguration.getProtocol()
-        + "://"
-        + fhirServerConfiguration.getHost()
-        + ":"
-        + fhirServerConfiguration.getPort()
-        + "/"
-        + fhirServerConfiguration.getPath();
+  @Bean
+  public ServerConfiguration fhirServerConfiguration() {
+    return new ServerConfiguration();
   }
 
   @Bean
   public FhirClient fhirClient() {
-    return new FhirClient(getServerUrl(), fhirServerConfiguration.getUserAgent());
+    return new FhirClient(fhirServerConfiguration().buildUrl(), appConfiguration.getUserAgent());
   }
 }

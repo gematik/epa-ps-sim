@@ -31,12 +31,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.gematik.epa.api.testdriver.medication.dto.AddEmpEntryInput;
-import de.gematik.epa.api.testdriver.medication.dto.AddEmpEntryResponseDTO;
-import de.gematik.epa.api.testdriver.medication.dto.GetMedicationPlanLogsResponseDTO;
-import de.gematik.epa.api.testdriver.medication.dto.UpdateEmpEntryInput;
-import de.gematik.epa.api.testdriver.medication.dto.UpdateEmpEntryResponseDTO;
+import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.medication.EmpService;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -140,6 +137,50 @@ class EmpApiImplTest {
   }
 
   @Test
+  void shouldBatchEmpSuccessfully() {
+    UUID requestId = UUID.randomUUID();
+    var batchEmpInput = new BatchEmpInput();
+    batchEmpInput.setEmpAdds(List.of(new AddEmpEntryInput()));
+    batchEmpInput.setEmpUpdates(List.of(new UpdateEmpEntryInput()));
+    batchEmpInput.setEmpCommit(new EmpCommitInput().chronologyId("provenance-1"));
+    batchEmpInput.setOrganization("{\"resourceType\":\"Organization\"}");
+
+    var expectedResponse = new BatchEmpResponseDTO();
+    expectedResponse.setSuccess(true);
+    expectedResponse.setBundle("success response");
+
+    when(empService.batchEmp(KVNR, requestId, USER_AGENT, batchEmpInput))
+        .thenReturn(expectedResponse);
+
+    var result = empApi.batchEmp(KVNR, requestId, USER_AGENT, batchEmpInput);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getBundle()).isEqualTo("success response");
+    verify(empService).batchEmp(KVNR, requestId, USER_AGENT, batchEmpInput);
+  }
+
+  @Test
+  void shouldHandleBatchEmpFailure() {
+    UUID requestId = UUID.randomUUID();
+    var batchEmpInput = new BatchEmpInput();
+
+    var expectedResponse = new BatchEmpResponseDTO();
+    expectedResponse.setSuccess(false);
+    expectedResponse.setStatusMessage("Bad Request");
+
+    when(empService.batchEmp(KVNR, requestId, USER_AGENT, batchEmpInput))
+        .thenReturn(expectedResponse);
+
+    var result = empApi.batchEmp(KVNR, requestId, USER_AGENT, batchEmpInput);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage()).isEqualTo("Bad Request");
+    verify(empService).batchEmp(KVNR, requestId, USER_AGENT, batchEmpInput);
+  }
+
+  @Test
   void shouldGetMedicationPlanLogsSuccessfully() {
     UUID requestId = UUID.randomUUID();
     Integer count = 10;
@@ -182,5 +223,44 @@ class EmpApiImplTest {
     assertThat(result.getSuccess()).isFalse();
     assertThat(result.getStatusMessage()).isEqualTo("Bad Request");
     verify(empService).getMedicationPlanLogs(KVNR, requestId, count, offset, format);
+  }
+
+  @Test
+  void shouldGetMedicationPlanSuccessfully() {
+    UUID requestId = UUID.randomUUID();
+    String format = "application/fhir+json";
+
+    var expectedResponse = new GetMedicationPlanResponseDTO();
+    expectedResponse.setSuccess(true);
+    expectedResponse.setMedicationPlan("{\"resourceType\":\"Bundle\",\"type\":\"searchset\"}");
+
+    when(empService.getEmp(format, KVNR, requestId, null)).thenReturn(expectedResponse);
+
+    var result = empApi.getMedicationPlan(KVNR, requestId, format, null);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getMedicationPlan())
+        .isEqualTo("{\"resourceType\":\"Bundle\",\"type\":\"searchset\"}");
+    verify(empService).getEmp(format, KVNR, requestId, null);
+  }
+
+  @Test
+  void shouldHandleGetMedicationPlanFailure() {
+    UUID requestId = UUID.randomUUID();
+    String format = "application/fhir+json";
+
+    var expectedResponse = new GetMedicationPlanResponseDTO();
+    expectedResponse.setSuccess(false);
+    expectedResponse.setStatusMessage("Bad Request");
+
+    when(empService.getEmp(format, KVNR, requestId, null)).thenReturn(expectedResponse);
+
+    var result = empApi.getMedicationPlan(KVNR, requestId, format, null);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage()).isEqualTo("Bad Request");
+    verify(empService).getEmp(format, KVNR, requestId, null);
   }
 }

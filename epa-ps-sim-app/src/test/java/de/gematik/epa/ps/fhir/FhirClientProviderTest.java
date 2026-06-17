@@ -26,63 +26,45 @@ package de.gematik.epa.ps.fhir;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import de.gematik.epa.ps.fhir.config.AuditServerConfiguration;
-import de.gematik.epa.ps.fhir.config.FhirServerConfiguration;
+import de.gematik.epa.config.AppConfig;
+import de.gematik.epa.ps.config.ServerConfiguration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class FhirClientProviderTest {
 
   public static final String EXPECTED_URL = "http://localhost:8080/fhir";
-  private final FhirServerConfiguration fhirServerConfiguration =
-      mock(FhirServerConfiguration.class);
-  private final AuditServerConfiguration auditServerConfiguration =
-      mock(AuditServerConfiguration.class);
+
+  private final ServerConfiguration serverConfiguration = mock(ServerConfiguration.class);
   private final FhirClientProvider fhirClientProvider =
-      new FhirClientProvider(fhirServerConfiguration, auditServerConfiguration);
+      spy(new FhirClientProvider(mock(AppConfig.class)));
 
-  @Test
-  void shouldCreateFhirServerUrl() {
-    mockFhirServerConfigAccess();
-
-    assertThat(fhirClientProvider.getFhirServerUrl()).isEqualTo(EXPECTED_URL);
+  @BeforeEach
+  void setUp() {
+    when(fhirClientProvider.fhirServerConfiguration()).thenReturn(serverConfiguration);
+    when(fhirClientProvider.auditServerConfiguration()).thenReturn(serverConfiguration);
+    when(fhirClientProvider.patientServerConfiguration()).thenReturn(serverConfiguration);
+    when(serverConfiguration.buildUrl()).thenReturn(EXPECTED_URL);
   }
 
   @Test
-  void shouldCreateAuditServerUrl() {
-    mockAuditServerConfigAccess();
-
-    assertThat(fhirClientProvider.getAuditServerUrl()).isEqualTo(EXPECTED_URL);
+  void shouldGetFhirServerUrl() {
+    assertThat(fhirClientProvider.fhirServerConfiguration().buildUrl()).isEqualTo(EXPECTED_URL);
+    assertThat(fhirClientProvider.fhirClient().getServerUrl()).isEqualTo(EXPECTED_URL);
   }
 
   @Test
-  void shouldCreateFhirClientWithServerUrl() {
-    mockFhirServerConfigAccess();
-
-    final var fhirClient = fhirClientProvider.fhirClient();
-    assertThat(fhirClient.getServerUrl()).isEqualTo(EXPECTED_URL);
+  void shouldGetAuditServerUrl() {
+    assertThat(fhirClientProvider.auditServerConfiguration().buildUrl()).isEqualTo(EXPECTED_URL);
+    assertThat(fhirClientProvider.auditFhirClient().getServerUrl()).isEqualTo(EXPECTED_URL);
   }
 
   @Test
-  void shouldCreateAuditClientWithServerUrl() {
-    mockAuditServerConfigAccess();
-
-    final var auditFhirClient = fhirClientProvider.auditFhirClient();
-    assertThat(auditFhirClient.getServerUrl()).isEqualTo(EXPECTED_URL);
-  }
-
-  private void mockFhirServerConfigAccess() {
-    when(fhirServerConfiguration.getProtocol()).thenReturn("http");
-    when(fhirServerConfiguration.getHost()).thenReturn("localhost");
-    when(fhirServerConfiguration.getPort()).thenReturn("8080");
-    when(fhirServerConfiguration.getPath()).thenReturn("fhir");
-  }
-
-  private void mockAuditServerConfigAccess() {
-    when(auditServerConfiguration.getProtocol()).thenReturn("http");
-    when(auditServerConfiguration.getHost()).thenReturn("localhost");
-    when(auditServerConfiguration.getPort()).thenReturn("8080");
-    when(auditServerConfiguration.getPath()).thenReturn("fhir");
+  void shouldGetPatientServerUrl() {
+    assertThat(fhirClientProvider.patientServerConfiguration().buildUrl()).isEqualTo(EXPECTED_URL);
+    assertThat(fhirClientProvider.patientFhirClient().getServerUrl()).isEqualTo(EXPECTED_URL);
   }
 }

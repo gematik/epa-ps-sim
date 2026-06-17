@@ -43,7 +43,7 @@ info:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0'
 
-  version: 1.1.5
+  version: 1.2.0
 servers:
   - url: 'https://epa-hst1.prod.epa4all.de'
 
@@ -58,71 +58,10 @@ tags:
     description: medication list (eML) in FHIR format
   - name: MedicationStatement
     description: medication statement related endpoints
+  - name: eMP
+    description: eMP related endpoints
 
 paths:
-  /epa/medication/render/v1/emp/pdf:
-    get:
-      tags:
-        - PDF (eMP)
-      operationId: renderMedicationPlanToPDF_MedicationSvc
-      description: |
-        This interface returns a medication plan (eMP) rendered in PDF/A.
-
-        #### **Allowed user groups [professionOID]**
-        * oid_versicherter
-        * oid_praxis_arzt 
-        * oid_krankenhaus
-        * oid_institution-vorsorge-reha
-        * oid_zahnarztpraxis 
-        * oid_praxis_psychotherapeut
-        * oid_institution-oeg
-        * oid_öffentliche_apotheke
-        * oid_institution-pflege
-        * oid_institution-geburtshilfe
-        * oid_praxis-physiotherapeut
-        * oid_institution-arbeitsmedizin
-
-        ***
-
-        **Error Handling**
-        -
-        | Conditions | Status code | Error code | Remarks |
-        |------------|-------------|------------|---------|
-        | Successful operation | 200 | | |
-        | Rendering led to empty list | 404 | noEntries ||
-        | Requestor not authorized (no user session with valid ID-Token available) | 403 | invalAuth ||
-        | Requestor has no valid entitlement | 403 | notEntitled ||
-        | Requestor role is not in the list of allowed user groups | 403 | invalidOid ||        
-        | Device registration does not exist (if requestor role is oid_versicherter only) | 403 | unregisteredDevice ||                
-        | Health record is in state UNKNOWN or INITIALIZED | 404 | noHealthRecord ||
-        | Health record is in state SUSPENDED or MAINTENANCE | 409 | statusMismatch ||        
-        | Any other error | 500 | internalError ||        
-        | If the insurant objected to the medication process or objected to the submission of prescription and dispensation data into the ePA system, the Medication Service is locked. | 423 | locked ||                
-
-      parameters:
-        - $ref: '#/components/parameters/insurantid'
-        - $ref: '#/components/parameters/useragent'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-        '400':
-          $ref: '#/components/responses/Error400BadRequest'
-        '403':
-          $ref: '#/components/responses/Error403EMP'
-        '404':
-          $ref: '#/components/responses/Error404NoEntries'
-        '409':
-          $ref: '#/components/responses/Error409Conflict'
-        '423':
-          $ref: '#/components/responses/Error423Locked'
-        '500':
-          $ref: '#/components/responses/Error500InternalError'
-
   /epa/medication/render/v1/eml/xhtml:
     get:
       tags:
@@ -301,6 +240,69 @@ paths:
         '404':
           $ref: '#/components/responses/GetMedicationListError404'
 
+  /epa/medication/render/v1/emp/pdf:
+    get:
+      tags:
+        - PDF (eMP)
+      operationId: renderMedicationPlanToPDF_MedicationSvc
+      description: |
+        This interface returns a medication plan (eMP) rendered in PDF/A.
+
+        #### **Allowed user groups [professionOID]**
+        * oid_versicherter
+        * oid_praxis_arzt 
+        * oid_krankenhaus
+        * oid_institution-vorsorge-reha
+        * oid_zahnarztpraxis 
+        * oid_praxis_psychotherapeut
+        * oid_institution-oeg
+        * oid_öffentliche_apotheke
+        * oid_institution-pflege
+        * oid_institution-geburtshilfe
+        * oid_praxis-physiotherapeut
+        * oid_institution-arbeitsmedizin
+
+        ***
+        
+        **Error Handling**
+        -
+        | Conditions | Status code | Error code | Remarks |
+        |------------|-------------|------------|---------|
+        | Successful operation | 200 | | |
+        | Rendering led to empty list | 404 | noEntries ||
+        | Requestor not authorized (no user session with valid ID-Token available) | 403 | invalAuth ||
+        | Requestor has no valid entitlement | 403 | notEntitled ||
+        | Requestor role is not in the list of allowed user groups | 403 | invalidOid ||        
+        | Device registration does not exist (if requestor role is oid_versicherter only) | 403 | unregisteredDevice ||                
+        | Health record is in state UNKNOWN or INITIALIZED | 404 | noHealthRecord ||
+        | Health record is in state SUSPENDED or MAINTENANCE | 409 | statusMismatch ||        
+        | Any other error | 500 | internalError ||        
+        | If the insurant objected to the medication process or objected to the submission of prescription and dispensation data into the ePA system, the Medication Service is locked. | 423 | locked ||                
+
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/Error400BadRequest'
+        '403':
+          $ref: '#/components/responses/Error403EMP'
+        '404':
+          $ref: '#/components/responses/Error404NoEntries'
+        '409':
+          $ref: '#/components/responses/Error409Conflict'
+        '423':
+          $ref: '#/components/responses/Error423Locked'
+        '500':
+          $ref: '#/components/responses/Error500InternalError'
+
   /epa/medication/api/v1/fhir/MedicationStatement/$add-eml-entry:
     post:
       summary: Type-level FHIR Operation $add-eml-entry
@@ -433,6 +435,147 @@ paths:
           $ref: '#/components/responses/EmlEntryError423'
         "500":
           $ref: '#/components/responses/Error500InternalError'
+  /epa/medication/api/v1/fhir/MedicationStatement/{id}/$link-emp:
+    post:
+      description: Create eML-eMP link.
+      operationId: linkEMP_MedicationSvc
+      tags:
+        - MedicationStatement
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestId'
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: X-Requesting-Organization
+          in: header
+          required: true
+          description: Base64 encoded FHIR Organization resource in JSON format used
+            to identify the originator of the request
+          schema:
+            type: string
+            format: base64(fhir+json:Organization)
+        - name: _format
+          in: query
+          required: false
+          description: 'Specify alternative response formats by their MIME-types (when
+            a client is unable access Accept: header)'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource ID (ID of MedicationStatement of eML)
+      requestBody:
+        $ref: "#/components/requestBodies/EPAOpLinkEmpEntryParameters"
+      responses:
+        "200":
+          description: Parameters FHIR resource.
+          content:
+            application/fhir+json:
+              schema:
+                type: string
+            application/fhir+xml:
+              schema:
+                type: string
+        "400":
+          $ref: '#/components/responses/EmlEntryError400'
+        "403":
+          $ref: '#/components/responses/EmlEntryError403'
+        "404":
+          $ref: '#/components/responses/EmlEntryError404'
+        "405":
+          $ref: '#/components/responses/EmlEntryError405'
+        "409":
+          $ref: '#/components/responses/EmlEntryError409'
+        "423":
+          $ref: '#/components/responses/EmlEntryError423'
+        "500":
+          $ref: '#/components/responses/Error500InternalError'
+
+  /epa/medication/api/v1/fhir/MedicationStatement/{id}/$unlink-emp:
+    post:
+      description: Create eML-eMP unlink.
+      operationId: unlinkEMP_MedicationSvc
+      tags:
+        - MedicationStatement
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestId'
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: X-Requesting-Organization
+          in: header
+          required: true
+          description: Base64 encoded FHIR Organization resource in JSON format used to identify the originator of the request
+          schema:
+            type: string
+            format: base64(fhir+json:Organization)
+        - name: _format
+          in: query
+          required: false
+          description: 'Specify alternative response formats by their MIME-types (when
+            a client is unable access Accept: header)'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Resource ID (ID of MedicationStatement of eML)
+      requestBody:
+        $ref: "#/components/requestBodies/EPAOpLinkEmpEntryParameters"
+      responses:
+        "200":
+          description: Parameters FHIR resource.
+          content:
+            application/fhir+json:
+              schema:
+                type: string
+            application/fhir+xml:
+              schema:
+                type: string
+        "400":
+          $ref: '#/components/responses/EmlEntryError400'
+        "403":
+          $ref: '#/components/responses/EmlEntryError403'
+        "404":
+          $ref: '#/components/responses/EmlEntryError404'
+        "405":
+          $ref: '#/components/responses/EmlEntryError405'
+        "409":
+          $ref: '#/components/responses/EmlEntryError409'
+        "423":
+          $ref: '#/components/responses/EmlEntryError423'
+        "500":
+          $ref: '#/components/responses/Error500InternalError'
+
   /epa/medication/api/v1/fhir/$add-emp-entry:
     post:
       tags:
@@ -554,6 +697,89 @@ paths:
           $ref: '#/components/responses/EmpEntryError423'
         "500":
           $ref: '#/components/responses/Error500InternalError'
+  /epa/medication/api/v1/fhir/$medication-plan:
+    get:
+      summary: System-level FHIR Operation $medication-plan
+      tags:
+        - System-level FHIR Operation
+      parameters:
+        - name: X-Request-ID
+          in: header
+          required: false
+          description: UUID of the request message
+          schema:
+            type: string
+            format: uuid
+        - name: x-insurantid
+          in: header
+          required: true
+          description: Health Record Identifier
+          schema:
+            type: string
+            pattern: ^[A-Z]{1}\d{9}$
+        - name: x-useragent
+          in: header
+          required: true
+          description: user agent information
+          schema:
+            type: string
+            pattern: ^[a-zA-Z0-9]{20}\/[a-zA-Z0-9\-\.]{1,15}$
+        - name: Accept
+          in: header
+          required: false
+          description: The Accept header indicates the format in which the client wishes
+            to receive the FHIR response.
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: _format
+          in: query
+          required: false
+          description: 'Specify alternative response formats by their MIME-types (when
+          a client is unable access Accept: header)'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: provenance
+          in: query
+          required: false
+          description: Die UUID der Provenance-Instanz, die eine bestimmte Version des
+            elektronischen Medikationsplans (eMP) identifiziert. Diese Provenance-Instanz
+            repräsentiert den Zustand zu einem bestimmten Zeitpunkt und bündelt die
+            zu diesem Zeitpunkt aktiven eMP-Elemente. Wird kein provenance-Parameter
+            angegeben, liefert die Operation den aktuellsten bekannten Zustand des eMP
+            zurück.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+            application/fhir+xml:
+              schema:
+                type: object
+        '400':
+          description: Invalid request
+        '404':
+          description: Health record is in state UNKNOWN or INITIALIZED
+        '403':
+          description: Device registration does not exist (if requestor role is oid_versicherter
+            only)
+        '409':
+          description: Health record is in state SUSPENDED or MAINTENANCE
+        '500':
+          description: Any other error
+        '423':
+          description: If the insurant objected to the medication process or objected
+            to the submission of prescription and dispensation data into the ePA system,
+            the Medication Service is locked.
   /epa/medication/api/v1/fhir/$medication-plan-log:
     get:
       tags:
@@ -607,12 +833,12 @@ paths:
                 $ref: '#/components/schemas/Bundle'
         '500':
           $ref: '#/components/responses/Error500InternalError'
-  /epa/medication/api/v1/fhir/MedicationStatement/{id}/$link-emp:
+  /epa/medication/api/v1/fhir/$batch-emp:
     post:
-      description: Create eML-eMP link.
-      operationId: linkEMP_MedicationSvc
       tags:
-        - MedicationStatement
+        - eMP
+      description: Batch execution of eMP operations.
+      operationId: batchEMPEntries_MedicationSvc
       parameters:
         - $ref: '#/components/parameters/insurantid'
         - $ref: '#/components/parameters/useragent'
@@ -638,24 +864,16 @@ paths:
         - name: _format
           in: query
           required: false
-          description: 'Specify alternative response formats by their MIME-types (when
-            a client is unable access Accept: header)'
           schema:
             type: string
             enum:
               - application/fhir+json
               - application/fhir+xml
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Resource ID (ID of MedicationStatement of eML)
       requestBody:
-        $ref: "#/components/requestBodies/EPAOpLinkEmpEntryParameters"
+        $ref: "#/components/requestBodies/BatchEmpInput"
       responses:
         "200":
-          description: Parameters FHIR resource.
+          description: Bundle FHIR resource of type transaction-response.
           content:
             application/fhir+json:
               schema:
@@ -664,17 +882,17 @@ paths:
               schema:
                 type: string
         "400":
-          $ref: '#/components/responses/EmlEntryError400'
+          $ref: '#/components/responses/EmpEntryError400'
         "403":
-          $ref: '#/components/responses/EmlEntryError403'
+          $ref: '#/components/responses/EmpEntryError403'
         "404":
-          $ref: '#/components/responses/EmlEntryError404'
-        "405":
-          $ref: '#/components/responses/EmlEntryError405'
-        "409":
-          $ref: '#/components/responses/EmlEntryError409'
+          $ref: '#/components/responses/EmpEntryError404'
+        "422":
+          $ref: '#/components/responses/EmpEntryError422'
         "423":
-          $ref: '#/components/responses/EmlEntryError423'
+          $ref: '#/components/responses/EmpEntryError423'
+        "431":
+          $ref: '#/components/responses/EmpEntryError431'
         "500":
           $ref: '#/components/responses/Error500InternalError'
 components:
@@ -703,6 +921,17 @@ components:
         format: uuid
 
   responses:
+    Error403EMP:
+      description: "Requestor not authorized, 
+                        Requestor has no valid entitlement, 
+                        Requestor role is not in the list of allowed user groups, 
+                        Device registration does not exist"
+      content:
+        application/json:
+          example:
+            errorCode: invalAuth
+          schema:
+            $ref: '#/components/schemas/ErrorType'
     Error400BadRequest:
       description: Unknown or invalid search parameter(s) or invalid request
       content:
@@ -765,7 +994,7 @@ components:
           example: MEDSVC_NO_VALID_STRUCTURE
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
-        application/xml+json:
+        application/fhir+xml:
           example: MEDSVC_NO_VALID_STRUCTURE
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
@@ -777,7 +1006,7 @@ components:
           example: SVC_IDENTITY_MISMATCH
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
-        application/xml+json:
+        application/fhir+xml:
           example: SVC_IDENTITY_MISMATCH
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
@@ -794,7 +1023,7 @@ components:
           example: MSG_OP_NOT_ALLOWED
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
-        application/xml+json:
+        application/fhir+xml:
           example: MSG_OP_NOT_ALLOWED
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
@@ -819,7 +1048,7 @@ components:
           example: MEDSVC_NO_VALID_STRUCTURE
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
-        application/xml+json:
+        application/fhir+xml:
           example: MEDSVC_NO_VALID_STRUCTURE
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
@@ -831,7 +1060,7 @@ components:
           example: SVC_IDENTITY_MISMATCH
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
-        application/xml+json:
+        application/fhir+xml:
           example: SVC_IDENTITY_MISMATCH
           schema:
             $ref: '#/components/schemas/EPAOperationOutcome'
@@ -853,6 +1082,12 @@ components:
         application/fhir+json:
           schema:
             $ref: '#/components/schemas/ErrorType'
+    EmpEntryError422:
+      description: "Invalid Data Structure in Medication Service."
+      content:
+        application/fhir+json:
+          schema:
+            $ref: '#/components/schemas/ErrorType'
     EmpEntryError423:
       description: "If the insurant objected to the medication process or objected to the submission 
       of prescription and dispensation data into the ePA system, the Medication Service is locked."
@@ -860,15 +1095,10 @@ components:
         application/fhir+json:
           schema:
             $ref: '#/components/schemas/ErrorType'
-    Error403EMP:
-      description: "Requestor not authorized, 
-                        Requestor has no valid entitlement, 
-                        Requestor role is not in the list of allowed user groups, 
-                        Device registration does not exist"
+    EmpEntryError431:
+      description: "Requesting Organization Header exceeds maximum size."
       content:
-        application/json:
-          example:
-            errorCode: invalAuth
+        application/fhir+json:
           schema:
             $ref: '#/components/schemas/ErrorType'
   schemas:
@@ -1038,7 +1268,8 @@ components:
           type: object
           xml:
             attribute: true
-      description: "The parameter item is containing a name and the resource itself (FHIR Resource). The resource can be a MedicationStatement, Medication and Provenance."
+      description: "The parameter item is containing a name and the resource itself (FHIR Resource). 
+      The resource can be a MedicationStatement, Medication, MedicationRequest and Provenance."
     EmpParameterItem:
       type: object
       properties:
@@ -1052,8 +1283,6 @@ components:
             attribute: true
         valueId:
           type: string
-          xml:
-            attribute: true
         valueIdentifier:
           $ref: '#/components/schemas/ValueIdentifier'
         part:
@@ -1070,6 +1299,9 @@ components:
         value:
           type: string
       description: "An identifier - identifies some entity uniquely and unambiguously."
+    BatchEmpParameters:
+      type: object
+      description: "The BatchEmpParameters is Bundle resource of type transaction containing multiple entries. Each entry is containing a request and a resource."
   requestBodies:
     EPAOpAddEmlEntryInputParameters:
       description: https://gematik.de/fhir/epa-medication/StructureDefinition/epa-op-add-eml-entry-input-parameters
@@ -1107,6 +1339,14 @@ components:
         application/fhir+xml:
           schema:
             $ref: "#/components/schemas/EPAOpLinkEmpEntryParameters"
-
+    BatchEmpInput:
+        description: https://gematik.de/fhir/epa-medication/StructureDefinition/epa-batch-emp-request-bundle
+        content:
+          application/fhir+json:
+            schema:
+              $ref: "#/components/schemas/BatchEmpParameters"
+          application/fhir+xml:
+            schema:
+              $ref: "#/components/schemas/BatchEmpParameters"
 
 

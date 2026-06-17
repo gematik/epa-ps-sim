@@ -45,5 +45,8 @@ public class EmlRenderClientConfiguration {
   private String addEmpEntryPath;
   private String updateEmpEntryPath;
   private String medicationPlanLogPath;
+  private String medicationPlanPath;
   private String linkEmpPath;
+  private String unlinkEmpPath;
+  private String batchEmpPath;
 }

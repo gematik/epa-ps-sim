@@ -1202,4 +1202,419 @@ class MedicationServiceTest {
     assertThat(response.getStatusMessage()).isNotBlank();
     assertThat(response.getStatusMessage()).contains("No medication historyBundle found for ID");
   }
+
+  @Test
+  void shouldGetMedicationHistoryByIdWithJsonFormat() {
+    // given
+    var id = "123";
+    var versionId = "1";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var medication = getMedication();
+    var iReadExecutable = mockFhirGetResourceByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenReturn(medication);
+
+    when(jsonParser.encodeResourceToString(medication)).thenReturn(medicationAsString);
+
+    // when
+    var response = medicationService.getMedicationHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedication()).isEqualTo(medicationAsString);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationHistoryByIdWithXmlFormat() {
+    // given
+    var id = "123";
+    var versionId = "2";
+    var format = "application/fhir+xml";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var medication = getMedication();
+    var iReadExecutable = mockFhirGetResourceByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenReturn(medication);
+
+    var xmlParser = mock(IParser.class);
+    when(context.newXmlParser()).thenReturn(xmlParser);
+    FhirUtils.setXmlParser(xmlParser);
+    when(xmlParser.encodeResourceToString(medication)).thenReturn("<Medication/>");
+
+    // when
+    var response = medicationService.getMedicationHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedication()).isEqualTo("<Medication/>");
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void getMedicationHistoryByIdShouldReturnSuccessAndStatusMessageWhenNoResourceFound() {
+    // given
+    var id = "123";
+    var versionId = "1";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var iReadExecutable = mockFhirGetResourceByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenThrow(ResourceNotFoundException.class);
+
+    // when
+    var response = medicationService.getMedicationHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedication()).isBlank();
+    assertThat(response.getStatusMessage()).isNotBlank();
+    assertThat(response.getStatusMessage()).contains("No medication history found for ID");
+    assertThat(response.getStatusMessage()).contains(id);
+    assertThat(response.getStatusMessage()).contains(versionId);
+  }
+
+  @Test
+  void getMedicationHistoryByIdShouldHandleException() {
+    // given
+    var id = "123";
+    var versionId = "1";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var iReadExecutable = mockFhirGetResourceByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenThrow(InvalidResponseException.class);
+
+    // when
+    var response = medicationService.getMedicationHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getMedication()).isBlank();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationRequestHistoryWithJsonFormat() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    var historyBundle = new Bundle();
+    var entry = new Bundle.BundleEntryComponent();
+    var medicationRequest = new MedicationRequest();
+    medicationRequest.setId(id);
+    entry.setResource(medicationRequest);
+    historyBundle.addEntry(entry);
+
+    when(historyTyped.execute()).thenReturn(historyBundle);
+    when(jsonParser.encodeResourceToString(medicationRequest))
+        .thenReturn(medicationRequestAsString);
+
+    // when
+    var response = medicationService.searchMedicationRequestHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).hasSize(1);
+    assertThat(response.getMedicationRequests().getFirst()).isEqualTo(medicationRequestAsString);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldSearchMedicationRequestHistoryWithXmlFormat() {
+    // given
+    var id = "123";
+    var format = "application/fhir+xml";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    var historyBundle = new Bundle();
+    var entry = new Bundle.BundleEntryComponent();
+    var medicationRequest = new MedicationRequest();
+    medicationRequest.setId(id);
+    entry.setResource(medicationRequest);
+    historyBundle.addEntry(entry);
+
+    when(historyTyped.execute()).thenReturn(historyBundle);
+
+    var xmlParser = mock(IParser.class);
+    when(context.newXmlParser()).thenReturn(xmlParser);
+    FhirUtils.setXmlParser(xmlParser);
+    when(xmlParser.encodeResourceToString(medicationRequest)).thenReturn("<MedicationRequest/>");
+
+    // when
+    var response = medicationService.searchMedicationRequestHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).hasSize(1);
+    assertThat(response.getMedicationRequests().getFirst()).isEqualTo("<MedicationRequest/>");
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void searchMedicationRequestHistoryShouldReturnSuccessAndStatusMessageWhenNoResourceFound() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    var historyBundle = new Bundle();
+    when(historyTyped.execute()).thenReturn(historyBundle);
+
+    // when
+    var response = medicationService.searchMedicationRequestHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+    assertThat(response.getStatusMessage())
+        .contains("No medication request historyBundle found for ID");
+  }
+
+  @Test
+  void searchMedicationRequestHistoryShouldHandleResourceNotFoundException() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    when(historyTyped.execute()).thenThrow(ResourceNotFoundException.class);
+
+    // when
+    var response = medicationService.searchMedicationRequestHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequests()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+    assertThat(response.getStatusMessage())
+        .contains("No medication request historyBundle found for ID");
+  }
+
+  @Test
+  void searchMedicationRequestHistoryShouldHandleException() {
+    // given
+    var id = "123";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var history = mock(IHistory.class);
+    when(client.history()).thenReturn(history);
+
+    var historyUntyped = mock(IHistoryUntyped.class);
+    when(history.onInstance(any(IdType.class))).thenReturn(historyUntyped);
+
+    var historyTyped = mock(IHistoryTyped.class);
+    when(historyUntyped.returnBundle(Bundle.class)).thenReturn(historyTyped);
+
+    when(historyTyped.execute()).thenThrow(InvalidResponseException.class);
+
+    // when
+    var response = medicationService.searchMedicationRequestHistory(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getMedicationRequests()).isEmpty();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  @Test
+  void shouldGetMedicationRequestHistoryByIdWithJsonFormat() {
+    // given
+    var id = "123";
+    var versionId = "1";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var medicationRequest = new MedicationRequest();
+    medicationRequest.setId(id);
+    var iReadExecutable = mockFhirGetMedicationRequestByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenReturn(medicationRequest);
+
+    when(jsonParser.encodeResourceToString(medicationRequest))
+        .thenReturn(medicationRequestAsString);
+
+    // when
+    var response = medicationService.getMedicationRequestHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequest()).isEqualTo(medicationRequestAsString);
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetMedicationRequestHistoryByIdWithXmlFormat() {
+    // given
+    var id = "123";
+    var versionId = "2";
+    var format = "application/fhir+xml";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var medicationRequest = new MedicationRequest();
+    medicationRequest.setId(id);
+    var iReadExecutable = mockFhirGetMedicationRequestByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenReturn(medicationRequest);
+
+    var xmlParser = mock(IParser.class);
+    when(context.newXmlParser()).thenReturn(xmlParser);
+    FhirUtils.setXmlParser(xmlParser);
+    when(xmlParser.encodeResourceToString(medicationRequest)).thenReturn("<MedicationRequest/>");
+
+    // when
+    var response = medicationService.getMedicationRequestHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequest()).isEqualTo("<MedicationRequest/>");
+    assertThat(response.getStatusMessage()).isBlank();
+  }
+
+  @Test
+  void getMedicationRequestHistoryByIdShouldReturnSuccessAndStatusMessageWhenNoResourceFound() {
+    // given
+    var id = "123";
+    var versionId = "1";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var iReadExecutable = mockFhirGetMedicationRequestByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenThrow(ResourceNotFoundException.class);
+
+    // when
+    var response = medicationService.getMedicationRequestHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isTrue();
+    assertThat(response.getMedicationRequest()).isBlank();
+    assertThat(response.getStatusMessage()).isNotBlank();
+    assertThat(response.getStatusMessage()).contains("No medication request history found for ID");
+    assertThat(response.getStatusMessage()).contains(id);
+    assertThat(response.getStatusMessage()).contains(versionId);
+  }
+
+  @Test
+  void getMedicationRequestHistoryByIdShouldHandleException() {
+    // given
+    var id = "123";
+    var versionId = "1";
+    var format = "application/fhir+json";
+    var searchRequest = new MedicationsHistorySearch().id(id).versionId(versionId).format(format);
+
+    var client = mock(IGenericClient.class);
+    when(fhirClient.getClient()).thenReturn(client);
+
+    var iReadExecutable = mockFhirGetMedicationRequestByIdAndVersion(client, id, versionId);
+    when(iReadExecutable.execute()).thenThrow(InvalidResponseException.class);
+
+    // when
+    var response = medicationService.getMedicationRequestHistoryById(searchRequest);
+
+    // then
+    assertThat(response.getSuccess()).isFalse();
+    assertThat(response.getMedicationRequest()).isBlank();
+    assertThat(response.getStatusMessage()).isNotBlank();
+  }
+
+  private IReadExecutable<Medication> mockFhirGetResourceByIdAndVersion(
+      IGenericClient client, String id, String versionId) {
+    var read = mock(IRead.class);
+    when(client.read()).thenReturn(read);
+
+    var resource = mock(IReadTyped.class);
+    when(read.resource(Medication.class)).thenReturn(resource);
+
+    var readExecutable = mock(IReadExecutable.class);
+    when(resource.withIdAndVersion(id, versionId)).thenReturn(readExecutable);
+    return readExecutable;
+  }
+
+  private IReadExecutable<MedicationRequest> mockFhirGetMedicationRequestByIdAndVersion(
+      IGenericClient client, String id, String versionId) {
+    var read = mock(IRead.class);
+    when(client.read()).thenReturn(read);
+
+    var resource = mock(IReadTyped.class);
+    when(read.resource(MedicationRequest.class)).thenReturn(resource);
+
+    var readExecutable = mock(IReadExecutable.class);
+    when(resource.withIdAndVersion(id, versionId)).thenReturn(readExecutable);
+    return readExecutable;
+  }
 }

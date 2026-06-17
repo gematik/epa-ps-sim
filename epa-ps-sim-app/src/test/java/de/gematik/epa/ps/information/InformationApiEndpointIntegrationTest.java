@@ -82,6 +82,7 @@ class InformationApiEndpointIntegrationTest extends AbstractIntegrationTest {
     var body = objectMapper.writeValueAsString(errorType);
     stubFailedGetRecordStatus(mockInformationServer1, 409, body); // AS 1
     stubFailedGetRecordStatus(mockInformationServer2, 409, body); // AS 2
+    stubFailedGetRecordStatus(mockInformationServer3, 409, body); // AS 3
 
     // when
     var result = getGetRecordStatus();

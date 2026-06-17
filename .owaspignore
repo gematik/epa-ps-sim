@@ -21,4 +21,145 @@
    <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus-activation@.*$</packageUrl>
    <cve>CVE-2025-7962</cve>
 </suppress>
+ <suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: tomcat-embed-core-11.0.15.jar
+    reason: temporary suppression; upgrade to tomcat >= 11.0.18
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat-embed-core@11\.0\.15$</packageUrl>
+    <cve>CVE-2026-24734</cve>
+  </suppress>
+  <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: jackson-databind-3.0.4.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/tools\.jackson\.core/jackson-databind@.*$</packageUrl>
+     <cve>CVE-2026-29062</cve>
+  </suppress>
+  <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <cpe>cpe:/a:apache:thrift</cpe>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: neethi-3.2.1.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.neethi/neethi@.*$</packageUrl>
+     <cpe>cpe:/a:apache:neethi</cpe>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: org.hl7.fhir.r4-6.7.9.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/ca\.uhn\.hapi\.fhir/org\.hl7\.fhir\.r4@.*$</packageUrl>
+     <cpe>cpe:/a:fhir:hapi_fhir</cpe>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: org.hl7.fhir.utilities-6.7.9.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/ca\.uhn\.hapi\.fhir/org\.hl7\.fhir\.utilities@.*$</packageUrl>
+     <cpe>cpe:/a:fhir:hapi_fhir</cpe>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2025-48431</vulnerabilityName>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2026-41603</vulnerabilityName>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2026-41605</vulnerabilityName>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2026-43869</vulnerabilityName>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2026-43870</vulnerabilityName>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2026-41607</vulnerabilityName>
+ </suppress>
+ <suppress>
+     <notes><![CDATA[
+     file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+     ]]></notes>
+     <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+     <vulnerabilityName>CVE-2026-41606</vulnerabilityName>
+ </suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: libthrift-0.22.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.thrift/libthrift@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-43868</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: neethi-3.2.1.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.neethi/neethi@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-42402</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: neethi-3.2.1.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.neethi/neethi@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-42403</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: neethi-3.2.1.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.apache\.neethi/neethi@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-42404</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: org.hl7.fhir.r4-6.7.9.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/ca\.uhn\.hapi\.fhir/org\.hl7\.fhir\.r4@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-33180</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: org.hl7.fhir.utilities-6.7.9.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/ca\.uhn\.hapi\.fhir/org\.hl7\.fhir\.utilities@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-33180</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: epa-ps-sim-app.jar: org.hl7.fhir.utilities-6.7.9.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/ca\.uhn\.hapi\.fhir/org\.hl7\.fhir\.utilities@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-34359</vulnerabilityName>
+</suppress>
 </suppressions>

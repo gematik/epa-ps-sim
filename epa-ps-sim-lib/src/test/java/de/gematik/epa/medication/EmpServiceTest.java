@@ -33,10 +33,13 @@ import static org.mockito.Mockito.when;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import de.gematik.epa.api.testdriver.medication.dto.AddEmpEntryInput;
+import de.gematik.epa.api.testdriver.medication.dto.BatchEmpInput;
+import de.gematik.epa.api.testdriver.medication.dto.EmpCommitInput;
 import de.gematik.epa.api.testdriver.medication.dto.UpdateEmpEntryInput;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.medication.client.EmlRenderClient;
 import de.gematik.epa.medication.client.RenderResponse;
+import java.util.List;
 import java.util.UUID;
 import org.hl7.fhir.r4.model.Medication;
 import org.hl7.fhir.r4.model.MedicationRequest;
@@ -44,6 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class EmpServiceTest {
+  private static final String INSURANT_ID = "X110435031";
   private FhirClient fhirClient;
   private EmlRenderClient emlRenderClient;
   private IParser jsonParser;
@@ -61,7 +65,6 @@ class EmpServiceTest {
 
   @Test
   void shouldAddEmpEntrySuccessfullyWithJsonFormat() {
-    var insurantId = "X110435031";
     var requestId = UUID.randomUUID();
     var userAgent = "test-agent";
 
@@ -84,7 +87,7 @@ class EmpServiceTest {
             anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(renderResponse);
 
-    var result = empService.addEmpEntry(insurantId, requestId, userAgent, addEmpEntryInput);
+    var result = empService.addEmpEntry(INSURANT_ID, requestId, userAgent, addEmpEntryInput);
 
     assertThat(result.getSuccess()).isTrue();
     assertThat(result.getParameters()).isEqualTo("success response");
@@ -92,7 +95,6 @@ class EmpServiceTest {
 
   @Test
   void shouldAddEmpEntrySuccessfullyWithXmlFormat() {
-    var insurantId = "X110435031";
     var requestId = UUID.randomUUID();
     var userAgent = "test-agent";
 
@@ -115,7 +117,7 @@ class EmpServiceTest {
             anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(renderResponse);
 
-    var result = empService.addEmpEntry(insurantId, requestId, userAgent, addEmpEntryInput);
+    var result = empService.addEmpEntry(INSURANT_ID, requestId, userAgent, addEmpEntryInput);
 
     assertThat(result.getSuccess()).isTrue();
     assertThat(result.getParameters()).isEqualTo("success response");
@@ -123,7 +125,6 @@ class EmpServiceTest {
 
   @Test
   void shouldUpdateEmpEntrySuccessfullyWithJsonFormat() {
-    var insurantId = "X110435031";
     var requestId = UUID.randomUUID();
     var userAgent = "test-agent";
 
@@ -146,7 +147,7 @@ class EmpServiceTest {
             anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(renderResponse);
 
-    var result = empService.updateEmpEntry(insurantId, requestId, userAgent, updateEmpEntryInput);
+    var result = empService.updateEmpEntry(INSURANT_ID, requestId, userAgent, updateEmpEntryInput);
 
     assertThat(result.getSuccess()).isTrue();
     assertThat(result.getParameters()).isEqualTo("success response");
@@ -154,7 +155,6 @@ class EmpServiceTest {
 
   @Test
   void shouldGetMedicationPlanLogsSuccessfully() {
-    var insurantId = "X110435031";
     var requestId = UUID.randomUUID();
     var count = 10;
     var offset = 0;
@@ -167,7 +167,7 @@ class EmpServiceTest {
             anyString(), anyString(), anyInt(), anyInt(), anyString()))
         .thenReturn(renderResponse);
 
-    var result = empService.getMedicationPlanLogs(insurantId, requestId, count, offset, format);
+    var result = empService.getMedicationPlanLogs(INSURANT_ID, requestId, count, offset, format);
 
     assertThat(result.getSuccess()).isTrue();
     assertThat(result.getMedicationPlanLogs()).isEqualTo(expectedResponse);
@@ -176,7 +176,6 @@ class EmpServiceTest {
 
   @Test
   void shouldHandleErrorWhenGetMedicationPlanLogsFails() {
-    var insurantId = "X110435031";
     var requestId = UUID.randomUUID();
     var count = 10;
     var offset = 0;
@@ -187,7 +186,7 @@ class EmpServiceTest {
             anyString(), anyString(), anyInt(), anyInt(), anyString()))
         .thenReturn(renderResponse);
 
-    var result = empService.getMedicationPlanLogs(insurantId, requestId, count, offset, format);
+    var result = empService.getMedicationPlanLogs(INSURANT_ID, requestId, count, offset, format);
 
     assertThat(result.getSuccess()).isFalse();
     assertThat(result.getStatusMessage()).isEqualTo("Bad request error");
@@ -195,7 +194,6 @@ class EmpServiceTest {
 
   @Test
   void shouldHandleIllegalArgumentExceptionWhenGetMedicationPlanLogs() {
-    var insurantId = "X110435031";
     var requestId = UUID.randomUUID();
     var count = 10;
     var offset = 0;
@@ -205,9 +203,132 @@ class EmpServiceTest {
             anyString(), anyString(), anyInt(), anyInt(), anyString()))
         .thenThrow(new IllegalArgumentException("Invalid format"));
 
-    var result = empService.getMedicationPlanLogs(insurantId, requestId, count, offset, format);
+    var result = empService.getMedicationPlanLogs(INSURANT_ID, requestId, count, offset, format);
 
     assertThat(result.getSuccess()).isFalse();
     assertThat(result.getStatusMessage()).contains("Unsupported format");
+  }
+
+  @Test
+  void shouldGetMedicationPlanSuccessfully() {
+    var requestId = UUID.randomUUID();
+    var format = "application/fhir+json";
+
+    var expectedResponse = "{\"resourceType\":\"Bundle\",\"type\":\"searchset\"}";
+    var renderResponse = new RenderResponse().httpStatusCode(200).medicationPlan(expectedResponse);
+    when(emlRenderClient.getEmp(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(renderResponse);
+
+    var result = empService.getEmp(format, INSURANT_ID, requestId, "1234");
+
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getMedicationPlan()).isEqualTo(expectedResponse);
+    assertThat(result.getStatusMessage()).isNull();
+  }
+
+  @Test
+  void shouldHandleErrorWhenGetMedicationPlanFails() {
+    var requestId = UUID.randomUUID();
+    var format = "application/fhir+json";
+
+    var renderResponse = new RenderResponse().httpStatusCode(400).errorMessage("Bad request error");
+    when(emlRenderClient.getEmp(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(renderResponse);
+
+    var result = empService.getEmp(format, INSURANT_ID, requestId, "123");
+
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage()).isEqualTo("Bad request error");
+  }
+
+  @Test
+  void shouldHandleIllegalArgumentExceptionWhenGetMedicationPlan() {
+    var requestId = UUID.randomUUID();
+    var format = "invalid-format";
+
+    when(emlRenderClient.getEmp(anyString(), anyString(), anyString(), anyString()))
+        .thenThrow(new IllegalArgumentException("Invalid format"));
+
+    var result = empService.getEmp(format, INSURANT_ID, requestId, null);
+
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage()).contains("Unsupported format");
+  }
+
+  @Test
+  void shouldGetEmpWithXmlFormat() {
+    var requestId = UUID.randomUUID();
+    var format = "application/fhir+xml";
+
+    var expectedResponse = "<Bundle xmlns=\"http://hl7.org/fhir\"/>";
+    var renderResponse = new RenderResponse().httpStatusCode(200).medicationPlan(expectedResponse);
+    when(emlRenderClient.getEmp(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(renderResponse);
+
+    var result = empService.getEmp(format, INSURANT_ID, requestId, "123");
+
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getMedicationPlan()).isEqualTo(expectedResponse);
+    assertThat(result.getStatusMessage()).isNull();
+  }
+
+  @Test
+  void shouldBatchEmpSuccessfullyWithJsonFormat() {
+    var requestId = UUID.randomUUID();
+    var userAgent = "test-agent";
+
+    var medicationForAdd = new Medication();
+    medicationForAdd.setId("medication-1");
+    var medicationRequestForAdd = new MedicationRequest();
+    medicationRequestForAdd.setId("med-request-add-1");
+    var medicationRequestForUpdate = new MedicationRequest();
+    medicationRequestForUpdate.setId("med-request-update-1");
+    var organization = "{\"resourceType\":\"Organization\",\"id\":\"org-1\"}";
+    var chronologyId = "provenance-1";
+    var medicationPlanId = "medication-plan-123";
+
+    var batchEmpInput = new BatchEmpInput();
+    AddEmpEntryInput addEmpEntryInput = new AddEmpEntryInput();
+    addEmpEntryInput.setMedication(jsonParser.encodeResourceToString(medicationForAdd));
+    addEmpEntryInput.setMedicationRequest(
+        jsonParser.encodeResourceToString(medicationRequestForAdd));
+    batchEmpInput.setEmpAdds(List.of(addEmpEntryInput));
+
+    UpdateEmpEntryInput updateEmpEntryInput = new UpdateEmpEntryInput();
+    updateEmpEntryInput.setMedicationRequest(
+        jsonParser.encodeResourceToString(medicationRequestForUpdate));
+    updateEmpEntryInput.setMedicationPlanId(medicationPlanId);
+    batchEmpInput.setEmpUpdates(List.of(updateEmpEntryInput));
+
+    batchEmpInput.setEmpCommit(new EmpCommitInput().chronologyId(chronologyId));
+    batchEmpInput.setOrganization(organization);
+    batchEmpInput.setFormat(BatchEmpInput.FormatEnum.APPLICATION_FHIR_JSON);
+
+    var renderResponse = new RenderResponse().httpStatusCode(200).empResponse("success response");
+    when(emlRenderClient.batchEmp(
+            anyString(), anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(renderResponse);
+
+    var result = empService.batchEmp(INSURANT_ID, requestId, userAgent, batchEmpInput);
+
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getBundle()).isEqualTo("success response");
+  }
+
+  @Test
+  void shouldHandleServerErrorWhenGetEmpFails() {
+    var requestId = UUID.randomUUID();
+    var format = "application/fhir+json";
+
+    var renderResponse =
+        new RenderResponse().httpStatusCode(500).errorMessage("Internal Server Error");
+    when(emlRenderClient.getEmp(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(renderResponse);
+
+    var result = empService.getEmp(format, INSURANT_ID, requestId, "123");
+
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage()).isEqualTo("Internal Server Error");
+    assertThat(result.getMedicationPlan()).isNull();
   }
 }

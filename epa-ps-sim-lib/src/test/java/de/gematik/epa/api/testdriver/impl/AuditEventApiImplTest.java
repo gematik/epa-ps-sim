@@ -29,10 +29,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import ca.uhn.fhir.context.FhirContext;
+import de.gematik.epa.api.audit_event.client.RenderApiApi;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventListAsPdfAResponseDTO;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventResponseDTO;
 import de.gematik.epa.audit.AuditEventService;
-import de.gematik.epa.audit.client.AuditRenderClient;
+import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.fhir.client.FhirClient;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,8 @@ class AuditEventApiImplTest {
 
   private final FhirClient fhirClient = mock(FhirClient.class);
   private final FhirContext fhirContext = mock(FhirContext.class);
-  private final AuditRenderClient auditRenderClient = mock(AuditRenderClient.class);
+  private final JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper =
+      mock(JaxRsClientWrapper.class);
 
   private AuditEventApiImpl auditEventApi;
   private AuditEventService auditEventService;
@@ -52,7 +54,7 @@ class AuditEventApiImplTest {
   public void setup() {
     when(fhirClient.getContext()).thenReturn(fhirContext);
     auditEventService = mock(AuditEventService.class);
-    auditEventApi = new AuditEventApiImpl(fhirClient, auditRenderClient);
+    auditEventApi = new AuditEventApiImpl(fhirClient, auditRenderClientWrapper);
     auditEventApi.setAuditEventService(auditEventService);
   }
 
@@ -84,11 +86,11 @@ class AuditEventApiImplTest {
   void shouldGetAuditEventListAsPdfA() {
     // given
     final byte[] pdf = new byte[0];
-    when(auditEventService.getAuditEventsAsPdfA("recordId", true))
+    when(auditEventService.getAuditEventsAsPdfA("recordId", true, null, null))
         .thenReturn(new GetAuditEventListAsPdfAResponseDTO().auditEventAsPdfA(pdf).success(true));
 
     // when
-    var response = auditEventApi.getAuditEventListAsPdfA("recordId", true);
+    var response = auditEventApi.getAuditEventListAsPdfA("recordId", true, null, null);
 
     // then
     assertThat(response.getSuccess()).isTrue();

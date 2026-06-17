@@ -105,18 +105,22 @@ class EmlRenderClientTest {
     webClientMock = mock(WebClient.class);
     emlRenderClient =
         new EmlRenderClient(
-            "http://localhost:8888",
-            "/pdf",
-            "/epa/medication/render/v1/emp/pdf",
-            "/xhtml",
-            "ps-sim",
-            "/medication-list",
-            "/$add-eml-entry",
-            "/$cancel-eml-entry",
-            "/$add-emp-entry",
-            "/$update-emp-entry",
-            "/$medication-plan-log",
-            "/$link-emp") {
+            new EmlRenderClient.EmlRenderClientConfig(
+                "http://localhost:8888",
+                "/pdf",
+                "/xhtml",
+                "ps-sim",
+                "/medication-list",
+                "/$add-eml-entry",
+                "/$cancel-eml-entry",
+                "/$add-emp-entry",
+                "/$update-emp-entry",
+                "/epa/medication/render/v1/emp/pdf",
+                "/$medication-plan-log",
+                "/$get-emp",
+                "/$link-emp",
+                "/$unlink-emp",
+                "/$batch-emp")) {
 
           @Override
           protected WebClient updateWebclient(String insurantId, String path) {
@@ -129,6 +133,7 @@ class EmlRenderClientTest {
   void shouldReturnEmlAsXhtml() {
     var mockResponse = mock(Response.class);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenReturn(mockResponse);
     when(mockResponse.getStatus()).thenReturn(200);
     when(mockResponse.readEntity(String.class)).thenReturn("test");
@@ -143,6 +148,7 @@ class EmlRenderClientTest {
   void shouldReturnEmlAsPdf() {
     var mockResponse = mock(Response.class);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenReturn(mockResponse);
     when(mockResponse.getStatus()).thenReturn(200);
     when(mockResponse.readEntity(byte[].class)).thenReturn(new byte[0]);
@@ -168,6 +174,7 @@ class EmlRenderClientTest {
   void getEmlAsPdfRelatedStatusCodeWhenWebApplicationExceptionIsThrown() {
     var webApplicationException = new WebApplicationException("error", 503);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
     var result = emlRenderClient.getEmlAsPdf("insurantId");
@@ -187,6 +194,7 @@ class EmlRenderClientTest {
 
     var webApplicationException = new WebApplicationException("403: Forbidden", responseMock);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
     var result = emlRenderClient.getEmlAsPdf("null");
@@ -210,6 +218,8 @@ class EmlRenderClientTest {
 
     var webApplicationException = new WebApplicationException(expectedMessage, responseMock);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
     var result = emlRenderClient.getEmlAsPdf("insurantId");
@@ -227,6 +237,7 @@ class EmlRenderClientTest {
         .thenReturn("{\"errorCode\":\"400\", \"errorDetail\":\"Bad Request\"}");
 
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenReturn(responseMock);
 
     var result = emlRenderClient.getEmlAsPdf("insurantId");
@@ -238,6 +249,7 @@ class EmlRenderClientTest {
   @Test
   void getEmlAsXhtmlReturnsRelatedStatusCodeWhenWebApplicationExceptionIsThrown() {
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     var webApplicationException = new WebApplicationException("error", 503);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
@@ -251,6 +263,7 @@ class EmlRenderClientTest {
   @Test
   void getEmlAsXhtmlReturnsNoEmlWhenExceptionIsThrown() {
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(new RuntimeException("error"));
 
     var result = emlRenderClient.getEmlAsXhtml("insurantId");
@@ -270,6 +283,7 @@ class EmlRenderClientTest {
 
     var webApplicationException = new WebApplicationException("403: Forbidden", responseMock);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
     var result = emlRenderClient.getEmlAsXhtml("null");
@@ -288,6 +302,7 @@ class EmlRenderClientTest {
         .thenReturn("{\"errorCode\":\"400\", \"errorDetail\":\"Bad Request\"}");
 
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenReturn(responseMock);
 
     var result = emlRenderClient.getEmlAsXhtml("insurantId");
@@ -310,6 +325,8 @@ class EmlRenderClientTest {
 
     var webApplicationException = new WebApplicationException(expectedMessage, responseMock);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
     var result = emlRenderClient.getEmlAsXhtml("insurantId");
@@ -320,9 +337,9 @@ class EmlRenderClientTest {
 
   @Test
   void shouldCreateWebClient() {
-    var result = emlRenderClient.updateWebclient("insurantId", "/pdf");
-
-    assertThat(result).isNotNull();
+    try (var result = emlRenderClient.updateWebclient("insurantId", "/pdf")) {
+      assertThat(result).isNotNull();
+    }
   }
 
   @ParameterizedTest
@@ -349,6 +366,58 @@ class EmlRenderClientTest {
     assertThat(result.httpStatusCode()).isEqualTo(200);
     assertThat(result.emlAsFhir()).isEqualTo("emlFhir");
     assertThat(result.errorMessage()).isBlank();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideValidParameters")
+  void shouldGetMedicationListEmpty(
+      String insurantId,
+      String requestId,
+      String date,
+      Integer count,
+      Integer offset,
+      String format) {
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    var mockResponse = mock(Response.class);
+    when(mockResponse.getStatus()).thenReturn(404);
+    when(mockResponse.readEntity(String.class))
+        .thenReturn(
+            """
+            {
+              "resourceType": "OperationOutcome",
+              "meta": {
+                "profile": [
+                  "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-ms-operation-outcome"
+                ]
+              },
+              "issue": [
+                {
+                  "severity": "error",
+                  "code": "not-found",
+                  "details": {
+                    "coding": [
+                      {
+                        "system": "http://terminology.hl7.org/CodeSystem/operation-outcome",
+                        "code": "MSG_NO_MATCH",
+                        "display": "No Resource found matching the query \\"%s\\""
+                      }
+                    ]
+                  },
+                  "diagnostics": "Medication List is empty."
+                }
+              ]
+            }
+            """);
+    when(webClientMock.get()).thenReturn(mockResponse);
+
+    var result =
+        emlRenderClient.getMedicationList(insurantId, requestId, date, count, offset, format);
+
+    assertThat(result.httpStatusCode()).isEqualTo(404);
+    assertThat(result.errorMessage()).contains("MSG_NO_MATCH");
   }
 
   @ParameterizedTest
@@ -843,9 +912,58 @@ class EmlRenderClientTest {
   }
 
   @Test
+  void shouldBatchEmpSuccessfully() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.post(anyString())).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(200);
+    when(mockResponse.readEntity(String.class)).thenReturn("success response");
+
+    var result =
+        emlRenderClient.batchEmp(
+            "insurantId",
+            UUID.randomUUID().toString(),
+            "user-agent",
+            "parameters",
+            "encodedOrg",
+            APPLICATION_FHIR_JSON);
+
+    assertThat(result.httpStatusCode()).isEqualTo(200);
+    assertThat(result.empResponse()).isEqualTo("success response");
+    assertThat(result.errorMessage()).isBlank();
+  }
+
+  @Test
+  void batchEmpShouldHandleOperationOutcomeFor400() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.post(anyString())).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(400);
+    when(mockResponse.readEntity(String.class))
+        .thenReturn("{\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\"}]}");
+
+    var result =
+        emlRenderClient.batchEmp(
+            "insurantId",
+            UUID.randomUUID().toString(),
+            "user-agent",
+            "parameters",
+            "encodedOrg",
+            APPLICATION_FHIR_JSON);
+
+    assertThat(result.httpStatusCode()).isEqualTo(400);
+    assertThat(result.errorMessage()).isNotBlank();
+  }
+
+  @Test
   void shouldReturnEmpAsPdf() {
     var mockResponse = mock(Response.class);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenReturn(mockResponse);
     when(mockResponse.getStatus()).thenReturn(200);
     when(mockResponse.readEntity(byte[].class)).thenReturn(new byte[0]);
@@ -860,6 +978,7 @@ class EmlRenderClientTest {
   void getEmpPdfShouldHandleNon200Status() {
     var mockResponse = mock(Response.class);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenReturn(mockResponse);
     when(mockResponse.getStatus()).thenReturn(400);
     when(mockResponse.readEntity(String.class))
@@ -882,6 +1001,7 @@ class EmlRenderClientTest {
   void getEmpAsPdfThrowsWebApplicationException() {
     var webApplicationException = new WebApplicationException("Test Error Message", 503);
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(webApplicationException);
 
     var result = emlRenderClient.getEmpAsPdf("insurantId");
@@ -897,6 +1017,7 @@ class EmlRenderClientTest {
   void getEmpAsPdfThrowsRuntimeException() {
     var runtimeException = new RuntimeException("Runtime Exception Message.");
     when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
     when(webClientMock.get()).thenThrow(runtimeException);
 
     var result = emlRenderClient.getEmpAsPdf("insurantId");
@@ -1043,5 +1164,213 @@ class EmlRenderClientTest {
 
     assertThat(result.httpStatusCode()).isEqualTo(503);
     assertThat(result.errorMessage()).isEqualTo("Service unavailable");
+  }
+
+  @Test
+  void shouldLinkThenUnlinkEmp() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.post(anyString())).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(200);
+    when(mockResponse.readEntity(String.class)).thenReturn("linking success response");
+
+    var result =
+        emlRenderClient.linkEmp(
+            "insurantId",
+            UUID.randomUUID().toString(),
+            "medicationStatementId",
+            "user-agent",
+            "parameters",
+            "encodedOrg",
+            APPLICATION_FHIR_JSON);
+
+    assertThat(result.httpStatusCode()).isEqualTo(200);
+    assertThat(result.empResponse()).isEqualTo("linking success response");
+    assertThat(result.errorMessage()).isBlank();
+
+    when(mockResponse.readEntity(String.class)).thenReturn("unlinking success response");
+
+    var unlinkedResult =
+        emlRenderClient.unlinkEmp(
+            "insurantId",
+            UUID.randomUUID().toString(),
+            "medicationStatementId",
+            "user-agent",
+            "parameters",
+            "encodedOrg",
+            APPLICATION_FHIR_JSON);
+
+    assertThat(unlinkedResult.httpStatusCode()).isEqualTo(200);
+    assertThat(unlinkedResult.empResponse()).isEqualTo("unlinking success response");
+    assertThat(unlinkedResult.errorMessage()).isBlank();
+  }
+
+  @Test
+  void shouldGetEmpSuccessfully() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.get()).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(200);
+    var expectedBody = "{\"resourceType\":\"Bundle\"}";
+    when(mockResponse.readEntity(String.class)).thenReturn(expectedBody);
+
+    var result =
+        emlRenderClient.getEmp(
+            APPLICATION_FHIR_JSON, "insurantId", UUID.randomUUID().toString(), null);
+
+    assertThat(result.httpStatusCode()).isEqualTo(200);
+    assertThat(result.medicationPlan()).isEqualTo(expectedBody);
+    assertThat(result.errorMessage()).isBlank();
+    verify(webClientMock, times(1)).get();
+  }
+
+  @Test
+  void shouldGetEmpWithNullFormatFallsBackToJson() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.get()).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(200);
+    var expectedBody = "{\"resourceType\":\"Bundle\"}";
+    when(mockResponse.readEntity(String.class)).thenReturn(expectedBody);
+
+    var result = emlRenderClient.getEmp(null, "insurantId", UUID.randomUUID().toString(), null);
+
+    assertThat(result.httpStatusCode()).isEqualTo(200);
+    assertThat(result.medicationPlan()).isEqualTo(expectedBody);
+    assertThat(result.errorMessage()).isBlank();
+    verify(webClientMock, times(1)).get();
+  }
+
+  @Test
+  void getEmpShouldHandleErrorResponse() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.get()).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(403);
+    when(mockResponse.readEntity(String.class))
+        .thenReturn("{\"errorCode\":\"403\", \"errorDetail\":\"Forbidden\"}");
+
+    var result =
+        emlRenderClient.getEmp(
+            APPLICATION_FHIR_JSON, "insurantId", UUID.randomUUID().toString(), null);
+
+    assertThat(result.httpStatusCode()).isEqualTo(403);
+    assertThat(result.errorMessage()).isEqualTo("403, Forbidden");
+    assertThat(result.medicationPlan()).isNull();
+  }
+
+  @Test
+  void getEmpShouldHandleWebApplicationException() {
+    var responseMock = mock(Response.class);
+    when(responseMock.getStatus()).thenReturn(503);
+    when(responseMock.hasEntity()).thenReturn(false);
+
+    var webApplicationException = new WebApplicationException("Service unavailable", responseMock);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.get()).thenThrow(webApplicationException);
+
+    var result =
+        emlRenderClient.getEmp(
+            APPLICATION_FHIR_JSON, "insurantId", UUID.randomUUID().toString(), null);
+
+    assertThat(result.httpStatusCode()).isEqualTo(503);
+    assertThat(result.errorMessage()).isEqualTo("Service unavailable");
+  }
+
+  @Test
+  void getEmpShouldHandleGeneralException() {
+    var runtimeException = new RuntimeException("Runtime Exception Message.");
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.get()).thenThrow(runtimeException);
+
+    var result =
+        emlRenderClient.getEmp(
+            APPLICATION_FHIR_JSON, "insurantId", UUID.randomUUID().toString(), null);
+
+    assertThat(result.httpStatusCode()).isEqualTo(500);
+    assertThat(result.errorMessage()).isEqualTo(runtimeException.getMessage());
+    verify(webClientMock, times(1)).get();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideErrorScenarios")
+  void getEmpShouldHandleErrors(
+      int statusCode, String errorCode, String errorDetail, String expectedMessage) {
+    var responseMock = mock(Response.class);
+    when(responseMock.getStatus()).thenReturn(statusCode);
+    when(responseMock.hasEntity()).thenReturn(true);
+    when(responseMock.readEntity(String.class))
+        .thenReturn(
+            String.format(
+                "{\"errorCode\":\"%s\", \"errorDetail\":\"%s\"}", errorCode, errorDetail));
+
+    var webApplicationException = new WebApplicationException(expectedMessage, responseMock);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.get()).thenThrow(webApplicationException);
+
+    var result =
+        emlRenderClient.getEmp(
+            APPLICATION_FHIR_JSON, "insurantId", UUID.randomUUID().toString(), null);
+
+    assertThat(result.httpStatusCode()).isEqualTo(statusCode);
+    assertThat(result.errorMessage()).isEqualTo(expectedMessage);
+  }
+
+  @Test
+  void shouldLinkThenUnlinkReturns400() {
+    var mockResponse = mock(Response.class);
+    when(webClientMock.replaceHeader(anyString(), anyString())).thenReturn(webClientMock);
+    when(webClientMock.replaceQueryParam(anyString(), any())).thenReturn(webClientMock);
+    when(webClientMock.accept(anyString())).thenReturn(webClientMock);
+    when(webClientMock.post(anyString())).thenReturn(mockResponse);
+    when(mockResponse.getStatus()).thenReturn(200);
+    when(mockResponse.readEntity(String.class)).thenReturn("linking success response");
+
+    var result =
+        emlRenderClient.linkEmp(
+            "insurantId",
+            UUID.randomUUID().toString(),
+            "medicationStatementId",
+            "user-agent",
+            "parameters",
+            "encodedOrg",
+            APPLICATION_FHIR_JSON);
+
+    assertThat(result.httpStatusCode()).isEqualTo(200);
+    assertThat(result.empResponse()).isEqualTo("linking success response");
+    assertThat(result.errorMessage()).isBlank();
+
+    when(mockResponse.getStatus()).thenReturn(400);
+    when(mockResponse.readEntity(String.class))
+        .thenReturn("{\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\"}]}");
+
+    var unlinkedResult =
+        emlRenderClient.unlinkEmp(
+            "insurantId",
+            UUID.randomUUID().toString(),
+            "medicationStatementId",
+            "user-agent",
+            "parameters",
+            "encodedOrg",
+            APPLICATION_FHIR_JSON);
+
+    assertThat(unlinkedResult.httpStatusCode()).isEqualTo(400);
+    assertThat(unlinkedResult.errorMessage())
+        .contains("[{\"severity\":\"error\",\"code\":\"invalid\"}]");
+    assertThat(unlinkedResult.errorMessage()).isNotBlank();
+    assertThat(unlinkedResult.empResponse()).isNull();
   }
 }

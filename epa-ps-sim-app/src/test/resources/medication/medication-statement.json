@@ -1,0 +1,47 @@
+{
+  "resourceType": "MedicationStatement",
+  "meta": {
+    "profile": [
+      "https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement"
+    ]
+  },
+  "extension": [
+    {
+      "url": "https://gematik.de/fhir/epa-medication/StructureDefinition/context-extension",
+      "valueCode": "MANUAL"
+    },
+    {
+      "url": "http://hl7.org/fhir/5.0/StructureDefinition/extension-MedicationStatement.renderedDosageInstruction",
+      "valueMarkdown": "1-0-1-0 Stück"
+    },
+    {
+      "url": "http://ig.fhir.de/igs/medication/StructureDefinition/GeneratedDosageInstructionsMeta",
+      "extension": [
+        {
+          "url": "algorithmVersion",
+          "valueString": "1.0.0"
+        },
+        {
+          "url": "language",
+          "valueCode": "de-DE"
+        }
+      ]
+    }
+  ],
+  "status": "unknown",
+  "subject": {
+    "identifier": {
+      "system": "http://fhir.de/sid/gkv/kvid-10",
+      "value": "X110999999"
+    }
+  },
+  "effectivePeriod": {
+    "start": "2026-02-10"
+  },
+  "dateAsserted": "2026-03-13T10:24:54+01:00",
+  "dosage": [
+    {
+      "text": "morgens 1 Tablette"
+    }
+  ]
+}

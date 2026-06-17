@@ -42,6 +42,8 @@ public class MiscUtils {
   public static final String X_INSURANT_ID = "x-insurantid";
   public static final String X_USER_AGENT = "x-useragent";
   public static final String X_ACTOR_ID = "x-actorId";
+  public static final int DEFAULT_COUNT = 10;
+  public static final int DEFAULT_OFFSET = 0;
 
   public static <T> T safeCast(Object obj, Class<T> castType) {
     return castType.isAssignableFrom(obj.getClass()) ? castType.cast(obj) : null;

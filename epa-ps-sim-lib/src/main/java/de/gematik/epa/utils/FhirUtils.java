@@ -31,7 +31,6 @@ import lombok.Setter;
 import lombok.experimental.UtilityClass;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.Resource;
 
 @UtilityClass
 public class FhirUtils {
@@ -73,11 +72,15 @@ public class FhirUtils {
     return extractDataAsJson(result);
   }
 
-  public String asJson(Resource resource) {
+  public String resourceAsString(IBaseResource resource, String format) {
+    return APPLICATION_FHIR_XML.equals(format) ? asXml(resource) : asJson(resource);
+  }
+
+  public String asJson(IBaseResource resource) {
     return jsonParser.encodeResourceToString(resource);
   }
 
-  public String asXml(Resource resource) {
+  public String asXml(IBaseResource resource) {
     return xmlParser.encodeResourceToString(resource);
   }
 

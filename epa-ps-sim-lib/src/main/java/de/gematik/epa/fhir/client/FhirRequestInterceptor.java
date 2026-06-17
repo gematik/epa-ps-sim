@@ -25,6 +25,7 @@
 package de.gematik.epa.fhir.client;
 
 import static de.gematik.epa.utils.MiscUtils.*;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 
 import ca.uhn.fhir.rest.client.api.IClientInterceptor;
 import ca.uhn.fhir.rest.client.api.IHttpRequest;
@@ -33,6 +34,7 @@ import de.gematik.epa.utils.HealthRecordProvider;
 import de.gematik.epa.utils.InsurantIdHolder;
 import de.gematik.epa.utils.TelematikIdHolder;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,6 +65,26 @@ public class FhirRequestInterceptor implements IClientInterceptor {
     if (telematikId != null) {
       theRequest.addHeader(X_ACTOR_ID, telematikId);
     }
+
+    // ************************* workaround for uppercase issue on IBM backend *********************
+    // But: https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3.2
+
+    // 1. Erstellen Sie eine modifizierbare Kopie der Headers
+    var mutableHeaders = new HashMap<>(theRequest.getAllHeaders());
+
+    // 2. Jetzt können Sie computeIfPresent sicher verwenden
+    mutableHeaders.computeIfPresent(
+        CONTENT_TYPE, (key, oldValue) -> oldValue.stream().map(String::toLowerCase).toList());
+    // 3. ersetzen
+    theRequest
+        .getAllHeaders()
+        .forEach(
+            (key, oldValue) -> {
+              if (key.equalsIgnoreCase(CONTENT_TYPE)) {
+                theRequest.removeHeaders(key);
+                oldValue.forEach(i -> theRequest.addHeader(key, i.toLowerCase()));
+              }
+            });
   }
 
   @Override

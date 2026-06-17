@@ -66,7 +66,7 @@ paths:
         - name: prescription
           in: query
           required: false
-          description: Returns medications related to teh specified prescription id (Medication.extension)
+          description: Returns medications related to the specified prescription id (Medication.extension)
           schema:
             type: string
       responses:
@@ -96,11 +96,42 @@ paths:
         - $ref: '#/components/parameters/format'
       responses:
         200:
-          description: A list of resources
+          description: A list of medication history resources.
           content:
             application/fhir+json:
               schema:
                 $ref: '#/components/schemas/GetMedicationHistoryResponseDTO'
+  /epa/testdriver/api/v1/medication/{id}/history/{versionId}:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a specific version of a medication as FHIR object.'
+      description: 'Get a specific version of a medication as FHIR object.'
+      operationId: getMedicationHistoryByIdAndVersion
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the Medication resource.'
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          description: 'The version id of the Medication resource.'
+          schema:
+            type: string
+        - $ref: '#/components/parameters/format'
+      responses:
+        200:
+          description: A medication history resource
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationHistoryByIdAndVersionResponseDTO'
   /epa/testdriver/api/v1/medication/render/eml/xhtml:
     get:
       tags:
@@ -273,7 +304,7 @@ paths:
         - name: status
           in: query
           required: false
-          description: Returns medications for a specific code
+          description: Returns medication requests for a specific status
           schema:
             type: string
         - name: requester
@@ -282,6 +313,32 @@ paths:
           description: Returns prescriptions prescribed by this prescriber
           schema:
             type: string
+        - name: context
+          in: query
+          required: false
+          description: Returns medication requests for a specific context (MedicationRequest.extension:context)
+          schema:
+            type: string
+        - name: medication
+          in: query
+          required: false
+          description: MedicationRequest.medication as Reference
+          schema:
+            type: string
+        - name: activity
+          in: query
+          required: false
+          description: Returns medication requests for a specific activity (MedicationRequest.extension:activity)
+          schema:
+            type: string
+        - name: effective-dose-period
+          in: query
+          required: false
+          description: MedicationRequest.extension:effectiveDosePeriod
+          schema:
+            type: string
+            format: date
+
       responses:
         '200':
           description: A list of resources
@@ -289,6 +346,62 @@ paths:
             application/fhir+json:
               schema:
                 $ref: '#/components/schemas/GetMedicationRequestListDTO'
+  /epa/testdriver/api/v1/medication-request/{id}/history:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a medication request history list of a personal health record as FHIR objects.'
+      description: 'List all medication request histories.'
+      operationId: getMedicationRequestHistoryList
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the Medication request resource.'
+          schema:
+            type: string
+        - $ref: '#/components/parameters/format'
+      responses:
+        200:
+          description: A list of medication request history resources.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationRequestHistoryResponseDTO'
+  /epa/testdriver/api/v1/medication-request/{id}/history/{versionId}:
+    get:
+      tags:
+        - Medication
+      summary: 'Get a specific version of a medication request as FHIR object.'
+      description: 'Get a specific version of a medication request as FHIR object.'
+      operationId: getMedicationRequestHistoryByIdAndVersion
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the MedicationRequest resource.'
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          description: 'The version id of the MedicationRequest resource.'
+          schema:
+            type: string
+        - $ref: '#/components/parameters/format'
+      responses:
+        200:
+          description: A medication request history resource
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationRequestHistoryByIdAndVersionResponseDTO'
   /epa/testdriver/api/v1/medication-dispense:
     get:
       tags:
@@ -474,7 +587,7 @@ paths:
           schema:
             type: string
       requestBody:
-          $ref: "#/components/requestBodies/LinkEmpRequestDTO"
+        $ref: "#/components/requestBodies/LinkEmpRequestDTO"
       responses:
         default:
           description: 'Response including the result of the $link-emp operation as FHIR Parameters resource.'
@@ -482,6 +595,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LinkEmpResponseDTO'
+  /epa/testdriver/api/v1/medication-statement/{id}/unlink-emp:
+    put:
+      tags:
+        - MedicationStatement
+      summary: 'Unlink eML with eMP.'
+      description: 'Triggers the call to the $unlink-emp in the underlying medication service.'
+      operationId: unlinkEmp
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the MedicationStatement resource.'
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/UnlinkEmpRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $unlink-emp operation as FHIR Parameters resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnlinkEmpResponseDTO'
   /epa/testdriver/api/v1/add-emp-entry:
     post:
       tags:
@@ -522,6 +661,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UpdateEmpEntryResponseDTO'
+  /epa/testdriver/api/v1/batch-emp:
+    post:
+      tags:
+        - Emp
+      summary: 'Updates eMP entry.'
+      description: 'Triggers the call to the $batch-emp in the underlying medication service.'
+      operationId: batchEmp
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+      requestBody:
+        $ref: "#/components/requestBodies/BatchEmpRequestDTO"
+      responses:
+        default:
+          description: 'Response including the result of the $batch-emp operation as FHIR Bundle resource.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchEmpResponseDTO'
   /epa/testdriver/api/v1/medication-plan-logs:
     get:
       tags:
@@ -550,6 +709,162 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetMedicationPlanLogsResponseDTO'
+  /epa/testdriver/api/v1/medication-statement:
+    get:
+      tags:
+        - MedicationStatement
+      operationId: getMedicationStatements
+      description: Return MedicationStatement resources of a personal health record as FHIR objects based on given search criteria.
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - $ref: '#/components/parameters/_count'
+        - $ref: '#/components/parameters/_offset'
+        - $ref: '#/components/parameters/_total'
+        - $ref: '#/components/parameters/_id'
+        - $ref: '#/components/parameters/_lastUpdated'
+        - $ref: '#/components/parameters/_include'
+        - $ref: '#/components/parameters/_revinclude'
+        - $ref: '#/components/parameters/format'
+        - name: medication
+          in: query
+          required: false
+          description: MedicationStatement.medication as Reference
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          description: Filters by MedicationStatement.status.
+          schema:
+            type: string
+        - name: effective
+          in: query
+          required: false
+          description: Filters by MedicationStatement.effective.
+          schema:
+            type: string
+            format: date
+        - name: prescription
+          in: query
+          required: false
+          description: Returns medications related to the specified prescription id (Medication.extension)
+          schema:
+            type: string
+        - name: derived_from
+          in: query
+          required: false
+          description: Filters by MedicationStatement.derivedFrom as Reference.
+          schema:
+            type: string
+        - name: context
+          in: query
+          required: false
+          description: Returns medication requests for a specific context (MedicationStatement.extension:context)
+          schema:
+            type: string
+        - name: based_on_emp
+          in: query
+          required: false
+          description: Filters by MedicationStatement.basedOn mit Extension:is-emp = true.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of resources
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationStatementListDTO'
+  /epa/testdriver/api/v1/medication-statement/{id}/history:
+    get:
+      tags:
+        - MedicationStatement
+      summary: 'Get a medication statement history list of a personal health record as FHIR objects.'
+      description: 'List all medication statement histories.'
+      operationId: getMedicationStatementHistoryList
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the MedicationStatement resource.'
+          schema:
+            type: string
+        - $ref: '#/components/parameters/format'
+      responses:
+        200:
+          description: A list of medication statement history resources.
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationStatementHistoryResponseDTO'
+  /epa/testdriver/api/v1/medication-statement/{id}/history/{versionId}:
+    get:
+      tags:
+        - MedicationStatement
+      summary: 'Get a specific version of a medication statement as FHIR object.'
+      description: 'Get a specific version of a medication statement as FHIR object.'
+      operationId: getMedicationStatementHistoryByIdAndVersion
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/useragent'
+        - $ref: '#/components/parameters/requestid'
+        - name: id
+          in: path
+          required: true
+          description: 'The logical id of the MedicationStatement resource.'
+          schema:
+            type: string
+        - name: versionId
+          in: path
+          required: true
+          description: 'The version id of the MedicationStatement resource.'
+          schema:
+            type: string
+        - $ref: '#/components/parameters/format'
+      responses:
+        200:
+          description: A medication statement history resource
+          content:
+            application/fhir+json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationStatementHistoryByIdAndVersionResponseDTO'
+  /epa/testdriver/api/v1/medication-plan:
+    get:
+      tags:
+        - Emp
+      summary: 'Get medication plan.'
+      description: 'Get medication plan of a personal health record.'
+      operationId: getMedicationPlan
+      parameters:
+        - $ref: '#/components/parameters/insurantid'
+        - $ref: '#/components/parameters/requestid'
+        - name: format
+          in: query
+          required: false
+          description: 'Specify in which format the search bundle shall be returned. If not specified, the default format is application/fhir+json.'
+          schema:
+            type: string
+            enum:
+              - application/fhir+json
+              - application/fhir+xml
+        - name: provenance_id
+          in: query
+          required: false
+          description: 'The UUID of a provenance instance identifying specific version of the medication plan.'
+          schema:
+            type: string
+      responses:
+        200:
+          description: Medication plan as FHIR search bundle.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMedicationPlanResponseDTO'
 
 components:
   parameters:
@@ -790,7 +1105,80 @@ components:
               type: array
               items:
                 type: string
-
+    GetMedicationHistoryByIdAndVersionResponseDTO:
+      description: Response including the medication history.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medication:
+              description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication'
+              x-examples:
+                Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication
+              type: string
+    GetMedicationRequestHistoryResponseDTO:
+      description: Returns a list of all medication requests using the FHIR representation as string array where the content is as fhir+json or fhir+xml based on the given format query parameter.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medicationRequests:
+              description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request'
+              x-examples:
+                Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request
+              type: array
+              items:
+                type: string
+    GetMedicationRequestHistoryByIdAndVersionResponseDTO:
+      description: Response including the medication request history.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medicationRequest:
+              description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request'
+              x-examples:
+                Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-request
+              type: string
+    GetMedicationStatementListDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          oneOf:
+            - $ref: "#/components/schemas/SearchSet_Bundle"
+            - type: object
+              properties:
+                medicationStatements:
+                  description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement|1.3.0'
+                  x-examples:
+                    Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement|1.3.0
+                  type: array
+                  items:
+                    type: string
+    GetMedicationStatementHistoryResponseDTO:
+      description: Returns a list of all medication statements using the FHIR representation as string array where the content is as fhir+json or fhir+xml based on the given format query parameter.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medicationStatements:
+              description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement|1.3.0'
+              x-examples:
+                Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement|1.3.0
+              type: array
+              items:
+                type: string
+    GetMedicationStatementHistoryByIdAndVersionResponseDTO:
+      description: Response including the medication statement history.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medicationStatement:
+              description: 'https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement|1.3.0'
+              x-examples:
+                Example 1: --> https://gematik.de/fhir/epa-medication/StructureDefinition/epa-medication-statement|1.3.0
+              type: string
     GetEmlAsFhirResponseDTO:
       description: Response including the eML as FHIR Search Bundle based on the given search criteria.
       allOf:
@@ -809,6 +1197,16 @@ components:
           properties:
             medicationPlanLogs:
               description: 'The eML as FHIR Search Bundle as JSON or as XML.'
+              example: --> http://hl7.org/fhir/search-set-bundle.html
+              type: string
+    GetMedicationPlanResponseDTO:
+      description: Response including the entire or a provenance-specific medication plan and its dependencies.
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            medicationPlan:
+              description: 'The eMP as FHIR Search Bundle as JSON or as XML.'
               example: --> http://hl7.org/fhir/search-set-bundle.html
               type: string
     SearchSet_Bundle:
@@ -998,6 +1396,9 @@ components:
         organization:
           description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
           type: string
+        medication:
+          description: 'A FHIR medication resource in JSON format.'
+          type: string
         format:
           description: 'Format for the response. If not specified, the default format is application/fhir+json.'
           type: string
@@ -1017,11 +1418,67 @@ components:
           description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
           type: string
         format:
-            description: 'Format for the response. If not specified, the default format is application/fhir+json.'
-            type: string
-            enum:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
             - application/fhir+json
             - application/fhir+xml
+        chronologyId:
+          description: 'ID of a chronology.'
+          type: string
+    UnlinkEmpInput:
+      type: object
+      required:
+        - medicationPlanId
+        - organization
+      properties:
+        medicationPlanId:
+          description: 'ID of a medication plan.'
+          type: string
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
+            - application/fhir+json
+            - application/fhir+xml
+        chronologyId:
+          description: 'ID of a chronology.'
+          type: string
+    BatchEmpInput:
+       type: object
+       required:
+         - organization
+       properties:
+        empUpdates:
+         description: 'List of eMP update entries.'
+         type: array
+         items:
+           $ref: "#/components/schemas/UpdateEmpEntryInput"
+        empAdds:
+          description: 'List of eMP add entries.'
+          type: array
+          items:
+            $ref: "#/components/schemas/AddEmpEntryInput"
+        empCommit:
+          $ref: "#/components/schemas/EmpCommitInput"
+        organization:
+          description: 'An FHIR Organization resource in JSON format to identify the originator of the request.'
+          type: string
+        format:
+          description: 'Format for the response. If not specified, the default format is application/fhir+json.'
+          type: string
+          enum:
+            - application/fhir+json
+            - application/fhir+xml
+    EmpCommitInput:
+      type: object
+      properties:
+        chronologyId:
+          description: 'ID of a chronology provenance resource'
+          type: string
     LinkEmpResponseDTO:
       allOf:
         - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
@@ -1030,6 +1487,24 @@ components:
             parameters:
               description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
               example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+    UnlinkEmpResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            parameters:
+              description: 'The response as FHIR Parameters resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Parameters
+              type: string
+    BatchEmpResponseDTO:
+      allOf:
+        - $ref: 'shared.yaml#/components/schemas/ResponseDTO'
+        - type: object
+          properties:
+            bundle:
+              description: 'The response as FHIR Bundle resource in JSON or XML based on the given _format query parameter.'
+              example: --> https://hl7.org/fhir/R4/fhir.schema.json#/definitions/Bundle
               type: string
   requestBodies:
     AddEmlEntryRequestDTO:
@@ -1046,7 +1521,7 @@ components:
       content:
         application/json:
           schema:
-           $ref: "#/components/schemas/AddEmpEntryInput"
+            $ref: "#/components/schemas/AddEmpEntryInput"
     UpdateEmpEntryRequestDTO:
       content:
         application/json:
@@ -1057,4 +1532,13 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/LinkEmpInput"
-
+    UnlinkEmpRequestDTO:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UnlinkEmpInput"
+    BatchEmpRequestDTO:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/BatchEmpInput"

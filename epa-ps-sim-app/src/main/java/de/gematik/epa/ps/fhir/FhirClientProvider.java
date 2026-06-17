@@ -24,12 +24,14 @@
  */
 package de.gematik.epa.ps.fhir;
 
+import ca.uhn.fhir.rest.api.EncodingEnum;
+import de.gematik.epa.config.AppConfig;
 import de.gematik.epa.fhir.client.FhirClient;
-import de.gematik.epa.ps.fhir.config.AuditServerConfiguration;
-import de.gematik.epa.ps.fhir.config.FhirServerConfiguration;
+import de.gematik.epa.ps.config.ServerConfiguration;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,40 +41,45 @@ import org.springframework.context.annotation.Profile;
 @Slf4j
 @Accessors(fluent = true)
 @Profile("!test")
-@EnableConfigurationProperties({FhirServerConfiguration.class, AuditServerConfiguration.class})
+@EnableConfigurationProperties({AppConfig.class})
 @RequiredArgsConstructor
 public class FhirClientProvider {
 
-  private final FhirServerConfiguration fhirServerConfiguration;
-  private final AuditServerConfiguration auditServerConfiguration;
+  private final AppConfig appConfiguration;
 
-  String getFhirServerUrl() {
-    return fhirServerConfiguration.getProtocol()
-        + "://"
-        + fhirServerConfiguration.getHost()
-        + ":"
-        + fhirServerConfiguration.getPort()
-        + "/"
-        + fhirServerConfiguration.getPath();
+  @Bean
+  @ConfigurationProperties(prefix = "fhir-server")
+  public ServerConfiguration fhirServerConfiguration() {
+    return new ServerConfiguration();
   }
 
-  String getAuditServerUrl() {
-    return auditServerConfiguration.getProtocol()
-        + "://"
-        + auditServerConfiguration.getHost()
-        + ":"
-        + auditServerConfiguration.getPort()
-        + "/"
-        + auditServerConfiguration.getPath();
+  @Bean
+  @ConfigurationProperties(prefix = "audit-server")
+  public ServerConfiguration auditServerConfiguration() {
+    return new ServerConfiguration();
+  }
+
+  @Bean
+  @ConfigurationProperties(prefix = "patient-server")
+  public ServerConfiguration patientServerConfiguration() {
+    return new ServerConfiguration();
   }
 
   @Bean
   public FhirClient fhirClient() {
-    return new FhirClient(getFhirServerUrl(), fhirServerConfiguration.getUserAgent());
+    return new FhirClient(fhirServerConfiguration().buildUrl(), appConfiguration.getUserAgent());
   }
 
   @Bean
   public FhirClient auditFhirClient() {
-    return new FhirClient(getAuditServerUrl(), auditServerConfiguration.getUserAgent());
+    return new FhirClient(auditServerConfiguration().buildUrl(), appConfiguration.getUserAgent());
+  }
+
+  @Bean
+  public FhirClient patientFhirClient() {
+    var patientFhirClient =
+        new FhirClient(patientServerConfiguration().buildUrl(), appConfiguration.getUserAgent());
+    patientFhirClient.getClient().setEncoding(EncodingEnum.JSON);
+    return patientFhirClient;
   }
 }

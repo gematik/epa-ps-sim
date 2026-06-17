@@ -5,16 +5,13 @@
     <parent>
         <artifactId>epa-ps-sim</artifactId>
         <groupId>de.gematik.epa</groupId>
-        <version>2.2.1</version>
+        <version>2.3.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>epa-ps-sim-api</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <swagger.v3.version>2.2.42</swagger.v3.version>
         <yaml.directory>${project.build.directory}/generated-sources/resources/openapi</yaml.directory>
         <yaml.zip.path>${project.build.directory}/${project.artifactId}-${project.version}-openapi.zip</yaml.zip.path>
         <api.config.dir>${project.build.directory}/config</api.config.dir>
@@ -36,51 +33,42 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>${swagger.v3.version}</version>
         </dependency>
         <!-- chnage swagger-jaxrs to swagger-jaxrs2 when the generator finally support generating io.swagger.v3.annotations -->
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jaxrs</artifactId>
-            <version>1.6.16</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-            <version>4.1.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>${spring.boot.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openapitools</groupId>
             <artifactId>jackson-databind-nullable</artifactId>
-            <version>0.2.8</version>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
-            <version>2.5</version>
         </dependency>
     </dependencies>
 
@@ -99,7 +87,6 @@
             <plugin>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-maven-plugin-jakarta</artifactId>
-                <version>${swagger.v3.version}</version>
                 <configuration>
                     <configurationFilePath>${api.config.dir}/${api.config.filename}</configurationFilePath>
                     <outputFileName>${project.artifactId}-${project.version}</outputFileName>
@@ -122,7 +109,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>create-archive</id>
@@ -142,7 +128,6 @@
             <plugin>
                 <groupId>com.soebes.maven.plugins</groupId>
                 <artifactId>iterator-maven-plugin</artifactId>
-                <version>0.5.1</version>
                 <executions>
                     <execution>
                         <id>generateApi</id>
@@ -161,6 +146,8 @@
                                 <item>information</item>
                                 <item>medication</item>
                                 <item>mhd</item>
+                                <item>organization</item>
+                                <item>patient</item>
                                 <item>poppToken</item>
                                 <item>vau</item>
                             </items>
@@ -169,7 +156,6 @@
                                     <plugin>
                                         <groupId>org.openapitools</groupId>
                                         <artifactId>openapi-generator-maven-plugin</artifactId>
-                                        <version>7.19.0</version>
                                     </plugin>
                                     <goal>generate</goal>
                                     <configuration>
@@ -180,6 +166,8 @@
                                         <apiPackage>de.gematik.epa.api.testdriver.@item@</apiPackage>
                                         <modelPackage>de.gematik.epa.api.testdriver.@item@.dto</modelPackage>
                                         <configOptions>
+                                            <generateBuilders>true</generateBuilders>
+                                            <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
                                             <interfaceOnly>true</interfaceOnly>
                                             <useJakartaEe>true</useJakartaEe>
                                             <dateLibrary>java8</dateLibrary>
@@ -195,7 +183,6 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.19.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -211,6 +198,8 @@
                             <output>${project.build.directory}/generated-sources</output>
                             <generateApiTests>false</generateApiTests>
                             <configOptions>
+                                <generateBuilders>true</generateBuilders>
+                                <generateConstructorWithAllArgs>true</generateConstructorWithAllArgs>
                                 <sourceFolder>/</sourceFolder>
                                 <interfaceOnly>true</interfaceOnly>
                                 <dateLibrary>java8</dateLibrary>

@@ -7,7 +7,7 @@
     <groupId>de.gematik.epa</groupId>
     <artifactId>epa-ps-sim</artifactId>
     <packaging>pom</packaging>
-    <version>2.2.1</version>
+    <version>2.3.0</version>
     <name>epa-ps-sim</name>
     <description>Simplified REST interface and implementation to run ePA operations of the
         Konnektor
@@ -22,69 +22,88 @@
     </modules>
 
     <properties>
+        <apache.cxf.version>4.2.2</apache.cxf.version>
+        <apache.tomcat.version>11.0.22</apache.tomcat.version>
+        <assertj>3.27.7</assertj>
+        <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
+        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
+        <commons-lang3.version>3.20.0</commons-lang3.version>
+        <cxf-xjc.version>4.2.0</cxf-xjc.version>
+        <fmt-maven-plugin.version>2.29</fmt-maven-plugin.version>
+        <gson.version>2.14.0</gson.version>
+        <hapifhir.version>8.10.0</hapifhir.version>
+        <hl7-fhir-r4.version>6.9.9</hl7-fhir-r4.version>
+        <icu4j.version>78.3</icu4j.version>
+        <idp.version>30.0.11</idp.version>
+        <iterator-maven-plugin.version>0.5.1</iterator-maven-plugin.version>
+        <jackson-databind-nullable.version>0.2.10</jackson-databind-nullable.version>
+        <jackson-tools.version>3.2.0</jackson-tools.version>
+        <jackson-fasterxml.version>2.22.0</jackson-fasterxml.version>
+        <jackson-annotations.version>2.22</jackson-annotations.version>
+        <jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
+        <jakarta>4.0.0</jakarta>
+        <jakarta-xml-ws.version>4.0.3</jakarta-xml-ws.version>
+        <javadoc-maven-plugin.version>3.12.0</javadoc-maven-plugin.version>
+        <javax-annotation.version>1.3.2</javax-annotation.version>
+        <jaxb-fluent-api.version>3.0</jaxb-fluent-api.version>
+        <jaxb-runtime.version>4.0.9</jaxb-runtime.version>
+        <jaxb-xml-bind.version>2.3.1</jaxb-xml-bind.version>
+        <jena-version>6.1.0</jena-version>
+        <junit.version>6.1.0</junit.version>
+        <lib-ihe-xds>3.1.0</lib-ihe-xds>
+        <license-maven-plugin.version>2.7.1</license-maven-plugin.version>
+        <logback-version>1.5.34</logback-version>
+        <lombok.version>1.18.46</lombok.version>
+        <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+        <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
+        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <micrometer.version>1.17.0</micrometer.version>
+        <mockito-inline.version>5.2.0</mockito-inline.version>
+        <mockito.version>5.23.0</mockito.version>
+        <openapi.generator.version>7.20.0</openapi.generator.version>
+        <opentelemetry.version>1.62.0</opentelemetry.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <servlet-api.version>2.5</servlet-api.version>
+        <slf4j.version>2.0.18</slf4j.version>
+        <snakeyaml.version>2.6</snakeyaml.version>
         <source-maven-plugin.version>3.4.0</source-maven-plugin.version>
-        <javadoc-maven-plugin.version>3.12.0</javadoc-maven-plugin.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
-        <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
-        <fmt-maven-plugin.version>2.29</fmt-maven-plugin.version>
-        <jackson.version>2.21.0</jackson.version>
-        <apache.cxf.version>4.1.4</apache.cxf.version>
-        <swagger-ui.version>5.31.0</swagger-ui.version>
-        <lombok.version>1.18.42</lombok.version>
-        <junit.version>6.0.2</junit.version>
-        <mockito.version>5.21.0</mockito.version>
-        <slf4j.version>2.0.17</slf4j.version>
-        <mockito-inline.version>5.2.0</mockito-inline.version>
-        <spring.boot.version>4.0.2</spring.boot.version>
-        <idp.version>30.0.2</idp.version>
-        <spring-framework.version>7.0.3</spring-framework.version>
-        <lib-ihe-xds>3.0.3</lib-ihe-xds>
-        <jakarta>4.0.0</jakarta>
-        <assertj>3.27.7</assertj>
-        <logback-version>1.5.27</logback-version>
-        <version.bouncycastle>1.83</version.bouncycastle>
-        <apache-commons-compress>1.28.0</apache-commons-compress>
-        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
-        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
-        <jena-version>5.6.0</jena-version>
+        <spring-framework.version>7.0.8</spring-framework.version>
+        <spring.boot.version>4.1.0</spring.boot.version>
+        <swagger-jaxrs.version>1.6.16</swagger-jaxrs.version>
+        <swagger-ui.version>5.32.6</swagger-ui.version>
+        <swagger.v3.version>2.2.51</swagger.v3.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
+        <version.bouncycastle>1.84</version.bouncycastle>
+        <wiremock.version>3.13.2</wiremock.version>
+        <commons-compress.version>1.28.0</commons-compress.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>${spring-framework.version}</version>
+                <groupId>ca.uhn.hapi.fhir</groupId>
+                <artifactId>hapi-fhir-base</artifactId>
+                <version>${hapifhir.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-core</artifactId>
-                <version>${spring-framework.version}</version>
+                <groupId>ca.uhn.hapi.fhir</groupId>
+                <artifactId>hapi-fhir-client</artifactId>
+                <version>${hapifhir.version}</version>
             </dependency>
             <dependency>
-                <groupId>de.gematik.epa</groupId>
-                <artifactId>lib-ihe-xds</artifactId>
-                <version>${lib-ihe-xds}</version>
+                <groupId>ca.uhn.hapi.fhir</groupId>
+                <artifactId>hapi-fhir-structures-r4</artifactId>
+                <version>${hapifhir.version}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.ws.rs</groupId>
-                <artifactId>jakarta.ws.rs-api</artifactId>
-                <version>${jakarta}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.assertj</groupId>
-                <artifactId>assertj-core</artifactId>
-                <version>${assertj}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${logback-version}</version>
+                <groupId>ca.uhn.hapi.fhir</groupId>
+                <artifactId>org.hl7.fhir.r4</artifactId>
+                <version>${hl7-fhir-r4.version}</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -92,23 +111,159 @@
                 <version>${logback-version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-compress</artifactId>
-                <version>${apache-commons-compress}</version>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${logback-version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>3.20.0</version>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson-fasterxml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+                <artifactId>jackson-jakarta-rs-json-provider</artifactId>
+                <version>${jackson-fasterxml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-fasterxml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson-tools.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.13.2</version>
+                <version>${gson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ibm.icu</groupId>
+                <artifactId>icu4j</artifactId>
+                <version>${icu4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.epa</groupId>
+                <artifactId>epa-fm-java-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.epa</groupId>
+                <artifactId>epa-ps-sim-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.epa</groupId>
+                <artifactId>epa-ps-sim-lib</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.epa</groupId>
+                <artifactId>epa-ps-sim-lib</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.epa</groupId>
+                <artifactId>lib-ihe-xds</artifactId>
+                <version>${lib-ihe-xds}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.idp</groupId>
+                <artifactId>idp-client</artifactId>
+                <version>${idp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-api</artifactId>
+                <version>${opentelemetry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger.v3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-jaxrs</artifactId>
+                <version>${swagger-jaxrs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${jakarta}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.ws</groupId>
+                <artifactId>jakarta.xml.ws-api</artifactId>
+                <version>${jakarta-xml-ws.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>${javax-annotation.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>servlet-api</artifactId>
+                <version>${servlet-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-features-logging</artifactId>
+                <version>${apache.cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+                <version>${apache.cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-frontend-jaxws</artifactId>
+                <version>${apache.cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-rs-client</artifactId>
+                <version>${apache.cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-rt-rs-service-description-openapi-v3</artifactId>
+                <version>${apache.cxf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf.xjc-utils</groupId>
+                <artifactId>cxf-xjc-runtime</artifactId>
+                <version>${cxf-xjc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cxf</groupId>
+                <artifactId>cxf-spring-boot-starter-jaxrs</artifactId>
+                <version>${apache.cxf.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.jena</groupId>
-                <artifactId>jena</artifactId>
+                <artifactId>jena-arq</artifactId>
                 <version>${jena-version}</version>
             </dependency>
             <dependency>
@@ -118,28 +273,291 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.jena</groupId>
-                <artifactId>jena-arq</artifactId>
-                <version>${jena-version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.jena</groupId>
                 <artifactId>jena-shex</artifactId>
                 <version>${jena-version}</version>
             </dependency>
             <dependency>
-                <groupId>com.ibm.icu</groupId>
-                <artifactId>icu4j</artifactId>
-                <version>78.2</version>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${apache.tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>${apache.tomcat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bc-jdk18on-bom</artifactId>
+                <version>${version.bouncycastle}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-jdk18on</artifactId>
+                <version>${version.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${version.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${jaxb-runtime.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito-inline.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.openapitools</groupId>
+                <artifactId>jackson-databind-nullable</artifactId>
+                <version>${jackson-databind-nullable.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-reload4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-configuration-processor</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-resttestclient</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-actuator</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring.boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-validation</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-aop</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-core</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-expression</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-test</artifactId>
+                <version>${spring-framework.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${swagger-ui.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
+                <version>${wiremock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>tools.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson-tools.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.soebes.maven.plugins</groupId>
+                    <artifactId>iterator-maven-plugin</artifactId>
+                    <version>${iterator-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.spotify.fmt</groupId>
+                    <artifactId>fmt-maven-plugin</artifactId>
+                    <version>${fmt-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.cxf</groupId>
+                    <artifactId>cxf-codegen-plugin</artifactId>
+                    <version>${apache.cxf.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.cxf</groupId>
+                    <artifactId>cxf-xjc-plugin</artifactId>
+                    <version>${cxf-xjc.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-maven-plugin-jakarta</artifactId>
+                    <version>${swagger.v3.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${maven-antrun-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven-gpg-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven-jar-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${javadoc-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${source-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefire-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>license-maven-plugin</artifactId>
+                    <version>${license-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.openapitools</groupId>
+                    <artifactId>openapi-generator-maven-plugin</artifactId>
+                    <version>${openapi.generator.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>${central-publishing-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>${source-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -152,7 +570,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadoc-maven-plugin.version}</version>
                 <configuration>
                     <quiet>true</quiet>
                     <doclint>none</doclint>
@@ -171,17 +588,18 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <parameters>true</parameters>
-                    <basedir/>
-                    <buildDirectory/>
-                    <mainOutputDirectory/>
-                    <outputDirectory/>
-                    <projectArtifact/>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
@@ -201,12 +619,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>com.spotify.fmt</groupId>
                 <artifactId>fmt-maven-plugin</artifactId>
-                <version>${fmt-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -222,7 +638,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
-                <version>2.7.1</version>
                 <configuration>
                     <licenseName>apache_v2_0</licenseName>
                     <licenseResolver>classpath://copyright-header/apache-license</licenseResolver>
@@ -297,7 +712,6 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven-gpg-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -318,7 +732,6 @@
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
-                        <version>${central-publishing-maven-plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
@@ -364,15 +777,5 @@
         </developer>
     </developers>
 
-    <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <url>${releaseDeploymentRepository}</url>
-        </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <url>${snapshotDeploymentRepository}</url>
-        </snapshotRepository>
-    </distributionManagement>
 
 </project>

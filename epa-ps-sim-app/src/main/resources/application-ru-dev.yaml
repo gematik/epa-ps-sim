@@ -16,3 +16,8 @@ information-servers:
       host: ${INF_SERVER2_HOST:epa-as-2.dev.epa4all.de}
       port: ${INF_SERVER2_PORT:443}
       user-agent: PSSIM123456789012345/1.2.4
+    - name: information-server3
+      protocol: ${INF_SERVER3_PROTOCOL:https}
+      host: ${INF_SERVER3_HOST:epa-as-3.dev.epa4all.de}
+      port: ${INF_SERVER3_PORT:443}
+      user-agent: PSSIM123456789012345/1.2.4

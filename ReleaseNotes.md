@@ -2,6 +2,24 @@
 
 # Release notes ePA-PS-Sim
 
+## Release 2.3.0
+
+### added
+- New endpoint to trigger batch-emp operations ($batch-emp)
+- Document Reuse: Support for EnableDocumentReuse in ProvideAndRegister
+- Support communication with PoPP Token Client
+- New endpoint to retrieve the eMP
+- New endpoint to get history by id and version (Medication, MedicationRequest, MedicationStatement)
+- New query endpoints (Medication, MedicationRequest, MedicationStatement)
+- Support of new 3rd ePA record system for EY
+- Upgraded version of several dependencies (e.g. lib-ihe-xds v3.1.0, idp-client v30.0.11, spring-boot v4.1.0)
+
+### updated
+- Link and unlink operations for EMP now support chronologyId
+- PoPP Implementation split into PoPPTokenGenerator and PoPPTokenClient
+- audit event backend interface to matching ePA 3.1.3-1
+- Update audit event endpoint to support lowerDateTime & upperDateTime
+
 ## Release 2.2.1
 
 - ReadVSD API was extended to use the SMC-B telematikId to select the correct card handle

@@ -37,4 +37,5 @@ public class RenderResponse {
   private int httpStatusCode;
   private String errorMessage;
   private String medicationPlanLogs;
+  private String medicationPlan;
 }

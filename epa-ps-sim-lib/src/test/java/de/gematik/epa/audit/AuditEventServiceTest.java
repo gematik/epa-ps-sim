@@ -27,7 +27,11 @@ package de.gematik.epa.audit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -40,13 +44,17 @@ import ca.uhn.fhir.rest.gclient.IClientExecutable;
 import ca.uhn.fhir.rest.gclient.ICriterion;
 import ca.uhn.fhir.rest.gclient.IQuery;
 import ca.uhn.fhir.rest.gclient.IUntypedQuery;
+import de.gematik.epa.api.audit_event.client.RenderApiApi;
 import de.gematik.epa.api.testdriver.audit.dto.GetAuditEventResponseDTO;
-import de.gematik.epa.audit.client.AuditRenderClient;
-import de.gematik.epa.audit.client.RenderResponse;
+import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.unit.util.ResourceLoader;
 import de.gematik.epa.utils.FhirUtils;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.time.OffsetDateTime;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.SneakyThrows;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.instance.model.api.IBaseResource;
@@ -55,6 +63,9 @@ import org.hl7.fhir.r4.model.Bundle;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.http.MediaType;
 
 class AuditEventServiceTest {
 
@@ -65,7 +76,9 @@ class AuditEventServiceTest {
   private final FhirContext context = mock(FhirContext.class);
   private final IParser jsonParser = mock(IParser.class);
 
-  private final AuditRenderClient auditRender = mock(AuditRenderClient.class);
+  private final JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper =
+      mock(JaxRsClientWrapper.class);
+  private RenderApiApi renderApi;
 
   private AuditEventService auditEventService;
   private static String auditEventAsString;
@@ -82,7 +95,10 @@ class AuditEventServiceTest {
     when(fhirClient.getContext()).thenReturn(context);
     when(context.newJsonParser()).thenReturn(jsonParser);
     FhirUtils.setJsonParser(jsonParser);
-    auditEventService = new AuditEventService(fhirClient, auditRender);
+    renderApi = mock(RenderApiApi.class);
+    when(auditRenderClientWrapper.getServiceApi()).thenReturn(renderApi);
+    when(auditRenderClientWrapper.getUserAgent()).thenReturn(USERAGENT);
+    auditEventService = new AuditEventService(fhirClient, auditRenderClientWrapper);
   }
 
   @Test
@@ -221,25 +237,57 @@ class AuditEventServiceTest {
   void shouldGetAuditEventsAsPdfA() {
     // given
     final byte[] pdfA = new byte[] {1, 2, 3, 4, 5};
-    when(auditRender.getAuditEventAsPdfA(X_INSURANTID, true))
-        .thenReturn(new RenderResponse().pdf(pdfA).httpStatusCode(200));
+    doReturn(Response.ok(pdfA).build())
+        .when(renderApi)
+        .renderAuditEventsToPDFAuditEventSvc(
+            eq(X_INSURANTID),
+            eq(USERAGENT),
+            any(UUID.class),
+            eq(MediaType.APPLICATION_PDF_VALUE),
+            anyBoolean(),
+            isNull(),
+            isNull());
+
     // when
-    var actual = auditEventService.getAuditEventsAsPdfA(X_INSURANTID, true);
+    var actual = auditEventService.getAuditEventsAsPdfA(X_INSURANTID, true, null, null);
     // then
     assertThat(actual.getSuccess()).isTrue();
     assertThat(actual.getAuditEventAsPdfA()).isEqualTo(pdfA);
   }
 
-  @Test
-  void getAuditEventsAsPdfAShouldReturnNoSuccessWhenFailure() {
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "NOT_FOUND, '{\"errorCode\":\"noEntries\",\"errorDetail\":\"Rendering led to empty list\"}'",
+        "INTERNAL_SERVER_ERROR, 'Unexpected  error. Please report to gematik GmbH: Exceeded limit on max bytes to buffer : 262144'",
+        "INTERNAL_SERVER_ERROR, 'null'"
+      })
+  void getAuditEventsAsPdfAndHandleErrors(Status status, String message) {
+    String entity = Objects.equals(message, "null") ? null : message;
+
+    String expectedMessage =
+        Objects.equals(message, "null")
+            ? "{ \"httpCode\": \"%d\" }".formatted(status.getStatusCode())
+            : "{ \"httpCode\": \"%d\", \"details\": %s }"
+                .formatted(status.getStatusCode(), message);
     // given
-    when(auditRender.getAuditEventAsPdfA(X_INSURANTID, true))
-        .thenReturn(new RenderResponse().httpStatusCode(500).errorMessage("error"));
+    doReturn(Response.status(status).entity(entity).build())
+        .when(renderApi)
+        .renderAuditEventsToPDFAuditEventSvc(
+            eq(X_INSURANTID),
+            eq(USERAGENT),
+            any(UUID.class),
+            eq(MediaType.APPLICATION_PDF_VALUE),
+            anyBoolean(),
+            isNull(),
+            isNull());
+
     // when
-    var actual = auditEventService.getAuditEventsAsPdfA(X_INSURANTID, true);
+    var actual = auditEventService.getAuditEventsAsPdfA(X_INSURANTID, true, null, null);
+
     // then
     assertThat(actual.getSuccess()).isFalse();
-    assertThat(actual.getStatusMessage()).isNotBlank();
+    assertThat(actual.getStatusMessage()).isEqualTo(expectedMessage);
     assertThat(actual.getAuditEventAsPdfA()).isNull();
   }
 

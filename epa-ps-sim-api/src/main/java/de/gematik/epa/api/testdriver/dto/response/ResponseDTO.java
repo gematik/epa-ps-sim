@@ -29,10 +29,19 @@ import static de.gematik.epa.constants.Documentation.SUCCESS_DESCRIPTION;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 
 @Schema(
     description =
         "Standard Response mit der Information, ob eine Operation erfolgreich ausgeführt werden konnte und ggf. Detailinformationen dazu.")
 public record ResponseDTO(
     @JsonProperty(required = true) @Schema(description = SUCCESS_DESCRIPTION) Boolean success,
-    @Schema(description = STATUS_MSG_DESCRIPTION) String statusMessage) {}
+    @Schema(description = STATUS_MSG_DESCRIPTION) String statusMessage,
+    @Schema(description = "Reused Document Mappings im Format 'uniqueId_new|uniqueId_old'")
+        List<String> reusedDocumentMappings) {
+
+  // Constructor for backward compatibility without reusedDocumentMappings.
+  public ResponseDTO(Boolean success, String statusMessage) {
+    this(success, statusMessage, null);
+  }
+}

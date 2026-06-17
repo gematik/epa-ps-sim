@@ -24,36 +24,34 @@
  */
 package de.gematik.epa.ps.audit;
 
-import de.gematik.epa.audit.client.AuditRenderClient;
-import de.gematik.epa.ps.audit.config.AuditRenderClientConfiguration;
+import de.gematik.epa.api.audit_event.client.RenderApiApi;
+import de.gematik.epa.client.JaxRsClientWrapper;
+import de.gematik.epa.config.AppConfig;
+import de.gematik.epa.ps.config.ServerConfiguration;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties(AuditRenderClientConfiguration.class)
+@EnableConfigurationProperties(AppConfig.class)
+@RequiredArgsConstructor
 public class AuditRenderClientProvider {
 
-  private final AuditRenderClientConfiguration auditRenderClientConfiguration;
+  private final AppConfig applicationConfig;
 
-  public AuditRenderClientProvider(
-      final AuditRenderClientConfiguration auditRenderClientConfiguration) {
-    this.auditRenderClientConfiguration = auditRenderClientConfiguration;
+  @Bean
+  @ConfigurationProperties(prefix = "audit-render")
+  public ServerConfiguration auditRenderServerConfiguration() {
+    return new ServerConfiguration();
   }
 
   @Bean
-  public AuditRenderClient auditRenderClient() {
-    return new AuditRenderClient(
-        getServerUrl(),
-        auditRenderClientConfiguration.getPdfPath(),
-        auditRenderClientConfiguration.getUserAgent());
-  }
-
-  private String getServerUrl() {
-    return auditRenderClientConfiguration.getProtocol()
-        + "://"
-        + auditRenderClientConfiguration.getHost()
-        + ":"
-        + auditRenderClientConfiguration.getPort();
+  public JaxRsClientWrapper<RenderApiApi> auditRenderClientWrapper() {
+    return new JaxRsClientWrapper<>(
+        auditRenderServerConfiguration().buildUrl(),
+        applicationConfig.getUserAgent(),
+        RenderApiApi.class);
   }
 }

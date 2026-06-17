@@ -35,6 +35,7 @@ import de.gematik.epa.ps.kob.config.VauProxyConfiguration;
 import de.gematik.epa.unit.TestDocumentClientConfiguration;
 import de.gematik.epa.unit.TestKonnektorClientConfiguration;
 import de.gematik.epa.utils.HealthRecordProvider;
+import de.gematik.epa.utils.InsurantIdHolder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import lombok.Getter;
@@ -80,6 +81,10 @@ public class AbstractIntegrationTest {
   @RegisterExtension
   public static WireMockExtension mockInformationServer2 =
       WireMockExtension.newInstance().options(wireMockConfig().port(8089)).build();
+
+  @RegisterExtension
+  public static WireMockExtension mockInformationServer3 =
+      WireMockExtension.newInstance().options(wireMockConfig().port(8083)).build();
 
   @RegisterExtension
   public static WireMockExtension mockEmlRender =
@@ -217,10 +222,11 @@ public class AbstractIntegrationTest {
     // reset all data with health record information
     mockInformationServer1.resetAll();
     mockInformationServer2.resetAll();
+    mockInformationServer3.resetAll();
     HealthRecordProvider.getAllHealthRecords()
         .forEach((key, value) -> HealthRecordProvider.clearHealthRecord(key));
     setupFqdnProvider(KVNR); // add KVNR as default for all Tests
-
+    InsurantIdHolder.setInsurantId(KVNR);
     mockAuthzServer.resetAll();
     mockIdpServer.resetAll();
     mockEntitlementServer.resetAll();
@@ -248,6 +254,7 @@ public class AbstractIntegrationTest {
   void tearDown() {
     HealthRecordProvider.getAllHealthRecords()
         .forEach((key, value) -> HealthRecordProvider.clearHealthRecord(key));
+    InsurantIdHolder.clear();
   }
 
   public void stubSuccessfulGetRecordStatus(final WireMockExtension server, int statusCode) {
