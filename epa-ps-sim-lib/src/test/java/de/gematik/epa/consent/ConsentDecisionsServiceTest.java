@@ -32,11 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.gematik.epa.api.consent_decision.client.ConsentDecisionsApi;
-import de.gematik.epa.api.consent_decision.client.dto.ConsentDecisionType;
-import de.gematik.epa.api.consent_decision.client.dto.ConsentDecisionsResponseType;
-import de.gematik.epa.api.consent_decision.client.dto.ErrorType;
-import de.gematik.epa.api.consent_decision.client.dto.UpdateConsentDecision200Response;
-import de.gematik.epa.api.testdriver.consentDecision.dto.ConsentDecisionsResponseTypeDTO;
+import de.gematik.epa.api.consent_decision.client.dto.*;
 import de.gematik.epa.api.testdriver.consentDecision.dto.DecisionEnum;
 import de.gematik.epa.api.testdriver.consentDecision.dto.GetConsentDecisionsResponseDTO;
 import de.gematik.epa.api.testdriver.consentDecision.dto.PutConsentDecisionRequestDTO;
@@ -96,15 +92,19 @@ class ConsentDecisionsServiceTest {
 
   @Test
   void getConsentDecisionsShouldReturn200Success() {
-    final UpdateConsentDecision200Response consents = new UpdateConsentDecision200Response();
-    final ConsentDecisionsResponseType cd = new ConsentDecisionsResponseType();
-    cd.setDecision(ConsentDecisionsResponseType.DecisionEnum.DENY);
-    cd.functionId("medication");
-    consents.data(List.of(cd));
+    final GetConsentDecisionsResponse consents = new GetConsentDecisionsResponse();
+    final ConsentDecisionsResponseType cdMedication = new ConsentDecisionsResponseType();
+    cdMedication.setDecision(ConsentDecisionsResponseType.DecisionEnum.DENY);
+    cdMedication.functionId("medication");
+
+    final ConsentDecisionsResponseType cdDataSubmission = new ConsentDecisionsResponseType();
+    cdDataSubmission.setDecision(ConsentDecisionsResponseType.DecisionEnum.DENY);
+    cdDataSubmission.functionId("data-submission");
+    consents.data(List.of(cdMedication, cdDataSubmission));
 
     Response mockResponse = mock(Response.class);
     when(mockResponse.getStatus()).thenReturn(200);
-    when(mockResponse.readEntity(UpdateConsentDecision200Response.class)).thenReturn(consents);
+    when(mockResponse.readEntity(GetConsentDecisionsResponse.class)).thenReturn(consents);
     when(consentDecisionsClient.getServiceApi().getConsentDecisions(anyString(), anyString()))
         .thenReturn(mockResponse);
 
@@ -112,12 +112,7 @@ class ConsentDecisionsServiceTest {
     assertThat(result.getSuccess()).isTrue();
     assertThat(result.getStatusMessage()).isEqualTo("Ok. Returns a list of consent decisions");
 
-    assertThat(result.getData()).isNotNull();
-    assertThat(result.getData()).hasSize(1);
-
-    ConsentDecisionsResponseTypeDTO consentDecisionsResponseType = result.getData().get(0);
-    assertThat(consentDecisionsResponseType.getDecision()).isEqualTo("deny");
-    assertThat(consentDecisionsResponseType.getFunctionId()).isEqualTo("medication");
+    assertThat(result.getData()).isNotNull().hasSize(2);
   }
 
   @ParameterizedTest

@@ -106,16 +106,18 @@ class MhdApiImplTest {
             isNull(),
             isNull(),
             isNull(),
+            isNull(),
             isNull()))
         .thenReturn(new MhdResponseBundle().success(true).bundle(expectedBundle));
 
     var mhdResponseBundle =
-        mhdApiImpl.epaTestdriverApiV1MdhFhirDocumentReferenceGet(
+        mhdApiImpl.epaTestdriverApiV1MhdFhirDocumentReferenceGet(
             KVNR,
             USER_ID,
             CURRENT,
             ACCEPT_FHIR_JSON,
             FORMAT,
+            null,
             null,
             null,
             null,
@@ -183,16 +185,18 @@ class MhdApiImplTest {
             isNull(),
             isNull(),
             isNull(),
+            isNull(),
             isNull()))
         .thenReturn(new MhdResponseBundle().success(true).bundle(expectedBundle));
 
     var mhdResponseBundle =
-        mhdApiImpl.epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost(
+        mhdApiImpl.epaTestdriverApiV1MhdFhirDocumentReferenceSearchPost(
             KVNR,
             USER_ID,
             CURRENT,
             ACCEPT_FHIR_JSON,
             FORMAT,
+            null,
             null,
             null,
             null,
@@ -233,7 +237,7 @@ class MhdApiImplTest {
         .thenReturn(new ResponseDTO().success(true).statusMessage(expectedStatusMessage));
 
     var responseDTO =
-        mhdApiImpl.epaTestdriverApiV1MdhFhirDocumentReferenceIdGet(
+        mhdApiImpl.epaTestdriverApiV1MhdFhirDocumentReferenceIdGet(
             KVNR, USER_ID, ACCEPT_FHIR_JSON, FORMAT);
     assertThat(responseDTO.getSuccess()).isTrue();
     assertThat(responseDTO.getStatusMessage()).isEqualTo(expectedStatusMessage);

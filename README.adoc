@@ -23,7 +23,7 @@ image::epa-ps-sim.png[epa-ps-sim,align=center,width=800,height=600]
 
 To build and run the project from source you need the following software installed on your machine:
 
-* Java 21
+* Java 25
 * Maven 3.8+
 * Git
 

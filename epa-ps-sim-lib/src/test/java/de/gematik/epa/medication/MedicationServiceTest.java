@@ -39,9 +39,6 @@ import ca.uhn.fhir.rest.client.exceptions.InvalidResponseException;
 import ca.uhn.fhir.rest.gclient.*;
 import ca.uhn.fhir.rest.param.DateRangeParam;
 import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.epa.api.testdriver.medication.dto.*;
 import de.gematik.epa.fhir.client.FhirClient;
 import de.gematik.epa.medication.client.EmlRenderClient;
@@ -59,6 +56,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 class MedicationServiceTest {
 
@@ -70,8 +70,8 @@ class MedicationServiceTest {
   private final FhirContext context = mock(FhirContext.class);
   private final IParser jsonParser = mock(IParser.class);
   private final EmlRenderClient emlRenderClient = mock(EmlRenderClient.class);
-  private final ObjectMapper objectMapper =
-      new ObjectMapper().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+  private final JsonMapper jsonMapper =
+      JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
   private MedicationService medicationService;
 
   @SneakyThrows
@@ -247,8 +247,7 @@ class MedicationServiceTest {
         new GetMedicationResponseDTO().success(true).medications(List.of(medicationAsString));
 
     // when
-    var json =
-        objectMapper.readValue(medicationResponse.getMedications().getFirst(), JsonNode.class);
+    var json = jsonMapper.readValue(medicationResponse.getMedications().getFirst(), JsonNode.class);
 
     // then
     assertThat(json).isNotNull();

@@ -56,6 +56,7 @@ public record PoppTokenClientService(JaxRsClientWrapper<PoppTokenClientApi> clie
     var communicationTypeEnum = CommunicationTypeEnum.fromValue(request.getCommunicationType());
     return new PoppClientRequest()
         .clientSessionId(request.getClientSessionId())
-        .communicationType(communicationTypeEnum);
+        .communicationType(communicationTypeEnum)
+        .patientId(request.getPatientId());
   }
 }

@@ -2,6 +2,20 @@
 
 # Release notes ePA-PS-Sim
 
+## Release 2.3.1
+
+### added
+- Corrected logging for health record logic
+- Enabled MHD search with wrong parameters
+- `data-submission` is now part of the consent decisions
+- Corrected `date` query parameter in MHD search
+- Add patientId to popp client request and update related schemas
+- Fix for Content-Type for MHD search using POST
+
+### updated
+- Updated lib-ihe dependency to 3.1.1
+- Updated library dependencies to latest versions
+
 ## Release 2.3.0
 
 ### added

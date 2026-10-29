@@ -28,6 +28,7 @@ import static de.gematik.epa.unit.util.TestDataFactory.ACCEPT_FHIR_JSON;
 import static de.gematik.epa.unit.util.TestDataFactory.KVNR;
 import static de.gematik.epa.unit.util.TestDataFactory.USER_AGENT;
 import static de.gematik.epa.unit.util.TestDataFactory.USER_ID;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -40,6 +41,7 @@ import de.gematik.epa.api.mhd.client.DocumentReferenceApi;
 import de.gematik.epa.api.mhd.client.RetrieveDocumentApi;
 import de.gematik.epa.api.mhd_dev.client.DevReferenceApi;
 import de.gematik.epa.client.JaxRsClientWrapper;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.util.UUID;
@@ -129,6 +131,29 @@ class MhdServiceTest {
   }
 
   @Test
+  void epaMhdRetrieveV1ContentPropagates404WithBody() {
+    var errorBody = "{\"errorCode\":\"noResource\",\"errorDetail\":\"Document not found\"}";
+    when(retrieveDocClient.getServiceApi()).thenReturn(mock(RetrieveDocumentApi.class));
+    when(retrieveDocClient
+            .getServiceApi()
+            .retrieveDocumentMHDSvc(
+                anyString(), anyString(), anyString(), anyString(), any(UUID.class), anyString()))
+        .thenReturn(Response.status(404).entity(errorBody).type("application/json").build());
+
+    var randomUUID = UUID.randomUUID(); // do not put in assert block!
+    assertThatThrownBy(
+            () ->
+                mhdService.epaMhdRetrieveV1Content(
+                    KVNR, USER_ID, "pdf", randomUUID, ACCEPT_FHIR_JSON))
+        .isInstanceOf(WebApplicationException.class)
+        .satisfies(
+            ex -> {
+              var wae = (WebApplicationException) ex;
+              assertThat(wae.getResponse().getStatus()).isEqualTo(404);
+            });
+  }
+
+  @Test
   void epaMhdClientApiV1MdhFhirDocumentReferenceGet() {
     when(docRefClient.getServiceApi()).thenReturn(mock(DocumentReferenceApi.class));
     when(docRefClient
@@ -166,6 +191,7 @@ class MhdServiceTest {
                 isNull(),
                 isNull(),
                 isNull(),
+                isNull(),
                 isNull()))
         .thenReturn(Response.status(200).entity("DOCUMENT JSON").build());
     var mhdResponseBundle =
@@ -175,6 +201,7 @@ class MhdServiceTest {
             STATUS,
             UUID.randomUUID(),
             ACCEPT_FHIR_JSON,
+            null,
             null,
             null,
             null,
@@ -246,6 +273,7 @@ class MhdServiceTest {
                 isNull(),
                 isNull(),
                 isNull(),
+                isNull(),
                 isNull()))
         .thenReturn(Response.status(200).entity("DOCUMENT JSON").build());
     var mhdResponseBundle =
@@ -276,6 +304,90 @@ class MhdServiceTest {
             null,
             null,
             null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+
+    assertThat(mhdResponseBundle.getSuccess()).isTrue();
+    assertThat(mhdResponseBundle.getStatusMessage()).isNull();
+
+    assertThat(mhdResponseBundle.getBundle()).isEqualTo(DUMMY_BODY);
+  }
+
+  @Test
+  void epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost_stringDates() {
+    when(docRefClient.getServiceApi()).thenReturn(mock(DocumentReferenceApi.class));
+    when(docRefClient
+            .getServiceApi()
+            .epaMhdApiV1FhirDocumentReferenceSearchPost(
+                eq(KVNR),
+                eq(USER_AGENT),
+                isNull(),
+                eq(STATUS),
+                any(UUID.class),
+                eq(ACCEPT_FHIR_JSON),
+                eq(FORMAT),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(String.class),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(String.class),
+                any(String.class),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                any(String.class),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull(),
+                isNull()))
+        .thenReturn(Response.status(200).entity("DOCUMENT JSON").build());
+    var mhdResponseBundle =
+        mhdService.epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost(
+            KVNR,
+            null,
+            STATUS,
+            UUID.randomUUID(),
+            ACCEPT_FHIR_JSON,
+            FORMAT,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "2026-01-02",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "lt:2026-01-01",
+            "2026-01-02",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            "2026-01-02",
             null,
             null,
             null,

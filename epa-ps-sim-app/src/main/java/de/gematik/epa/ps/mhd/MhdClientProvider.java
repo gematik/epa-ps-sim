@@ -30,9 +30,11 @@ import de.gematik.epa.api.mhd_dev.client.DevReferenceApi;
 import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.mhd.MhdService;
 import de.gematik.epa.ps.config.EpaProxyConfiguration;
+import jakarta.ws.rs.core.MediaType;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -56,8 +58,12 @@ public class MhdClientProvider {
   }
 
   private <T> JaxRsClientWrapper<T> createClientWrapper(Class<T> apiClass) {
-    return new JaxRsClientWrapper<>(
-            mhdConfiguration.getServerUrl(), mhdConfiguration.getUserAgent(), apiClass)
-        .makeInsecureTlsClient();
+    var wrapper =
+        new JaxRsClientWrapper<>(
+                mhdConfiguration.getServerUrl(), mhdConfiguration.getUserAgent(), apiClass)
+            .makeInsecureTlsClient();
+    // todo msu consider try-res
+    WebClient.client(wrapper.getServiceApi()).type(MediaType.APPLICATION_FORM_URLENCODED);
+    return wrapper;
   }
 }

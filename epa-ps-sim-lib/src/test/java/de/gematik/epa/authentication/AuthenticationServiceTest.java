@@ -53,6 +53,9 @@ import de.gematik.epa.konnektor.SmbInformationProvider;
 import de.gematik.epa.unit.util.ResourceLoader;
 import de.gematik.epa.unit.util.TestDataFactory;
 import de.gematik.epa.utils.CertificateUtils;
+import de.gematik.epa.utils.HealthRecordProvider;
+import de.gematik.epa.utils.InsurantIdHolder;
+import de.gematik.epa.utils.TelematikIdHolder;
 import de.gematik.idp.client.AuthorizationCodeResult;
 import de.gematik.idp.client.IdpClient;
 import de.gematik.idp.client.IdpClientRuntimeException;
@@ -62,6 +65,8 @@ import java.util.function.UnaryOperator;
 import lombok.SneakyThrows;
 import oasis.names.tc.dss._1_0.core.schema.Base64Signature;
 import oasis.names.tc.dss._1_0.core.schema.SignatureObject;
+import org.apache.cxf.interceptor.Fault;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -80,6 +85,7 @@ class AuthenticationServiceTest {
       "https://localhost:8082/authz?client_id=ePA&response_type=code&redirect_uri=http%3A%2F%2Ftest-ps.gematik.de%2FePA&state=ABCVDFGHT564&code_challenge=IMevy8z9hyfFsDad6JM0E20MQ_jLInJ6GtE55sGyH3Y&code_challenge_method=S256&scope=openid%20epa&nonce=7721435277f5d0137b17ef8b835ca03cf09dc23926aa1766e4f8132433ff37d6";
   private final String userAgent = "PS_SIM_123";
   private final VauApi vauApiMock = mock(VauApi.class);
+  private final String defaultInsurantId = "X110499478";
   private AuthenticationService authenticationService;
 
   @BeforeEach
@@ -103,6 +109,17 @@ class AuthenticationServiceTest {
     when(vauApiJaxRsClientWrapper.getServiceApi()).thenReturn(vauApiMock);
 
     authenticationService.setCardAuthenticationService(cardAuthenticationService);
+
+    // default routing context so that /VAU-Status may be queried; individual tests for the
+    // missing-context scenarios override/clear this.
+    InsurantIdHolder.setInsurantId(defaultInsurantId);
+    HealthRecordProvider.addHealthRecord(defaultInsurantId, "https://localhost:8082");
+  }
+
+  @AfterEach
+  void tearDown() {
+    HealthRecordProvider.clearHealthRecord(defaultInsurantId);
+    InsurantIdHolder.clear();
   }
 
   @Test
@@ -623,7 +640,129 @@ class AuthenticationServiceTest {
     // then
     assertThat(result.success()).isFalse();
     assertThat(result.httpStatusCode()).isEqualTo(403);
-    assertThat(result.errorMessage()).isNotBlank();
+    assertThat(result.errorMessage()).contains("no x-target-fqdn routing context");
+
+    verify(idpClientBuilder, never()).build();
+    verify(authorizationSmcBApi, never()).getNonce(userAgent);
+  }
+
+  @Test
+  void loginShouldFailBecauseVauStatusReturnsUnexpectedStatusCode() {
+    // covers the generic (non-401/403) branch of handleVauStatusError
+    var telematikId = "2-883110000118994";
+    var mockVauStatus =
+        new VauStatus()
+            .vaUType("ePA")
+            .vaUVersion("1.0")
+            .userAuthentication(telematikId)
+            .keyID("devKeyId")
+            .connectionStart(String.valueOf(System.currentTimeMillis()));
+    var simulatedResponse = simulateInbound(Response.status(500).entity(mockVauStatus).build());
+    when(vauApiMock.getVauStatus(userAgent)).thenReturn(simulatedResponse);
+
+    // when
+    final var result = authenticationService.login(telematikId, "FQDN");
+
+    // then
+    assertThat(result.success()).isFalse();
+    assertThat(result.httpStatusCode()).isEqualTo(500);
+    assertThat(result.errorMessage()).contains("VAU-Status request failed with status code: 500");
+
+    verify(idpClientBuilder, never()).build();
+    verify(authorizationSmcBApi, never()).getNonce(userAgent);
+  }
+
+  @Test
+  void loginShouldFailBecauseVauStatusIndicatesDifferentAuthenticatedTelematikId() {
+    // covers the mismatch branch of evaluateVauStatus: VAU-Status returns 200 with an
+    // already authenticated session, but for a *different* telematikId than requested
+    var requestedTelematikId = "2-883110000118994";
+    var authenticatedTelematikId = "2-999999999999999";
+    var mockVauStatus =
+        new VauStatus()
+            .vaUType("ePA")
+            .vaUVersion("1.0")
+            .userAuthentication(authenticatedTelematikId)
+            .keyID("devKeyId")
+            .connectionStart(String.valueOf(System.currentTimeMillis()));
+    var simulatedResponse = simulateInbound(Response.status(200).entity(mockVauStatus).build());
+    when(vauApiMock.getVauStatus(userAgent)).thenReturn(simulatedResponse);
+
+    // when
+    final var result = authenticationService.login(requestedTelematikId, "FQDN");
+
+    // then
+    assertThat(result.success()).isFalse();
+    assertThat(result.httpStatusCode()).isEqualTo(403);
+    assertThat(result.errorMessage()).contains("TelematikId does not match");
+    // the authenticated (possibly foreign) telematikId must not be leaked in the error message
+    assertThat(result.errorMessage()).doesNotContain(authenticatedTelematikId);
+
+    verify(idpClientBuilder, never()).build();
+    verify(authorizationSmcBApi, never()).getNonce(userAgent);
+  }
+
+  @Test
+  void loginShouldNotSendVauStatusRequestWithoutXTargetFqdnWhenInsurantIdIsSet() {
+    // given: an insurantId is set (see setUp), but no health record/x-target-fqdn is resolvable
+    // for it -> the JaxRsOutgoingRequestInterceptor blocks the outbound VAU-Status request and
+    // throws a Fault instead of letting it go out on the wire (see
+    // JaxRsOutgoingRequestInterceptorTest#shouldBlockRequestWhenNoHealthRecordRegisteredForInsurantId).
+    assertThat(InsurantIdHolder.getInsurantId()).isEqualTo(defaultInsurantId);
+    HealthRecordProvider.clearHealthRecord(defaultInsurantId);
+    var telematikId = "2-883110000118994";
+    when(vauApiMock.getVauStatus(userAgent))
+        .thenThrow(
+            new Fault(
+                new IllegalStateException(
+                    "Blocking outbound request to [VAU-Status]: x-target-fqdn header is missing."
+                        + " The request will NOT be sent.")));
+
+    // when
+    final var result = authenticationService.login(telematikId, "FQDN");
+
+    // then: login fails cleanly with the root cause communicated, and no normal login flow
+    // (nonce/authorization/idp) is triggered after the blocked VAU-Status request
+    assertThat(result.success()).isFalse();
+    assertThat(result.httpStatusCode()).isEqualTo(400);
+    assertThat(result.errorMessage()).contains("x-target-fqdn");
+    assertThat(result.errorMessage()).contains(defaultInsurantId);
+
+    verify(idpClientBuilder, never()).build();
+    verify(authorizationSmcBApi, never()).getNonce(userAgent);
+    verify(authorizationSmcBApi, never()).sendAuthorizationRequestSC(anyString());
+    verify(authorizationSmcBApi, never()).sendAuthCodeSC(any(), any());
+  }
+
+  @Test
+  void loginShouldPopulateTelematikIdHolderSoThatInterceptorCanAddXActorIdHeader() {
+    // given: AuthenticationService.login() must populate TelematikIdHolder with the telematikId
+    // before the VAU-Status request is issued, since JaxRsOutgoingRequestInterceptor reads this
+    // holder to add the x-actorId header to every outbound request (see
+    // JaxRsOutgoingRequestInterceptorTest#shouldAddTelematikIdToHeadersWhenPresent).
+    var telematikId = "2-883110000118994";
+    when(vauApiMock.getVauStatus(userAgent))
+        .thenAnswer(
+            invocation -> {
+              assertThat(TelematikIdHolder.getTelematikId()).isEqualTo(telematikId);
+              return simulateInbound(
+                  Response.status(200)
+                      .entity(
+                          new VauStatus()
+                              .vaUType("ePA")
+                              .vaUVersion("1.0")
+                              .userAuthentication(telematikId)
+                              .keyID("devKeyId")
+                              .connectionStart(String.valueOf(System.currentTimeMillis())))
+                      .build());
+            });
+
+    // when
+    final var result = authenticationService.login(telematikId, "FQDN");
+
+    // then
+    assertThat(result.success()).isTrue();
+    assertThat(TelematikIdHolder.getTelematikId()).isEqualTo(telematikId);
   }
 
   private void getMockVauStatusResponseAuthenticationNone() {

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "BouncyCastle fixed 1.84 (1.85+ drops KYBER required by lib-vau)",
+      "matchPackageNames": [
+        "org.bouncycastle:*"
+      ],
+      "enabled": false
+    }
+  ]
+}

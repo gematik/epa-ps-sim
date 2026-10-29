@@ -257,6 +257,66 @@ class InformationServiceTest {
   }
 
   @Test
+  void shouldSucceedWhenFirstAsThrowsAndSecondAsReturns204() {
+    var throwingClient = mock(JaxRsClientWrapper.class);
+    var throwingApi = mock(AccountInformationApi.class);
+    when(throwingClient.getServiceApi()).thenReturn(throwingApi);
+    when(throwingClient.getUserAgent()).thenReturn(PS_SIM_AGENT);
+    when(throwingClient.getUrl()).thenReturn("https://as-1.example.com:443");
+    when(throwingApi.getRecordStatus(anyString(), anyString()))
+        .thenThrow(new RuntimeException("TLS handshake failure"));
+
+    var url = "http://as-2.example.com:8000/fqdn";
+    when(accountInformationClient.getUrl()).thenReturn(url);
+    when(accountInformationClient.getServiceApi().getRecordStatus(anyString(), anyString()))
+        .thenReturn(Response.status(204).build());
+
+    var service =
+        new InformationService(
+            List.of(throwingClient, accountInformationClient),
+            consentDecisionsClientWrapper,
+            userExperienceClientWrapper);
+
+    var result = service.getRecordStatus("222333");
+
+    assertThat(result.getSuccess()).isTrue();
+    assertThat(result.getFqdn()).isEqualTo(url);
+  }
+
+  @Test
+  void shouldReturnCombinedNoHealthRecordMessageWhenAllAsFail() {
+    var throwingClient1 = mock(JaxRsClientWrapper.class);
+    var throwingApi1 = mock(AccountInformationApi.class);
+    when(throwingClient1.getServiceApi()).thenReturn(throwingApi1);
+    when(throwingClient1.getUserAgent()).thenReturn(PS_SIM_AGENT);
+    when(throwingClient1.getUrl()).thenReturn("https://as-1.example.com:443");
+    when(throwingApi1.getRecordStatus(anyString(), anyString()))
+        .thenThrow(new RuntimeException("TLS handshake failure"));
+
+    var throwingClient2 = mock(JaxRsClientWrapper.class);
+    var throwingApi2 = mock(AccountInformationApi.class);
+    when(throwingClient2.getServiceApi()).thenReturn(throwingApi2);
+    when(throwingClient2.getUserAgent()).thenReturn(PS_SIM_AGENT);
+    when(throwingClient2.getUrl()).thenReturn("https://as-2.example.com:8443");
+    when(throwingApi2.getRecordStatus(anyString(), anyString()))
+        .thenThrow(new RuntimeException("Connection timed out"));
+
+    var service =
+        new InformationService(
+            List.of(throwingClient1, throwingClient2),
+            consentDecisionsClientWrapper,
+            userExperienceClientWrapper);
+
+    var result = service.getRecordStatus("444555");
+
+    assertThat(result.getSuccess()).isFalse();
+    assertThat(result.getStatusMessage())
+        .isEqualTo(
+            NO_RECORD_FOUND
+                + " oder Fehler im AS<as-1.example.com:443>, AS<as-2.example.com:8443>");
+  }
+
+  @Test
   void shouldSetFqdn() {
     final SetFqdnRequestDTO requestDTO =
         new SetFqdnRequestDTO().fqdn("http://localhost:8000/fqdn").insurantId("Z1234");

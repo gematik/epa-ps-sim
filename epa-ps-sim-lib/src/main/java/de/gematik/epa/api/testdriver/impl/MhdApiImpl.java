@@ -30,7 +30,6 @@ import de.gematik.epa.api.testdriver.mhd.dto.ResponseDTO;
 import de.gematik.epa.mhd.MhdService;
 import java.io.File;
 import java.net.URI;
-import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -54,7 +53,7 @@ public class MhdApiImpl implements MhdReferenceApi {
   }
 
   @Override
-  public MhdResponseBundle epaTestdriverApiV1MdhFhirDocumentReferenceGet(
+  public MhdResponseBundle epaTestdriverApiV1MhdFhirDocumentReferenceGet(
       String xInsurantid,
       String patientIdentifier,
       String status,
@@ -65,14 +64,14 @@ public class MhdApiImpl implements MhdReferenceApi {
       String total,
       String id,
       String content,
-      LocalDate lastUpdated,
+      String lastUpdated,
       String authorGiven,
       String authorFamily,
       String authorOrganizationName,
       String category,
       String contentType,
-      LocalDate creation,
-      LocalDate date,
+      String creation,
+      String date,
       String description,
       String event,
       String facility,
@@ -80,12 +79,13 @@ public class MhdApiImpl implements MhdReferenceApi {
       String identifier,
       String language,
       URI patient,
-      LocalDate period,
+      String period,
       URI related,
       String securityLabel,
       String setting,
       String title,
-      String type) {
+      String type,
+      String unsupported) {
     return mhdService.epaMhdClientApiV1MdhFhirDocumentReferenceGet(
         xInsurantid,
         patientIdentifier,
@@ -118,11 +118,12 @@ public class MhdApiImpl implements MhdReferenceApi {
         securityLabel,
         setting,
         title,
-        type);
+        type,
+        unsupported);
   }
 
   @Override
-  public MhdResponseBundle epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost(
+  public MhdResponseBundle epaTestdriverApiV1MhdFhirDocumentReferenceSearchGet(
       String xInsurantid,
       String patientIdentifier,
       String status,
@@ -133,14 +134,14 @@ public class MhdApiImpl implements MhdReferenceApi {
       String total,
       String id,
       String content,
-      LocalDate lastUpdated,
+      String lastUpdated,
       String authorGiven,
       String authorFamily,
       String authorOrganizationName,
       String category,
       String contentType,
-      LocalDate creation,
-      LocalDate date,
+      String creation,
+      String date,
       String description,
       String event,
       String facility,
@@ -148,12 +149,13 @@ public class MhdApiImpl implements MhdReferenceApi {
       String identifier,
       String language,
       URI patient,
-      LocalDate period,
+      String period,
       URI related,
       String securityLabel,
       String setting,
       String title,
-      String type) {
+      String type,
+      String unsupported) {
     return mhdService.epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost(
         xInsurantid,
         patientIdentifier,
@@ -186,11 +188,82 @@ public class MhdApiImpl implements MhdReferenceApi {
         securityLabel,
         setting,
         title,
-        type);
+        type,
+        unsupported);
   }
 
   @Override
-  public ResponseDTO epaTestdriverApiV1MdhFhirDocumentReferenceIdGet(
+  public MhdResponseBundle epaTestdriverApiV1MhdFhirDocumentReferenceSearchPost(
+      String xInsurantid,
+      String patientIdentifier,
+      String status,
+      String accept,
+      String format,
+      String count,
+      Integer offset,
+      String total,
+      String id,
+      String content,
+      String lastUpdated,
+      String authorGiven,
+      String authorFamily,
+      String authorOrganizationName,
+      String category,
+      String contentType,
+      String creation,
+      String date,
+      String description,
+      String event,
+      String facility,
+      String format2,
+      String identifier,
+      String language,
+      URI patient,
+      String period,
+      URI related,
+      String securityLabel,
+      String setting,
+      String title,
+      String type,
+      String unsupported) {
+    return mhdService.epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost(
+        xInsurantid,
+        patientIdentifier,
+        status,
+        UUID.randomUUID(),
+        accept,
+        format,
+        count,
+        offset,
+        total,
+        id,
+        content,
+        lastUpdated,
+        authorGiven,
+        authorFamily,
+        authorOrganizationName,
+        category,
+        contentType,
+        creation,
+        date,
+        description,
+        event,
+        facility,
+        format2,
+        identifier,
+        language,
+        patient,
+        period,
+        related,
+        securityLabel,
+        setting,
+        title,
+        type,
+        unsupported);
+  }
+
+  @Override
+  public ResponseDTO epaTestdriverApiV1MhdFhirDocumentReferenceIdGet(
       String xInsurantid, String id, String accept, String format) {
     return mhdService.epaMhdApiV1FhirDocumentReferenceIdGet(
         xInsurantid, id, UUID.randomUUID(), accept, format);

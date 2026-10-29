@@ -25,9 +25,6 @@
 package de.gematik.epa.unit.util;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.epa.api.testdriver.dto.request.AppendDocumentsRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.FindRequestDTO;
 import de.gematik.epa.api.testdriver.dto.request.PutDocumentsRequestDTO;
@@ -47,7 +44,9 @@ import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.io.FileUtils;
+import org.openapitools.jackson.nullable.JsonNullableJackson3Module;
 import telematik.ws.conn.servicedirectory.xsd.v3_1.ConnectorServices;
+import tools.jackson.databind.json.JsonMapper;
 
 @UtilityClass
 @Accessors(fluent = true)
@@ -90,7 +89,7 @@ public class ResourceLoader {
 
   public static final String CONNECTOR_SDS_PATH = RESPONSE_PATH + "connector.sds";
 
-  private static ObjectMapper MAPPER;
+  private static JsonMapper MAPPER;
 
   @Getter(lazy = true)
   private static final PutDocumentsRequestDTO putDocumentWithFolderMetadataRequest =
@@ -144,15 +143,16 @@ public class ResourceLoader {
   private static final ConnectorServices connectorServices =
       XmlUtils.unmarshal(ConnectorServices.class, readBytesFromResource(CONNECTOR_SDS_PATH));
 
-  public static ObjectMapper getObjectMapper() {
+  public static JsonMapper getJsonMapper() {
     return Optional.ofNullable(MAPPER)
         .orElseGet(
             () -> {
               MAPPER =
-                  new ObjectMapper()
-                      .registerModule(new JavaTimeModule())
-                      .setSerializationInclusion(Include.NON_ABSENT)
-                      .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+                  JsonMapper.builder()
+                      .changeDefaultPropertyInclusion(
+                          inclusion -> inclusion.withValueInclusion(Include.NON_ABSENT))
+                      .addModule(new JsonNullableJackson3Module())
+                      .build();
               return MAPPER;
             });
   }
@@ -164,7 +164,7 @@ public class ResourceLoader {
   @SneakyThrows
   public static <T> T loadDtoFromJsonFile(final Class<T> dtoClass, final String path) {
     final String fileContent = readFileContentFromResource(path);
-    return getObjectMapper().readValue(fileContent, dtoClass);
+    return getJsonMapper().readValue(fileContent, dtoClass);
   }
 
   public static String readFileContentFromResource(final String filePath) throws IOException {

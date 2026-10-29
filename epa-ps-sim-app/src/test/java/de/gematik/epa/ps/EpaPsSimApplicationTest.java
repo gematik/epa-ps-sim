@@ -26,7 +26,6 @@ package de.gematik.epa.ps;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import de.gematik.epa.config.DefaultdataProvider;
 import de.gematik.epa.document.cxf.DocumentInterfacesCxfImpl;
 import de.gematik.epa.fhir.client.FhirClient;
@@ -42,6 +41,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 @SpringBootTest
 @ActiveProfiles("test")
