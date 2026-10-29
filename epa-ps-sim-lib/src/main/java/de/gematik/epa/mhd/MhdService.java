@@ -30,34 +30,34 @@ import de.gematik.epa.api.mhd_dev.client.DevReferenceApi;
 import de.gematik.epa.api.testdriver.mhd.dto.MhdResponseBundle;
 import de.gematik.epa.api.testdriver.mhd.dto.ResponseDTO;
 import de.gematik.epa.client.JaxRsClientWrapper;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.net.URI;
-import java.time.LocalDate;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public record MhdService(
     String useragent,
-    JaxRsClientWrapper<DocumentReferenceApi> docRefClient,
-    JaxRsClientWrapper<RetrieveDocumentApi> retrieveDocClient,
-    JaxRsClientWrapper<DevReferenceApi> homeRefClient) {
+    JaxRsClientWrapper<DocumentReferenceApi> documentReferenceApi,
+    JaxRsClientWrapper<RetrieveDocumentApi> retrieveDocumentApi,
+    JaxRsClientWrapper<DevReferenceApi> devReferenceApi) {
 
   public ResponseDTO epaMhdClientApiV1MhdSetupGet() {
     log.warn("!!! epaMhdClientApiV1MhdSetupGet");
-    return tryBasicResponse(homeRefClient.getServiceApi().epaMhdSetupGet());
+    return tryBasicResponse(devReferenceApi.getServiceApi().epaMhdSetupGet());
   }
 
   public ResponseDTO epaMhdClientApiV1MhdCleanupGet() {
     log.warn("!!! epaMhdClientApiV1MhdCleanupGet");
-    return tryBasicResponse(homeRefClient.getServiceApi().epaMhdCleanupGet());
+    return tryBasicResponse(devReferenceApi.getServiceApi().epaMhdCleanupGet());
   }
 
   public ResponseDTO epaMhdApiV1FhirDocumentReferenceIdGet(
       String xInsurantid, String id, UUID xRequestID, String accept, String format) {
     return tryBasicResponse(
-        docRefClient
+        documentReferenceApi
             .getServiceApi()
             .epaMhdApiV1FhirDocumentReferenceIdGet(
                 xInsurantid, useragent, id, xRequestID, accept, format));
@@ -70,7 +70,7 @@ public record MhdService(
       UUID xRequestID,
       String accept) {
     try (var response =
-        retrieveDocClient
+        retrieveDocumentApi
             .getServiceApi()
             .retrieveDocumentMHDSvc(
                 xInsurantid,
@@ -79,10 +79,16 @@ public record MhdService(
                 fileExtension,
                 xRequestID,
                 accept)) {
-      if (response.getStatus() == 200) {
+      int httpCode = response.getStatus();
+      if (httpCode == 200) {
         return response.readEntity(File.class);
       }
-      return null;
+      var contentType = response.getHeaderString("Content-Type");
+      throw new WebApplicationException(
+          Response.status(httpCode)
+              .entity(response.readEntity(String.class))
+              .type(contentType != null ? contentType : "application/json")
+              .build());
     }
   }
 
@@ -99,14 +105,14 @@ public record MhdService(
       String total,
       String id,
       String content,
-      LocalDate lastUpdated,
+      String lastUpdated,
       String authorGiven,
       String authorFamily,
       String authorOrganizationName,
       String category,
       String contentType,
-      LocalDate creation,
-      LocalDate date,
+      String creation,
+      String date,
       String description,
       String event,
       String facility,
@@ -114,15 +120,16 @@ public record MhdService(
       String identifier,
       String language,
       URI patient,
-      LocalDate period,
+      String period,
       URI related,
       String securityLabel,
       String setting,
       String title,
-      String type) {
+      String type,
+      String unsupported) {
     log.warn("!!! epaMhdClientApiV1MdhFhirDocumentReferenceGet");
     return tryMhdResponseBundle(
-        docRefClient
+        documentReferenceApi
             .getServiceApi()
             .epaMhdApiV1FhirDocumentReferenceGet(
                 xInsurantid,
@@ -157,7 +164,8 @@ public record MhdService(
                 securityLabel,
                 setting,
                 title,
-                type));
+                type,
+                unsupported));
   }
 
   // endregion
@@ -175,14 +183,14 @@ public record MhdService(
       String total,
       String id,
       String content,
-      LocalDate lastUpdated,
+      String lastUpdated,
       String authorGiven,
       String authorFamily,
       String authorOrganizationName,
       String category,
       String contentType,
-      LocalDate creation,
-      LocalDate date,
+      String creation,
+      String date,
       String description,
       String event,
       String facility,
@@ -190,15 +198,16 @@ public record MhdService(
       String identifier,
       String language,
       URI patient,
-      LocalDate period,
+      String period,
       URI related,
       String securityLabel,
       String setting,
       String title,
-      String type) {
+      String type,
+      String unsupported) {
     log.warn("!!! epaTestdriverApiV1MdhFhirDocumentReferenceSearchPost");
     return tryMhdResponseBundle(
-        docRefClient
+        documentReferenceApi
             .getServiceApi()
             .epaMhdApiV1FhirDocumentReferenceSearchPost(
                 xInsurantid,
@@ -233,7 +242,8 @@ public record MhdService(
                 securityLabel,
                 setting,
                 title,
-                type));
+                type,
+                unsupported));
   }
 
   // endregion

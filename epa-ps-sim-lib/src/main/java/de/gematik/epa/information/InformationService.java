@@ -33,8 +33,10 @@ import de.gematik.epa.api.testdriver.information.dto.*;
 import de.gematik.epa.client.JaxRsClientWrapper;
 import de.gematik.epa.utils.HealthRecordProvider;
 import jakarta.ws.rs.core.Response;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -71,8 +73,30 @@ public class InformationService {
     result.statusMessage(statusMessage);
   }
 
+  /**
+   * Derives a human-readable identifier (host:port) for an AS (Aktensystem) from its configured
+   * server URL, e.g. used to point out which AS could not be reached in an error message.
+   */
+  private static String asIdentifierOf(final JaxRsClientWrapper<AccountInformationApi> client) {
+    try {
+      final URI uri = URI.create(client.getUrl());
+      return uri.getPort() > 0 ? uri.getHost() + ":" + uri.getPort() : uri.getHost();
+    } catch (Exception e) {
+      return client.getUrl();
+    }
+  }
+
+  private static String noHealthRecordOrAsErrorMessage(final List<String> failedAsIdentifiers) {
+    return NO_RECORD_FOUND
+        + " oder Fehler im "
+        + failedAsIdentifiers.stream()
+            .map(identifier -> "AS<" + identifier + ">")
+            .collect(Collectors.joining(", "));
+  }
+
   public GetRecordStatusResponseDTO getRecordStatus(String insurantId) {
     var result = new GetRecordStatusResponseDTO().success(false);
+    final List<String> failedAsIdentifiers = new ArrayList<>();
     for (JaxRsClientWrapper<AccountInformationApi> client : accountInformationApiClients) {
       try {
         final Response response =
@@ -98,9 +122,16 @@ public class InformationService {
         }
 
       } catch (Exception e) {
-        log.error("Error while getting record status, {}", e.getMessage());
+        final String asIdentifier = asIdentifierOf(client);
+        log.error(
+            "Error while getting record status from AS<{}>, {}", asIdentifier, e.getMessage());
+        failedAsIdentifiers.add(asIdentifier);
         setStatusMessage(result.success(false), UNKNOWN_ERROR);
       }
+    }
+
+    if (!failedAsIdentifiers.isEmpty()) {
+      result.setStatusMessage(noHealthRecordOrAsErrorMessage(failedAsIdentifiers));
     }
 
     return result;

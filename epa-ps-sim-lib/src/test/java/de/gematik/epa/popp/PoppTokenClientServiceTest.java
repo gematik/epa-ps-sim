@@ -59,6 +59,7 @@ class PoppTokenClientServiceTest {
     var testDriverRequest = new PoppClientRequestDto();
     testDriverRequest.setCommunicationType(CONTACT_STANDARD);
     testDriverRequest.setClientSessionId("session-123");
+    testDriverRequest.setPatientId("X123456789");
 
     var poppApi = mock(PoppTokenClientApi.class);
     var mockResponse = mock(Response.class);
@@ -81,6 +82,7 @@ class PoppTokenClientServiceTest {
       assertThat(capturedRequest.getCommunicationType())
           .isEqualTo(PoppClientRequest.CommunicationTypeEnum.CONTACT_STANDARD.value());
       assertThat(capturedRequest.getClientSessionId()).isEqualTo("session-123");
+      assertThat(capturedRequest.getPatientId()).isEqualTo("X123456789");
     }
   }
 

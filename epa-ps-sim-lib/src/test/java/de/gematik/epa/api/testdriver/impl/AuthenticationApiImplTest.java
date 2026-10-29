@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import de.gematik.epa.api.testdriver.authentication.dto.LoginResponseDTO;
 import de.gematik.epa.authentication.AuthenticationService;
 import de.gematik.epa.authentication.LoginResult;
+import de.gematik.epa.utils.InsurantIdHolder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -77,5 +78,23 @@ class AuthenticationApiImplTest {
     assertThat(result.getTelematikId()).isEqualTo(telematikId);
     assertThat(result.getSuccess()).isFalse();
     assertThat(result.getStatusMessage()).isEqualTo(loginResult.errorMessage());
+  }
+
+  @Test
+  void loginShouldSetRecordIdAsInsurantContextBeforeAuthenticationServiceLogin() {
+    var telematikId = "testTelematikId";
+    var fqdn = "<unused parameters>";
+    var recordId = "X110499478";
+
+    when(authenticationService.login(telematikId, fqdn))
+        .thenAnswer(
+            invocation -> {
+              assertThat(InsurantIdHolder.getInsurantId()).isEqualTo(recordId);
+              return new LoginResult().success(true);
+            });
+
+    LoginResponseDTO result = authenticationApiImpl.login(telematikId, recordId, fqdn);
+
+    assertThat(result.getSuccess()).isTrue();
   }
 }

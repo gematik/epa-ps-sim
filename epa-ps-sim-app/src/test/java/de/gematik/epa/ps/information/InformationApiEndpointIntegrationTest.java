@@ -31,7 +31,6 @@ import static de.gematik.epa.information.InformationService.UNKNOWN_ERROR;
 import static de.gematik.epa.unit.util.TestDataFactory.CONTENT_TYPE_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.epa.api.information.client.dto.ConsentDecisionsResponseType;
 import de.gematik.epa.api.information.client.dto.ErrorType;
 import de.gematik.epa.api.information.client.dto.GetConsentDecisionInformation200Response;
@@ -47,6 +46,7 @@ import lombok.SneakyThrows;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.databind.ObjectMapper;
 
 class InformationApiEndpointIntegrationTest extends AbstractIntegrationTest {
 

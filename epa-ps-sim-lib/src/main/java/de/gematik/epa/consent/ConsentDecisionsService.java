@@ -25,10 +25,7 @@
 package de.gematik.epa.consent;
 
 import de.gematik.epa.api.consent_decision.client.ConsentDecisionsApi;
-import de.gematik.epa.api.consent_decision.client.dto.ConsentDecisionType;
-import de.gematik.epa.api.consent_decision.client.dto.ConsentDecisionsResponseType;
-import de.gematik.epa.api.consent_decision.client.dto.ErrorType;
-import de.gematik.epa.api.consent_decision.client.dto.UpdateConsentDecision200Response;
+import de.gematik.epa.api.consent_decision.client.dto.*;
 import de.gematik.epa.api.testdriver.consentDecision.dto.ConsentDecisionsResponseTypeDTO;
 import de.gematik.epa.api.testdriver.consentDecision.dto.GetConsentDecisionsResponseDTO;
 import de.gematik.epa.api.testdriver.consentDecision.dto.PutConsentDecisionRequestDTO;
@@ -68,8 +65,8 @@ public class ConsentDecisionsService {
       List<ConsentDecisionsResponseTypeDTO> consentDecisionsDTO = new ArrayList<>();
       switch (response.getStatus()) {
         case 200 -> {
-          final UpdateConsentDecision200Response consents =
-              response.readEntity(UpdateConsentDecision200Response.class);
+          final GetConsentDecisionsResponse consents =
+              response.readEntity(GetConsentDecisionsResponse.class);
           for (final ConsentDecisionsResponseType consent : consents.getData()) {
             final ConsentDecisionsResponseTypeDTO consentDecisionsResponseType =
                 new ConsentDecisionsResponseTypeDTO();

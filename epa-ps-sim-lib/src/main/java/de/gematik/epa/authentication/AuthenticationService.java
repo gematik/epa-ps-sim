@@ -38,6 +38,7 @@ import de.gematik.epa.konnektor.KonnektorContextProvider;
 import de.gematik.epa.konnektor.KonnektorInterfaceAssembly;
 import de.gematik.epa.konnektor.SmbInformationProvider;
 import de.gematik.epa.konnektor.client.AuthSignatureServiceClient;
+import de.gematik.epa.utils.InsurantIdHolder;
 import de.gematik.epa.utils.TelematikIdHolder;
 import de.gematik.idp.client.AuthorizationCodeResult;
 import de.gematik.idp.client.IdpClient;
@@ -59,6 +60,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.cxf.interceptor.Fault;
 import org.jose4j.jwt.JwtClaims;
 import telematik.ws.conn.cardservice.xsd.v8_1.CardInfoType;
 
@@ -71,6 +73,8 @@ public class AuthenticationService {
       "Error while getting authorization code from IDP";
   protected static final String ERROR_WHILE_PARSING_REDIRECT_URL =
       "Error while parsing redirectUrl";
+  protected static final String ERROR_NO_ROUTING_CONTEXT_FOR_VAU_STATUS =
+      "Cannot query VAU-Status: no x-target-fqdn routing context available for insurantId ";
 
   private static final List<Integer> AUTHZ_SERVER_ERROR_CODES = List.of(400, 403, 409, 500);
   private final AuthorizationSmcBApi authorizationSmcBApi;
@@ -108,39 +112,104 @@ public class AuthenticationService {
 
   public LoginResult login(final String telematikId, final String fqdn) {
     // 0. check /VAU-Status for user-session
-    // 1. auhtzclient.getNonce() (A_24881)
+    // 1. authzclient.getNonce() (A_24881)
     // 2. authzclient.sendAuthzRequest() -> liefert u.a. , scope, codecChallenge, clientID (A_24760)
     // 3. idpclient.login() (A_24760)
     // 4. sign nonce (A_24883)
     // 5. authzclient.sendAuthCode() (A_20668)
 
     // else -> continue
+
     final var loginResult = new LoginResult().telematikId(telematikId).fqdn(fqdn).success(true);
     TelematikIdHolder.setTelematikId(telematikId);
 
     // 0. check /VAU-Status for user-session
-    final Response vauResponse =
-        vauApiJaxRsClientWrapper.getServiceApi().getVauStatus(this.authServiceUserAgent);
-    int vauResponseStatus = vauResponse.getStatus();
-    if (vauResponseStatus == 200) {
-      var vauStatus = vauResponse.readEntity(VauStatus.class);
-      boolean authNotNone = vauStatus.getUserAuthentication().equalsIgnoreCase("none");
-      boolean matchingTelematikId = vauStatus.getUserAuthentication().contains(telematikId);
-      if (!authNotNone && matchingTelematikId) {
-        // if "User-Authentication" != "None" && like telematikId -> no login required
-        log.info(
-            "VAU-Status, no login required, matching telematikID: {}",
-            vauStatus.getUserAuthentication());
-        return loginResult.httpStatusCode(200);
-      }
-    } else {
-      log.warn("Unexpected error while getting VAU-Status: {}", vauResponse);
-      return loginResult
-          .httpStatusCode(vauResponseStatus)
-          .success(false)
-          .errorMessage("Unexpected error while getting VAU-Status");
+    final LoginResult existingSessionResult = checkExistingSession(telematikId, loginResult);
+    if (existingSessionResult != null) {
+      return existingSessionResult;
     }
 
+    return performLoginFlow(telematikId, loginResult);
+  }
+
+  /**
+   * Checks the VAU-Status for an existing, matching user-session.
+   *
+   * @return a completed {@link LoginResult} if the login process should terminate here already
+   *     (existing valid session found, mismatch detected, or the VAU-Status request failed / could
+   *     not be routed), or {@code null} if the regular login flow (steps 1-5) should continue
+   *     because no session exists yet.
+   */
+  private LoginResult checkExistingSession(
+      final String telematikId, final LoginResult loginResult) {
+    // The outgoing request interceptor blocks this call (throws a Fault) when no x-target-fqdn
+    // routing context can be resolved for the current insurantId.
+    final Response vauResponse;
+    try {
+      vauResponse =
+          vauApiJaxRsClientWrapper.getServiceApi().getVauStatus(this.authServiceUserAgent);
+    } catch (final Fault fault) {
+      final String errorMessage =
+          ERROR_NO_ROUTING_CONTEXT_FOR_VAU_STATUS + InsurantIdHolder.getInsurantId();
+      log.warn(errorMessage, fault);
+      return loginResult.success(false).httpStatusCode(400).errorMessage(errorMessage);
+    }
+
+    final int vauResponseStatus = vauResponse.getStatus();
+    if (vauResponseStatus != 200) {
+      return handleVauStatusError(vauResponseStatus, loginResult);
+    }
+
+    return evaluateVauStatus(vauResponse.readEntity(VauStatus.class), telematikId, loginResult);
+  }
+
+  /**
+   * Evaluates a successfully retrieved VAU-Status against the requested telematikId.
+   *
+   * @return a completed {@link LoginResult} if there is already an authenticated session (matching
+   *     or mismatching), or {@code null} if no session exists yet ("None") and the regular login
+   *     flow should continue.
+   */
+  private LoginResult evaluateVauStatus(
+      final VauStatus vauStatus, final String telematikId, final LoginResult loginResult) {
+    final boolean authenticated = !vauStatus.getUserAuthentication().equalsIgnoreCase("none");
+    if (!authenticated) {
+      // no existing session -> continue with the regular login flow
+      return null;
+    }
+
+    final boolean matchingTelematikId = vauStatus.getUserAuthentication().contains(telematikId);
+    if (matchingTelematikId) {
+      // if "User-Authentication" != "None" && like telematikId -> no login required
+      log.info(
+          "VAU-Status, no login required, matching telematikID: {}",
+          vauStatus.getUserAuthentication());
+      return loginResult.httpStatusCode(200);
+    }
+
+    log.warn("TelematikId does not match the authenticated user in VAU-Status");
+    return loginResult
+        .httpStatusCode(403)
+        .success(false)
+        .errorMessage("TelematikId does not match the authenticated user in VAU-Status.");
+  }
+
+  private LoginResult handleVauStatusError(
+      final int vauResponseStatus, final LoginResult loginResult) {
+    final String warningMessage;
+    if (vauResponseStatus == 401 || vauResponseStatus == 403) {
+      warningMessage = ERROR_NO_ROUTING_CONTEXT_FOR_VAU_STATUS;
+    } else {
+      warningMessage = "VAU-Status request failed with status code: " + vauResponseStatus;
+    }
+    log.warn(warningMessage);
+    return loginResult
+        .httpStatusCode(vauResponseStatus)
+        .success(false)
+        .errorMessage(warningMessage);
+  }
+
+  private LoginResult performLoginFlow(final String telematikId, final LoginResult loginResult) {
     // 1. A_24881
     fetchNonce(loginResult);
     if (!loginResult.success()) {

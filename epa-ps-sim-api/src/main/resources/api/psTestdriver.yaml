@@ -308,7 +308,7 @@ components:
           description: Forget all data associated with the given KVNRs.
     kvnr:
       type: string
-      pattern: '^[A-Z][0-9]{19-30}$'
+      pattern: '^[A-Z]{1}\d{9}$'
       description: Krankenversicherungsnummer (KVNR)
     eml-type:
       type: string

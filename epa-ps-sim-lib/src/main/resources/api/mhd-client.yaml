@@ -93,7 +93,6 @@ paths:
           required: false
           schema:
             type: string
-            format: date
           description: Änderungszeitpunkt der DocumentReference
         - name: author.given
           in: query
@@ -134,14 +133,12 @@ paths:
           required: false
           schema:
             type: string
-            format: date
           description: Erstellungszeitpunkt des Dokuments auf Basis von DocumentReference.content.attachment.creation
         - name: date
           in: query
           required: false
           schema:
             type: string
-            format: date
           description: Erstellungszeitpunkt der DocumentReference
         - name: description
           in: query
@@ -200,7 +197,6 @@ paths:
           required: false
           schema:
             type: string
-            format: date
           description: Zeitraum des dokumentierenden Ereignisses auf Basis von DocumentReference.context.period
         - name: related
           in: query
@@ -241,6 +237,12 @@ paths:
           schema:
             type: string
           description: Art des Dokuments auf Basis von DocumentReference.type
+        - name: unsupported
+          in: query
+          required: false
+          schema:
+            type: string
+          description: an unsupported search parameter, unspecified by the documentation
       responses:
         '200':
           description: Search successful
@@ -423,7 +425,6 @@ paths:
           required: false
           schema:
             type: string
-            format: date
           description: Änderungszeitpunkt der DocumentReference
         - name: author.given
           in: query
@@ -464,14 +465,12 @@ paths:
           required: false
           schema:
             type: string
-            format: date
           description: Erstellungszeitpunkt des Dokuments auf Basis von DocumentReference.content.attachment.creation
         - name: date
           in: query
           required: false
           schema:
             type: string
-            format: date
           description: Erstellungszeitpunkt der DocumentReference
         - name: description
           in: query
@@ -530,7 +529,6 @@ paths:
           required: false
           schema:
             type: string
-            format: date
           description: Zeitraum des dokumentierenden Ereignisses auf Basis von DocumentReference.context.period
         - name: related
           in: query
@@ -571,6 +569,12 @@ paths:
           schema:
             type: string
           description: Art des Dokuments auf Basis von DocumentReference.type
+        - name: unsupported
+          in: query
+          required: false
+          schema:
+            type: string
+          description: an unsupported search parameter, unspecified by the documentation
       responses:
         '200':
           description: Search successful

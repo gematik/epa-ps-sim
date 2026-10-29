@@ -50,8 +50,11 @@ import lombok.SneakyThrows;
 import oasis.names.tc.ebxml_regrep.xsd.lcm._3.RemoveObjectsRequest;
 import oasis.names.tc.ebxml_regrep.xsd.lcm._3.SubmitObjectsRequest;
 import oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryRequest;
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.*;
 import org.apache.cxf.transport.http.HTTPException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import xds.document.wsdl.IDocumentManagementPortType;
 
@@ -82,6 +85,39 @@ class DocumentApiImplTest extends TestBase {
         new FindObjectsResponseDTO(
             true, TestDataFactory.REGISTRY_RESPONSE_STATUS_SUCCESS, registryObjectLists);
     assertEquals(expectedResponseDTO, actualResponseDTO);
+  }
+
+  @SuppressWarnings("unchecked")
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"2024", "202408", "20240826", "2024082712", "202408271230", "20240827123045"})
+  void find_dtmFormatTest(String dtm) {
+
+    var extrinsicObject = new ExtrinsicObjectType();
+    extrinsicObject.setId("urn:uuid:11111111-1111-1111-1111-111111111111");
+    extrinsicObject.setObjectType("urn:uuid:7edca82f-054d-47f2-a032-9b2a5b5186c1");
+    extrinsicObject.setMimeType("text/plain");
+
+    for (var slotName : List.of("creationTime", "serviceStartTime", "serviceStopTime")) {
+      extrinsicObject
+          .getSlot()
+          .add(
+              new SlotType1().withName(slotName).withValueList(new ValueListType().withValue(dtm)));
+    }
+
+    var response = TestDataFactory.getSuccessResponse();
+    var jaxbElement = new ObjectFactory().createExtrinsicObject(extrinsicObject);
+    var listType = new RegistryObjectListType().withIdentifiable(jaxbElement);
+    response.setRegistryObjectList(listType);
+
+    Mockito.when(
+            documentServiceMock.documentRegistryRegistryStoredQuery(
+                Mockito.any(AdhocQueryRequest.class)))
+        .thenReturn(response);
+
+    var actual = xdsDocumentApi.find(X_INSURANT_ID, ResourceLoader.findByPatientIdRequest());
+
+    assertTrue(actual.success(), actual.statusMessage());
   }
 
   @Test

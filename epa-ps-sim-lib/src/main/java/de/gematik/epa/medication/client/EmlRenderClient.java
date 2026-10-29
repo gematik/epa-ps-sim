@@ -26,9 +26,6 @@ package de.gematik.epa.medication.client;
 
 import static org.springframework.http.MediaType.*;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.epa.api.medication_render.client.dto.*;
 import de.gematik.epa.client.JaxRsOutgoingRequestInterceptor;
 import jakarta.ws.rs.WebApplicationException;
@@ -46,6 +43,11 @@ import org.apache.cxf.ext.logging.LoggingInInterceptor;
 import org.apache.cxf.ext.logging.LoggingOutInterceptor;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 @Slf4j
 public class EmlRenderClient {
@@ -61,7 +63,8 @@ public class EmlRenderClient {
   private static final String X_REQUESTING_ORGANIZATION = "X-Requesting-Organization";
   private static final String CONTENT_TYPE = "Content-Type";
   private static final Set<Integer> HTTP_ERRORS_WITH_BODY = Set.of(403, 409, 423);
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER =
+      JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
   private static final String FORMAT_QUERY_PARAM = "_format";
   private static final String COUNT_QUERY_PARAM = "_count";
   private static final String OFFSET_QUERY_PARAM = "_offset";
@@ -419,7 +422,7 @@ public class EmlRenderClient {
   private EPAOperationOutcome parseOperationOutcome(String responseBody) {
     try {
       return OBJECT_MAPPER.readValue(responseBody, EPAOperationOutcome.class);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.warn("Reading response as JSON tree!", e);
       var tree = OBJECT_MAPPER.readTree(responseBody);
       return new EPAOperationOutcome()
@@ -436,7 +439,7 @@ public class EmlRenderClient {
   private ErrorType parseErrorResponse(String responseBody) {
     try {
       return OBJECT_MAPPER.readValue(responseBody, ErrorType.class);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.error("Error while parsing error response: {}", e.getMessage());
       return new ErrorType().errorDetail(responseBody).errorCode("Unknown");
     }

@@ -36,7 +36,18 @@ import org.apache.commons.lang3.StringUtils;
 public class MiscUtils {
 
   public static final String X_TARGET_FQDN = "x-target-fqdn";
+  // Endpoint for information service
   public static final List<String> ENDPOINTS_TO_IGNORE = List.of("information/api/v1/ehr");
+  public static final List<String> ENDPOINTS_TO_IGNORE_FOR_FQDN =
+      List.of("popp-token-generator", "popp-token-client");
+  //   Endpoints called during the login flow before a health record / x-target-fqdn can be
+  //   resolved. For these, a telematikId alone is sufficient identification and the outbound
+  //   request must not be blocked, even though no insurantId/health record is known yet.
+  public static final List<String> ENDPOINTS_ALLOWING_TELEMATIKID_ONLY =
+      List.of(
+          "epa/authz/v1/getNonce",
+          "epa/authz/v1/send_authorization_request_sc",
+          "epa/authz/v1/send_authcode_sc");
   public static final List<String> INSURANT_ID_KEYS =
       List.of("recordId", "insurantId", "x-insurantid", "insurantid");
   public static final String X_INSURANT_ID = "x-insurantid";

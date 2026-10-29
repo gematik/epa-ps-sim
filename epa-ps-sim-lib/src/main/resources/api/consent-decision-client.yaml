@@ -151,6 +151,12 @@ paths:
             set to _permit_.
           - (f) set the decision for _medication_ to _deny_ (including the consequences for clients) if _functionid_ = _erp-submission_ is
             set to _deny_.
+        
+        _functionid_ == _data-submission_:</br> 
+        The change of this decision prevents submission of pseudonymized medical data to the research data center (FDZ) if set to _deny_. 
+        The _deny_-decision information shall be sent to the FDZ instead of any further data for secondary usage.
+        If set to _permit_ new medical data will be pseudonymized and send to the FDZ, including the consent decisions 
+        of data usage purpose of the insurant.</br> 
 
         If decision provided equals decision stored (i.e. no change), this shall not cause an error response.
 
@@ -221,6 +227,8 @@ paths:
                         decision: "permit"
                       - functionId: "erp-submission"
                         decision: "permit"
+                      - functionId: "data-submission"
+                        decision: "permit"
                 Deny_erp-submission:
                   summary: Deny functionid == erp-submission (denies medication internally) response
                   value:
@@ -229,6 +237,8 @@ paths:
                         decision: "deny"
                       - functionId: "erp-submission"
                         decision: "deny"
+                      - functionId: "data-submission"
+                        decision: "deny"
                 Deny_erp-submission2:
                   summary: Deny functionid == erp-submission (medication already denied) response
                   value:
@@ -236,12 +246,7 @@ paths:
                       - functionId: "erp-submission"
                         decision: "deny"
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ConsentDecisionsResponseType"
+                $ref: "#/components/schemas/UpdateConsentDecisionResponse"
         '400':
           $ref: "#/components/responses/Error400BadRequest"
         '403':
@@ -351,12 +356,7 @@ paths:
                   - functionId: "erp-submission"
                     decision: "permit"
               schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ConsentDecisionsResponseType"
+                $ref: "#/components/schemas/GetConsentDecisionsResponse"
         '400':
           $ref: "#/components/responses/Error400BadRequest"
         '403':
@@ -436,6 +436,22 @@ components:
             $ref: '#/components/schemas/ErrorType'
 
   schemas:
+    UpdateConsentDecisionResponse:
+      description: "Response for update is of consent decisions"
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConsentDecisionsResponseType"
+    GetConsentDecisionsResponse:
+      description: "Response for get list of consent decisions"
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ConsentDecisionsResponseType"
     ConsentDecisionType:
       description: "Consent Decision"
       type: object

@@ -39,8 +39,6 @@ import static de.gematik.epa.unit.AppTestDataFactory.setupFqdnProvider;
 import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import de.gematik.epa.api.consent_decision.client.dto.ErrorType;
 import de.gematik.epa.api.testdriver.consentDecision.dto.DecisionEnum;
@@ -64,6 +62,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -123,7 +123,7 @@ public class ConsentDecisionsIntegrationTest {
   }
 
   @Test
-  void getConsentDecisionsShouldReturnFailureFor400Response() throws JsonProcessingException {
+  void getConsentDecisionsShouldReturnFailureFor400Response() throws JacksonException {
 
     var errorType =
         new ErrorType().errorDetail("Request does not match schema").errorCode("malformedRequest");
@@ -134,7 +134,7 @@ public class ConsentDecisionsIntegrationTest {
                 aResponse()
                     .withHeader(CONTENT_TYPE_HEADER, "application/json")
                     .withHeader(X_INSURANTID, "X12345678")
-                    .withStatus(200)
+                    .withStatus(400)
                     .withBody(body)));
     GetConsentDecisionsResponseDTO response = consentDecisionsApiEndpoint.getConsentDecisions(KVNR);
 

@@ -24,8 +24,6 @@
  */
 package de.gematik.epa.unit;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.xml.bind.DatatypeConverter;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -39,6 +37,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 public class TestUtils {
   public static final long IAT_TIME_OFFSET = 1735689600L;

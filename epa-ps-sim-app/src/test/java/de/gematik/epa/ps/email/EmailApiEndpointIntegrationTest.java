@@ -34,8 +34,6 @@ import static de.gematik.epa.unit.AppTestDataFactory.setupFqdnProvider;
 import static de.gematik.epa.unit.util.TestDataFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import de.gematik.epa.api.email.client.dto.ErrorType;
 import de.gematik.epa.api.testdriver.email.dto.GetEmailAddressResponseDTO;
@@ -52,6 +50,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -100,7 +100,7 @@ class EmailApiEndpointIntegrationTest {
   }
 
   @Test
-  void getEmailAddressShouldReturnFailureFor400Response() throws JsonProcessingException {
+  void getEmailAddressShouldReturnFailureFor400Response() throws JacksonException {
     // given
     var errorType =
         new ErrorType().errorDetail("Request does not match schema").errorCode("malformedRequest");
@@ -115,7 +115,7 @@ class EmailApiEndpointIntegrationTest {
   }
 
   @Test
-  void getEmailAddressShouldReturnFailureFor404Response() throws JsonProcessingException {
+  void getEmailAddressShouldReturnFailureFor404Response() throws JacksonException {
     // given
     var errorType = new ErrorType().errorDetail("Email does not exist").errorCode("noResource");
     var body = objectMapper.writeValueAsString(errorType);

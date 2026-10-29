@@ -25,21 +25,20 @@
 package de.gematik.epa.ps;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import java.security.Security;
 import java.util.Set;
 import org.apache.cxf.jaxrs.openapi.OpenApiFeature;
 import org.apache.cxf.jaxrs.swagger.ui.SwaggerUiConfig;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.openapitools.jackson.nullable.JsonNullableJackson3Module;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 /** Main class of the epa-ps-sim-app. Starts the Spring Boot context. */
 @SpringBootApplication(scanBasePackages = {"de.gematik.epa.ps", "de.gematik.epa.konnektor"})
@@ -93,14 +92,15 @@ public class EpaPsSimApplication {
    */
   @Bean
   public JacksonJsonProvider jsonProvider() {
-    final ObjectMapper objectMapper = new ObjectMapper();
-    objectMapper.setSerializationInclusion(Include.NON_ABSENT);
-    objectMapper.registerModule(new JavaTimeModule());
-
+    final var jsonMapper =
+        JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .changeDefaultPropertyInclusion(
+                inclusion -> inclusion.withValueInclusion(Include.NON_ABSENT))
+            .addModule(new JsonNullableJackson3Module()) // differentiates between set and not set
+            .build();
     final JacksonJsonProvider provider = new JacksonJsonProvider();
-    provider.setMapper(objectMapper);
-    provider.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-    provider.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    provider.setMapper(jsonMapper);
     return provider;
   }
 }

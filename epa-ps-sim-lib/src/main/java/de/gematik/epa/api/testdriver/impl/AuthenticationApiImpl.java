@@ -27,6 +27,7 @@ package de.gematik.epa.api.testdriver.impl;
 import de.gematik.epa.api.testdriver.authentication.LoginLogoutApi;
 import de.gematik.epa.api.testdriver.authentication.dto.LoginResponseDTO;
 import de.gematik.epa.authentication.AuthenticationService;
+import de.gematik.epa.utils.InsurantIdHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,10 @@ public class AuthenticationApiImpl implements LoginLogoutApi {
 
   @Override
   public LoginResponseDTO login(String telematikId, String recordId, String fqdn) {
+    if (recordId != null && !recordId.isBlank()) {
+      InsurantIdHolder.setInsurantId(recordId);
+    }
+
     var result = authenticationService.login(telematikId, fqdn);
     return new LoginResponseDTO()
         .statusMessage(result.errorMessage())

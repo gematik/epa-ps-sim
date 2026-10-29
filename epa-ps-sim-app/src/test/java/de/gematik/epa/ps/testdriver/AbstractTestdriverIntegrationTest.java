@@ -41,7 +41,7 @@ import org.springframework.test.web.servlet.client.RestTestClient;
 @AutoConfigureRestTestClient
 class AbstractTestdriverIntegrationTest extends AbstractIntegrationTest {
 
-  protected static final String MY_HAPPY_LITTLE_KVNR = "1234567890";
+  protected static final String MY_HAPPY_LITTLE_KVNR = "A123456789";
   protected static final MediaType psDriverType =
       new MediaType("application", "gematik.psTestdriver.v0.1.0+json");
 

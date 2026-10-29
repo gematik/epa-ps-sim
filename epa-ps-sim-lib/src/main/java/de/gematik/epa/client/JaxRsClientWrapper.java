@@ -27,11 +27,6 @@ package de.gematik.epa.client;
 import static org.apache.cxf.transport.https.InsecureTrustManager.getNoOpX509TrustManagers;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import de.gematik.epa.utils.LoggingFeatureUtil;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -44,7 +39,11 @@ import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.ext.logging.LoggingFeature;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.openapitools.jackson.nullable.JsonNullableJackson3Module;
 import org.slf4j.event.Level;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 @Slf4j
 @Getter
@@ -82,12 +81,14 @@ public class JaxRsClientWrapper<T> {
     factoryBean.setAddress(serverUrl);
 
     var provider = new JacksonJsonProvider();
-    var om = new ObjectMapper();
-    om.registerModule(new JavaTimeModule());
-    om.setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
-    provider.setMapper(om);
-    provider.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-    provider.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    var objectMapper =
+        JsonMapper.builder()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .changeDefaultPropertyInclusion(
+                inclusion -> inclusion.withValueInclusion(JsonInclude.Include.NON_ABSENT))
+            .addModule(new JsonNullableJackson3Module()) // differentiates between set and not set
+            .build();
+    provider.setMapper(objectMapper);
     factoryBean.setProvider(provider);
     factoryBean.getFeatures().add(loggingFeature);
     factoryBean.getOutInterceptors().add(new JaxRsOutgoingRequestInterceptor());

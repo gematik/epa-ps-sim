@@ -90,7 +90,7 @@ components:
       properties:
         functionId:
           type: string
-          enum: [ "medication", "erp-submission" ]
+          enum: [ "medication", "erp-submission", "data-submission" ]
           description: function id of consent related functions of a health record.
         decision:
           type: string

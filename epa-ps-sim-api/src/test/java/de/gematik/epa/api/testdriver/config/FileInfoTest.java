@@ -27,13 +27,11 @@ package de.gematik.epa.api.testdriver.config;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.epa.ihe.model.simple.ByteArray;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 class FileInfoTest {
 
@@ -138,7 +136,7 @@ class FileInfoTest {
   void fileInfoPathTest() {
     var tstObj = new FileInfo("/path/to/keystore/file.p12");
     var tlsCfg = new TlsConfig(true, tstObj, "00", "PKCS12", List.of());
-    var objMapper = getObjectMapper();
+    var objMapper = getJsonMapper();
 
     var serialized = assertDoesNotThrow(() -> objMapper.writeValueAsString(tlsCfg));
 
@@ -156,23 +154,23 @@ class FileInfoTest {
     var tstObj =
         new FileInfo(ByteArray.of("/path/to/keystore/file.p12".getBytes(StandardCharsets.UTF_8)));
     var tlsCfg = new TlsConfig(true, tstObj, "00", "PKCS12", List.of());
-    var objMapper = getObjectMapper();
+    var jsonMapper = getJsonMapper();
 
-    var serialized = assertDoesNotThrow(() -> objMapper.writeValueAsString(tlsCfg));
+    var serialized = assertDoesNotThrow(() -> jsonMapper.writeValueAsString(tlsCfg));
 
     assertNotNull(serialized);
 
-    var deserialized = assertDoesNotThrow(() -> objMapper.readValue(serialized, TlsConfig.class));
+    var deserialized = assertDoesNotThrow(() -> jsonMapper.readValue(serialized, TlsConfig.class));
 
     assertNotNull(deserialized);
 
     assertEquals(tstObj, deserialized.keystorefile());
   }
 
-  private ObjectMapper getObjectMapper() {
-    return new ObjectMapper()
-        .registerModule(new JavaTimeModule())
-        .setSerializationInclusion(Include.NON_ABSENT)
-        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+  private JsonMapper getJsonMapper() {
+    return JsonMapper.builder()
+        .changeDefaultPropertyInclusion(
+            inclusion -> inclusion.withValueInclusion(Include.NON_ABSENT))
+        .build();
   }
 }

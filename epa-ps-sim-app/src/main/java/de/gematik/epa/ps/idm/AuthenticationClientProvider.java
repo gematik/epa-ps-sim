@@ -26,7 +26,6 @@ package de.gematik.epa.ps.idm;
 
 import static de.gematik.epa.utils.LoggingFeatureUtil.newLoggingFeature;
 
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
 import de.gematik.epa.api.authorization.client.AuthorizationSmcBApi;
 import de.gematik.epa.api.vau.client.VauApi;
 import de.gematik.epa.authentication.AuthenticationService;
@@ -55,6 +54,9 @@ import org.slf4j.event.Level;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.jakarta.rs.json.JacksonJsonProvider;
 
 @Configuration
 @Slf4j
@@ -134,7 +136,10 @@ public class AuthenticationClientProvider {
     var factoryBean = new JAXRSClientFactoryBean();
     factoryBean.setServiceClass(AuthorizationSmcBApi.class);
     factoryBean.setAddress(serverUrl);
-    factoryBean.setProvider(new JacksonJsonProvider());
+    var provider = new JacksonJsonProvider();
+    provider.setMapper(
+        JsonMapper.builder().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build());
+    factoryBean.setProvider(provider);
     factoryBean.getFeatures().add(loggingFeature);
     var api = factoryBean.create(AuthorizationSmcBApi.class);
     WebClient.client(api).accept("application/json");

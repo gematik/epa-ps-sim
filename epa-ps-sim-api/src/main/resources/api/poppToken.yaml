@@ -115,6 +115,7 @@ components:
       type: object
       required:
         - communicationType
+        - patientId
       properties:
         communicationType:
           type: string
@@ -131,3 +132,8 @@ components:
           type: string
           description: Optional session ID, applicable for connector communication types.
           example: "123456"
+        patientId:
+          $ref: 'shared.yaml#/components/schemas/KvnrType'
+          description:
+            Identifikationsnummer (KVNR) des Aktenkonto.
+          nullable: false
